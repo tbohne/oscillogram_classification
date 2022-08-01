@@ -10,5 +10,5 @@ if __name__ == '__main__':
     print("number of recordings (oscillograms):", len(data))
 
     for oscillogram in data:
-        data, label = oscillogram
-        print(label)
+        voltages, label = oscillogram
+        print(label, len(voltages))

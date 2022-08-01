@@ -19,6 +19,15 @@ def read_oscilloscope_recording(rec_file):
     return label, curr_voltages
 
 
+def equalize_sample_sizes(voltages):
+    min_size = min([len(sample) for sample in voltages])
+    # reduce all samples with too many data points
+    for i in range(len(voltages)):
+        if len(voltages[i]) > min_size:
+            remove = len(voltages[i]) - min_size
+            voltages[i] = voltages[i][: len(voltages[i]) - remove]
+
+
 def iterate_through_input_data():
     labels = []
     voltages = []
@@ -26,9 +35,7 @@ def iterate_through_input_data():
         label, curr_voltages = read_oscilloscope_recording(path)
         labels.append(label)
         voltages.append(curr_voltages)
-
-    print(len(voltages))
-    print(np.array(voltages, dtype=object).shape)
+    equalize_sample_sizes(voltages)
     np.savez("data/training_data.npz", np.array(voltages, dtype=object), np.array(labels))
 
 
