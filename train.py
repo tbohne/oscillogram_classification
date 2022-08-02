@@ -66,6 +66,13 @@ def train_model(x_train, y_train):
     )
 
 
+def evaluate_model_on_test_data(x_test, y_test):
+    trained_model = keras.models.load_model("best_model.h5")
+    test_loss, test_acc = trained_model.evaluate(x_test, y_test)
+    print("test accuracy:", test_acc)
+    print("test loss:", test_loss)
+
+
 if __name__ == '__main__':
     data = TrainingData(np.load("data/training_data.npz", allow_pickle=True))
     print("number of recordings (oscillograms):", len(data))
@@ -89,3 +96,8 @@ if __name__ == '__main__':
     keras.utils.plot_model(model, to_file="model.png", show_shapes=True)
 
     train_model(x_train, y_train)
+
+    # TODO: setup test data
+    x_test = x_train
+    y_test = y_train
+    evaluate_model_on_test_data(x_test, y_test)
