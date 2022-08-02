@@ -28,12 +28,17 @@ def equalize_sample_sizes(voltages):
             voltages[i] = voltages[i][: len(voltages[i]) - remove]
 
 
+def z_normalize_time_series(series):
+    return (series - np.mean(series)) / np.std(series)
+
+
 def iterate_through_input_data():
     labels = []
     voltages = []
     for path in Path("data/").glob('**/*.csv'):
         label, curr_voltages = read_oscilloscope_recording(path)
         labels.append(label)
+        curr_voltages = z_normalize_time_series(curr_voltages)
         voltages.append(curr_voltages)
     equalize_sample_sizes(voltages)
     np.savez("data/training_data.npz", np.array(voltages, dtype=object), np.array(labels))
