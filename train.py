@@ -107,7 +107,7 @@ if __name__ == '__main__':
     y_train = np.asarray(y_train).astype('float32')
 
     model = create_model(x_train.shape[1:], len(np.unique(y_train)))
-    keras.utils.plot_model(model, to_file="model.png", show_shapes=True)
+    keras.utils.plot_model(model, to_file="img/model.png", show_shapes=True)
 
     train_model(x_train, y_train)
 
