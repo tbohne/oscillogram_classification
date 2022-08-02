@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow import keras
 
-EPOCHS = 500
+EPOCHS = 20
 BATCH_SIZE = 32
 
 
@@ -64,6 +64,20 @@ def train_model(x_train, y_train):
         validation_split=0.2,
         verbose=1,
     )
+    plot_training_and_validation_loss(history)
+
+
+def plot_training_and_validation_loss(history):
+    metric = "sparse_categorical_accuracy"
+    plt.figure()
+    plt.plot(history.history[metric])
+    plt.plot(history.history["val_" + metric])
+    plt.title("model " + metric)
+    plt.ylabel(metric, fontsize="large")
+    plt.xlabel("epoch", fontsize="large")
+    plt.legend(["train", "val"], loc="best")
+    plt.show()
+    plt.close()
 
 
 def evaluate_model_on_test_data(x_test, y_test):
