@@ -4,6 +4,7 @@
 from pathlib import Path
 import pandas as pd
 import numpy as np
+import argparse
 
 
 def read_oscilloscope_recording(rec_file):
@@ -32,13 +33,14 @@ def z_normalize_time_series(series):
     return (series - np.mean(series)) / np.std(series)
 
 
-def iterate_through_input_data():
+def iterate_through_input_data(z_norm):
     labels = []
     voltages = []
     for path in Path("data/").glob('**/*.csv'):
         label, curr_voltages = read_oscilloscope_recording(path)
         labels.append(label)
-        curr_voltages = z_normalize_time_series(curr_voltages)
+        if z_norm:
+            curr_voltages = z_normalize_time_series(curr_voltages)
         voltages.append(curr_voltages)
     equalize_sample_sizes(voltages)
     np.savez("data/training_data.npz", np.array(voltages, dtype=object), np.array(labels))
@@ -47,4 +49,7 @@ def iterate_through_input_data():
 if __name__ == '__main__':
     # input: raw oscilloscope data (one file per recording)
     # output: preprocessed data (one training data file containing data of all recordings)
-    iterate_through_input_data()
+    parser = argparse.ArgumentParser(description='Preprocess time series data..')
+    parser.add_argument('--znorm', action='store_true', help='z-normalize time series')
+    args = parser.parse_args()
+    iterate_through_input_data(args.znorm)
