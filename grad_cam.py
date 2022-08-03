@@ -10,44 +10,67 @@ from tensorflow import keras
 import preprocess
 
 
-def generate_gradcam_heatmap(input_array, trained_model, last_conv_layer, pred_idx=None):
+def generate_gradcam(input_array, trained_model, last_conv_layer, pred_idx=None):
+    """
+    Generates the Grad-CAM (Gradient-weighted Class Activation Map) for the specified input, trained model
+    and optionally prediction. It is essentially used to get a sense of what regions of the input the CNN is looking
+    at in order to make a prediction.
+
+    :param input_array: input to understand prediction for
+    :param trained_model: trained model that produces the prediction to be understood
+    :param last_conv_layer: name of the last convolutional layer in the CNN
+    :param pred_idx: index of the prediction to be analyzed (default is the "best guess")
+    :return: class activation map (heatmap) that highlights the most relevant parts for the classification
+    """
+    # remove the last layer's softmax
+    trained_model.layers[-1].activation = None
+
     # model that maps the input to the activations of the last conv layer as well as the output predictions
     grad_model = tf.keras.models.Model(
         [trained_model.inputs], [trained_model.get_layer(last_conv_layer).output, trained_model.output]
     )
 
-    # compute gradient of the predicted class for input series with respect to the activations of the last conv layer
+    # gradient tape -> API to inspect gradients in tensorflow
     with tf.GradientTape() as tape:
+        # compute gradient of the predicted class for the input series with respect to the
+        # activations of the last conv layer
         last_conv_layer_output, predictions = grad_model(input_array)
+        # no index specified -> use the one with the highest "probability" (the best guess)
         if pred_idx is None:
             pred_idx = tf.argmax(predictions[0])
-        class_channel = predictions[:, pred_idx]
+        pred_value = predictions[:, pred_idx]
 
     # gradient of the output neuron (top predicted) w.r.t. the output feature map of the last conv layer
-    grads = tape.gradient(class_channel, last_conv_layer_output)
-
+    grads = tape.gradient(pred_value, last_conv_layer_output)
     # vector where each entry is the mean intensity of the gradient over a specific feature map channel
     pooled_grads = tf.reduce_mean(grads, axis=(0, 1))
 
-    # multiply each channel in the feature map array by "how important this channel is" with regard to the top
+    # now a channel could have a high gradient but still a low activation (we want to consider both)
+    # thus:
+    # multiply each channel in the feature map by how important it is w.r.t. the top
     # predicted class, then sum all the channels to obtain the heatmap class activation
     last_conv_layer_output = last_conv_layer_output[0]
-    heatmap = last_conv_layer_output @ pooled_grads[..., tf.newaxis]
-    heatmap = tf.squeeze(heatmap)
+    cam = last_conv_layer_output @ pooled_grads[..., tf.newaxis]
+    cam = tf.squeeze(cam)
 
-    # for visualization purpose, normalize heatmap between 0 & 1
-    heatmap = tf.maximum(heatmap, 0) / tf.math.reduce_max(heatmap)
-    return heatmap.numpy()
+    # for visualization purpose, normalize heatmap
+    cam = tf.maximum(cam, 0) / tf.math.reduce_max(cam)
+    return cam.numpy()
 
 
-def plot_heatmap(heatmap):
+def plot_gradcam(cam):
+    """
+    Visualizes the Grad-CAM.
+
+    :param cam: class activation map to be visualized
+    """
     plt.rcParams["figure.figsize"] = 10, 4
     fig, (ax, ax2) = plt.subplots(nrows=2, sharex=True)
 
     # bounding box in data coordinates that the image will fill (left, right, bottom, top)
-    extent = [0, heatmap.shape[0], 0, 1]
+    extent = [0, cam.shape[0], 0, 1]
 
-    ax.imshow(heatmap[np.newaxis, :], cmap="plasma", aspect="auto", extent=extent)
+    ax.imshow(cam[np.newaxis, :], cmap="plasma", aspect="auto", extent=extent)
     ax.set_yticks([])
     ax.set_xlim(extent[0], extent[1])
     data_points = [i for i in range(len(voltages))]
@@ -57,7 +80,6 @@ def plot_heatmap(heatmap):
 
 
 if __name__ == '__main__':
-
     _, voltages = preprocess.read_oscilloscope_recording("data/NEG_WVWZZZAUZHP535532.csv")
     voltages = preprocess.z_normalize_time_series(voltages)
 
@@ -77,17 +99,10 @@ if __name__ == '__main__':
     print(model.summary())
     last_conv_layer_name = "conv1d_2"
 
-    # EXPLAINABILITY
-
-    # remove last layer's softmax
-    model.layers[-1].activation = None
+    # EXPLAIN PREDICTION WITH GRAD-CAM
 
     prediction = model.predict(np.array([net_input]))
-    print("Predicted:", prediction)
+    print("prediction:", prediction)
 
-    # generate class activation heatmap
-    heatmap = generate_gradcam_heatmap(np.array([net_input]), model, last_conv_layer_name)
-
-    print("heatmap shape:", heatmap.shape)
-
-    plot_heatmap(heatmap)
+    heatmap = generate_gradcam(np.array([net_input]), model, last_conv_layer_name)
+    plot_gradcam(heatmap)
