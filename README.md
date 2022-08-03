@@ -20,3 +20,8 @@ The task comes down to binary time series classification.
 
 - TODO:
 - ![](img/accuracy.png)
+
+## Grad-CAM Class Activation Visualization
+
+- TODO:
+- ![](img/heatmap.png)

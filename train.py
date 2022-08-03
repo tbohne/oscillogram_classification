@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# @author Tim Bohne
 
 from training_data import TrainingData
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow import keras
 
-EPOCHS = 20
+EPOCHS = 50  # 500
 BATCH_SIZE = 32
 
 
@@ -92,6 +93,7 @@ if __name__ == '__main__':
     print("number of recordings (oscillograms):", len(data))
 
     x_train = data[:][0]
+
     y_train = data[:][1]
     visualize_one_example_per_class(x_train, y_train)
 
