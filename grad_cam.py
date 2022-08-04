@@ -50,7 +50,16 @@ def generate_gradcam(input_array, trained_model, last_conv_layer, pred_idx=None)
     # multiply each channel in the feature map by how important it is w.r.t. the top
     # predicted class, then sum all the channels to obtain the heatmap class activation
     last_conv_layer_output = last_conv_layer_output[0]
-    cam = last_conv_layer_output @ pooled_grads[..., tf.newaxis]
+
+    print("conv out:", last_conv_layer_output.shape)
+    print("pooled grads:", pooled_grads[:, tf.newaxis].shape)
+
+    # new axis necessary so that the dimensions fit for matrix multiplication
+    cam = last_conv_layer_output @ pooled_grads[:, tf.newaxis]
+
+    print("cam shape:", cam.shape)
+
+    # get back to time series shape (1D) -> remove dimension of size 1
     cam = tf.squeeze(cam)
 
     # for visualization purpose, normalize heatmap
