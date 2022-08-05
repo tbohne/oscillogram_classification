@@ -10,7 +10,19 @@ from tensorflow import keras
 import preprocess
 
 
-def generate_gradcam(input_array, trained_model, last_conv_layer, pred_idx=None):
+def retrieve_last_conv_layer(trained_model):
+    """
+    Retrieves the name of the last convolutional layer in the CNN.
+
+    :param trained_model: trained model that produces the prediction to be understood
+    :return: name of last conv layer
+    """
+    for layer in trained_model.layers[::-1]:
+        if "conv" in layer.name:
+            return layer.name
+
+
+def generate_gradcam(input_array, trained_model, pred_idx=None):
     """
     Generates the Grad-CAM (Gradient-weighted Class Activation Map) for the specified input, trained model
     and optionally prediction. It is essentially used to get a sense of what regions of the input the CNN is looking
@@ -18,7 +30,6 @@ def generate_gradcam(input_array, trained_model, last_conv_layer, pred_idx=None)
 
     :param input_array: input to understand prediction for
     :param trained_model: trained model that produces the prediction to be understood
-    :param last_conv_layer: name of the last convolutional layer in the CNN
     :param pred_idx: index of the prediction to be analyzed (default is the "best guess")
     :return: class activation map (heatmap) that highlights the most relevant parts for the classification
     """
@@ -27,7 +38,8 @@ def generate_gradcam(input_array, trained_model, last_conv_layer, pred_idx=None)
 
     # model that maps the input to the activations of the last conv layer as well as the output predictions
     grad_model = tf.keras.models.Model(
-        [trained_model.inputs], [trained_model.get_layer(last_conv_layer).output, trained_model.output]
+        [trained_model.inputs],
+        [trained_model.get_layer(retrieve_last_conv_layer(trained_model)).output, trained_model.output]
     )
 
     # gradient tape -> API to inspect gradients in tensorflow
@@ -106,12 +118,11 @@ if __name__ == '__main__':
     print("input shape:", net_input.shape)
 
     print(model.summary())
-    last_conv_layer_name = "conv1d_2"
 
     # EXPLAIN PREDICTION WITH GRAD-CAM
 
     prediction = model.predict(np.array([net_input]))
     print("prediction:", prediction)
 
-    heatmap = generate_gradcam(np.array([net_input]), model, last_conv_layer_name)
+    heatmap = generate_gradcam(np.array([net_input]), model)
     plot_gradcam(heatmap)
