@@ -79,11 +79,12 @@ def generate_gradcam(input_array, trained_model, pred_idx=None):
     return cam.numpy()
 
 
-def plot_gradcam(cam):
+def plot_gradcam(cam, voltage_vals):
     """
     Visualizes the Grad-CAM.
 
     :param cam: class activation map to be visualized
+    :param voltage_vals: voltage values to be visualized
     """
     plt.rcParams["figure.figsize"] = 10, 4
     fig, (ax, ax2) = plt.subplots(nrows=2, sharex=True)
@@ -94,8 +95,8 @@ def plot_gradcam(cam):
     ax.imshow(cam[np.newaxis, :], cmap="plasma", aspect="auto", extent=extent)
     ax.set_yticks([])
     ax.set_xlim(extent[0], extent[1])
-    data_points = [i for i in range(len(voltages))]
-    ax2.plot(data_points, voltages)
+    data_points = [i for i in range(len(voltage_vals))]
+    ax2.plot(data_points, voltage_vals)
     plt.tight_layout()
     plt.show()
 
@@ -125,4 +126,4 @@ if __name__ == '__main__':
     print("prediction:", prediction)
 
     heatmap = generate_gradcam(np.array([net_input]), model)
-    plot_gradcam(heatmap)
+    plot_gradcam(heatmap, voltages)
