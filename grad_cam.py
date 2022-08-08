@@ -7,7 +7,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 
-from oscillogram_classification import preprocess
+import preprocess
 
 
 def retrieve_last_conv_layer(trained_model):
