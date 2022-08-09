@@ -103,7 +103,7 @@ def evaluate_model_on_test_data(x_test, y_test):
     print("test loss:", test_loss)
 
 
-if __name__ == '__main__':
+def prepare_and_train_model():
     data = TrainingData(np.load("data/synthetic_battery_data/training_data.npz", allow_pickle=True))
     print("number of recordings (oscillograms):", len(data))
 
@@ -128,11 +128,14 @@ if __name__ == '__main__':
 
     train_model(model, x_train, y_train)
 
-    ####### test data
+
+def evaluate_model():
     test_data = TrainingData(np.load("data/synthetic_battery_data/test_data.npz", allow_pickle=True))
     x_test = test_data[:][0]
     y_test = test_data[:][1]
+    evaluate_model_on_test_data(x_test.astype('float32'), y_test.astype('float32'))
 
-    x_test = np.asarray(x_test).astype('float32')
-    y_test = np.asarray(y_test).astype('float32')
-    evaluate_model_on_test_data(x_test, y_test)
+
+if __name__ == '__main__':
+    prepare_and_train_model()
+    evaluate_model()
