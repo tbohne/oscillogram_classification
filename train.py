@@ -51,7 +51,15 @@ def create_model(input_shape, num_classes):
     return keras.models.Model(inputs=input_layer, outputs=output_layer)
 
 
-def train_model(model, x_train, y_train):
+def train_model(model, x_train, y_train, x_val, y_val):
+    print("training model:")
+    print("total training samples:", len(x_train))
+    for c in np.unique(y_train, axis=0):
+        print("training samples for class", str(c), ":", len(x_train[y_train == c]))
+    print("total validation samples:", len(x_val))
+    for c in np.unique(y_val, axis=0):
+        print("validation samples for class", str(c), ":", len(x_val[y_val == c]))
+
     callbacks = [
         keras.callbacks.ModelCheckpoint("best_model.h5", save_best_only=True, monitor="val_loss"),
         keras.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.5, patience=20, min_lr=0.0001),
@@ -69,6 +77,7 @@ def train_model(model, x_train, y_train):
         epochs=EPOCHS,
         callbacks=callbacks,
         validation_split=0.2,
+        validation_data=(x_val, y_val),
         verbose=1,
     )
     plot_training_and_validation_loss(history)
@@ -105,8 +114,6 @@ def evaluate_model_on_test_data(x_test, y_test):
 
 def prepare_and_train_model():
     data = TrainingData(np.load("data/synthetic_battery_data/training_data.npz", allow_pickle=True))
-    print("number of recordings (oscillograms):", len(data))
-
     x_train = data[:][0]
     y_train = data[:][1]
 
@@ -123,10 +130,14 @@ def prepare_and_train_model():
     x_train = np.asarray(x_train).astype('float32')
     y_train = np.asarray(y_train).astype('float32')
 
+    # read validation data
+    val_data = TrainingData(np.load("data/synthetic_battery_data/validation_data.npz", allow_pickle=True))
+    x_val = val_data[:][0]
+    y_val = val_data[:][1]
+
     model = create_model(x_train.shape[1:], len(np.unique(y_train)))
     keras.utils.plot_model(model, to_file="img/model.png", show_shapes=True)
-
-    train_model(model, x_train, y_train)
+    train_model(model, x_train, y_train, x_val.astype('float32'), y_val.astype('float32'))
 
 
 def evaluate_model():
