@@ -9,7 +9,7 @@ from tensorflow import keras
 from training_data import TrainingData
 
 EPOCHS = 100
-BATCH_SIZE = 32
+BATCH_SIZE = 1  # 32
 
 
 def visualize_n_samples_per_class(x, y):
@@ -88,7 +88,16 @@ def plot_training_and_validation_loss(history):
 
 
 def evaluate_model_on_test_data(x_test, y_test):
+    print("evaluating model:")
+    print("total test samples:", len(x_test))
+    for c in np.unique(y_test, axis=0):
+        print("test samples for class", str(c), ":", len(x_test[y_test == c]))
+
     trained_model = keras.models.load_model("best_model.h5")
+    # test samples should match model input length
+    assert x_test.shape[1] == trained_model.layers[0].output_shape[0][1]
+    # TODO: think about whether it should be able to deal with not matching input lengths
+    #       if so: x_test[:, :trained_model.layers[0].output_shape[0][1]]
     test_loss, test_acc = trained_model.evaluate(x_test, y_test)
     print("test accuracy:", test_acc)
     print("test loss:", test_loss)
@@ -120,14 +129,10 @@ if __name__ == '__main__':
     train_model(model, x_train, y_train)
 
     ####### test data
-    test_data = TrainingData(np.load("data/synthetic_battery_data/validation_data.npz", allow_pickle=True))
+    test_data = TrainingData(np.load("data/synthetic_battery_data/test_data.npz", allow_pickle=True))
     x_test = test_data[:][0]
     y_test = test_data[:][1]
 
-    print(x_test.shape)
-    # TODO: find out dynamically
-    size = 23040
-
     x_test = np.asarray(x_test).astype('float32')
     y_test = np.asarray(y_test).astype('float32')
-    evaluate_model_on_test_data(x_test[:, :size], y_test)
+    evaluate_model_on_test_data(x_test, y_test)
