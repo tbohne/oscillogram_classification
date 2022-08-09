@@ -12,15 +12,20 @@ EPOCHS = 100
 BATCH_SIZE = 32
 
 
-def visualize_one_example_per_class(x, y):
-    classes = np.unique(y, axis=0)
+def visualize_n_samples_per_class(x, y):
     plt.figure()
-    for c in classes:
-        x_c = x[y == c]
-        plt.plot(x_c[0], label="class " + str(c))
-    plt.legend(loc="best")
-    plt.show()
-    plt.close()
+    classes = np.unique(y, axis=0)
+    samples_by_class = {c: x[y == c] for c in classes}
+
+    for sample in range(len(samples_by_class[classes[0]])):
+        key = input("Enter '+' to see another sample per class\n")
+        if key != "+":
+            break
+        for c in classes:
+            plt.plot(samples_by_class[c][sample], label="class " + str(c))
+        plt.legend(loc="best")
+        plt.show()
+        plt.close()
 
 
 def create_model(input_shape, num_classes):
@@ -95,7 +100,8 @@ if __name__ == '__main__':
 
     x_train = data[:][0]
     y_train = data[:][1]
-    visualize_one_example_per_class(x_train, y_train)
+
+    visualize_n_samples_per_class(x_train, y_train)
 
     # generally applicable to multivariate time series
     x_train = x_train.reshape((x_train.shape[0], x_train.shape[1], 1))
