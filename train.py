@@ -2,12 +2,13 @@
 # -*- coding: utf-8 -*-
 # @author Tim Bohne
 
-from training_data import TrainingData
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from tensorflow import keras
 
-EPOCHS = 50  # 500
+from training_data import TrainingData
+
+EPOCHS = 100
 BATCH_SIZE = 32
 
 
@@ -45,7 +46,7 @@ def create_model(input_shape, num_classes):
     return keras.models.Model(inputs=input_layer, outputs=output_layer)
 
 
-def train_model(x_train, y_train):
+def train_model(model, x_train, y_train):
     callbacks = [
         keras.callbacks.ModelCheckpoint("best_model.h5", save_best_only=True, monitor="val_loss"),
         keras.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.5, patience=20, min_lr=0.0001),
@@ -89,11 +90,10 @@ def evaluate_model_on_test_data(x_test, y_test):
 
 
 if __name__ == '__main__':
-    data = TrainingData(np.load("data/training_data.npz", allow_pickle=True))
+    data = TrainingData(np.load("data/synthetic_battery_data/training_data.npz", allow_pickle=True))
     print("number of recordings (oscillograms):", len(data))
 
     x_train = data[:][0]
-
     y_train = data[:][1]
     visualize_one_example_per_class(x_train, y_train)
 
@@ -111,9 +111,17 @@ if __name__ == '__main__':
     model = create_model(x_train.shape[1:], len(np.unique(y_train)))
     keras.utils.plot_model(model, to_file="img/model.png", show_shapes=True)
 
-    train_model(x_train, y_train)
+    train_model(model, x_train, y_train)
 
-    # TODO: setup test data
-    x_test = x_train
-    y_test = y_train
-    evaluate_model_on_test_data(x_test, y_test)
+    ####### test data
+    test_data = TrainingData(np.load("data/synthetic_battery_data/validation_data.npz", allow_pickle=True))
+    x_test = test_data[:][0]
+    y_test = test_data[:][1]
+
+    print(x_test.shape)
+    # TODO: find out dynamically
+    size = 23040
+
+    x_test = np.asarray(x_test).astype('float32')
+    y_test = np.asarray(y_test).astype('float32')
+    evaluate_model_on_test_data(x_test[:, :size], y_test)
