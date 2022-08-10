@@ -102,26 +102,24 @@ def plot_gradcam(cam, voltage_vals):
 
 
 if __name__ == '__main__':
-    _, voltages = preprocess.read_oscilloscope_recording("data/NEG_WVWZZZAUZHP535532.csv")
+    _, voltages = preprocess.read_downsampled_recording("data/positive_samples/training/augemented_downsampled/synthetic66.csv")
     voltages = preprocess.z_normalize_time_series(voltages)
-
-    model = keras.models.load_model("best_model.h5")
-
-    # fix input size
+    model = keras.models.load_model("stochastic_GD/best_model.h5")
     net_input_size = model.layers[0].output_shape[0][1]
-    if len(voltages) > net_input_size:
-        remove = len(voltages) - net_input_size
-        voltages = voltages[: len(voltages) - remove]
+
+    assert net_input_size == len(voltages)
+    # TODO: think about whether it makes sense to fix input size
+    # if len(voltages) > net_input_size:
+    #     remove = len(voltages) - net_input_size
+    #     voltages = voltages[: len(voltages) - remove]
 
     net_input = np.asarray(voltages).astype('float32')
     net_input = net_input.reshape((net_input.shape[0], 1))
 
     print("input shape:", net_input.shape)
-
     print(model.summary())
 
     # EXPLAIN PREDICTION WITH GRAD-CAM
-
     prediction = model.predict(np.array([net_input]))
     print("prediction:", prediction)
 
