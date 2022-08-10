@@ -10,14 +10,20 @@ import argparse
 
 def read_oscilloscope_recording(rec_file):
     print("reading oscilloscope recording from", rec_file)
-
     # label: pos (1) / neg (0)
     label = 1 if "POS" in str(rec_file) else 0
-
     df = pd.read_csv(rec_file, delimiter=';', na_values=['-∞', '∞'])
     df = df[1:].apply(lambda x: x.str.replace(',', '.')).astype(float).dropna()
     curr_voltages = list(df['Kanal A'].values)
+    return label, curr_voltages
 
+
+def read_voltage_only_format_recording(rec_file):
+    print("reading oscilloscope recording from", rec_file)
+    # label: pos (1) / neg (0)
+    label = 1 if "pos" in str(rec_file) else 0
+    a = pd.read_csv(rec_file, delimiter=",", na_values=["-∞", "∞"], names=["Kanal A"])
+    curr_voltages = list(a['Kanal A'].values)
     return label, curr_voltages
 
 
