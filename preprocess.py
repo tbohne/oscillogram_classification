@@ -2,10 +2,12 @@
 # -*- coding: utf-8 -*-
 # @author Tim Bohne
 
-from pathlib import Path
-import pandas as pd
-import numpy as np
 import argparse
+import os
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
 
 
 def read_oscilloscope_recording(rec_file):
@@ -21,7 +23,7 @@ def read_oscilloscope_recording(rec_file):
 def read_voltage_only_format_recording(rec_file):
     print("reading oscilloscope recording from", rec_file)
     # label: pos (1) / neg (0)
-    label = 1 if "pos" in str(rec_file) else 0
+    label = 1 if "POS" in str(rec_file) else 0
     a = pd.read_csv(rec_file, delimiter=",", na_values=["-∞", "∞"], names=["Kanal A"])
     curr_voltages = list(a['Kanal A'].values)
     return label, curr_voltages
@@ -40,23 +42,35 @@ def z_normalize_time_series(series):
     return (series - np.mean(series)) / np.std(series)
 
 
-def iterate_through_input_data(z_norm):
+def iterate_through_input_data(z_norm, altering_format, data_path, data_type):
     labels = []
     voltages = []
-    for path in Path("data/").glob('**/*.csv'):
-        label, curr_voltages = read_oscilloscope_recording(path)
+    for path in Path(data_path).glob('**/*.csv'):
+        label, curr_voltages = read_oscilloscope_recording(path) if not altering_format else read_voltage_only_format_recording(path)
         labels.append(label)
         if z_norm:
             curr_voltages = z_normalize_time_series(curr_voltages)
         voltages.append(curr_voltages)
     equalize_sample_sizes(voltages)
-    np.savez("data/training_data.npz", np.array(voltages, dtype=object), np.array(labels))
+    np.savez("data/%s_data.npz" % data_type, data_type, np.array(voltages, dtype=object), np.array(labels))
+
+
+def dir_path(path):
+    if os.path.isdir(path):
+        return path
+    else:
+        raise argparse.ArgumentTypeError(f"{path} is not a valid path")
 
 
 if __name__ == '__main__':
     # input: raw oscilloscope data (one file per recording)
-    # output: preprocessed data (one training data file containing data of all recordings)
+    # output: preprocessed data (one training / testing / validation data file containing data of all recordings)
     parser = argparse.ArgumentParser(description='Preprocess time series data..')
     parser.add_argument('--znorm', action='store_true', help='z-normalize time series')
+    parser.add_argument('--altering_format', action='store_true', help='using the "only voltage" format')
+    parser.add_argument('--path', type=dir_path, required=True)
+    parser.add_argument(
+        '--type', action='store', type=str, help='type of data: ["training", "validation", "test"]', required=True)
+
     args = parser.parse_args()
-    iterate_through_input_data(args.znorm)
+    iterate_through_input_data(args.znorm, args.altering_format, args.path, args.type)
