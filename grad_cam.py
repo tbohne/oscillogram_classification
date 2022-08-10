@@ -102,7 +102,9 @@ def plot_gradcam(cam, voltage_vals):
 
 
 if __name__ == '__main__':
-    _, voltages = preprocess.read_downsampled_recording("data/positive_samples/training/augemented_downsampled/synthetic66.csv")
+    _, voltages = preprocess.read_voltage_only_format_recording(
+        "data/positive_samples/training/augemented_downsampled/synthetic66.csv"
+    )
     voltages = preprocess.z_normalize_time_series(voltages)
     model = keras.models.load_model("stochastic_GD/best_model.h5")
     net_input_size = model.layers[0].output_shape[0][1]
