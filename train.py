@@ -5,11 +5,17 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from tensorflow import keras
+import wandb
+from wandb.keras import WandbCallback
+import yaml
 
 from training_data import TrainingData
+from configs import api_key
 
-EPOCHS = 100
-BATCH_SIZE = 1  # 32
+
+def set_up_wandb(wandb_config):
+    wandb.login(key=api_key.wandb_api_key)
+    wandb.init(project="Oscillogram Classification CNN", entity="awindler", config=wandb_config)
 
 
 def visualize_n_samples_per_class(x, y):
@@ -64,17 +70,21 @@ def train_model(model, x_train, y_train, x_val, y_val):
         keras.callbacks.ModelCheckpoint("best_model.h5", save_best_only=True, monitor="val_loss"),
         keras.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.5, patience=20, min_lr=0.0001),
         keras.callbacks.EarlyStopping(monitor="val_loss", patience=50, verbose=1),
+        WandbCallback()
     ]
+
+    optimizer = eval(wandb.config["optimizer"])(learning_rate=wandb.config["learning_rate"])
+
     model.compile(
-        optimizer="adam",
+        optimizer=optimizer,
         loss="sparse_categorical_crossentropy",
         metrics=["sparse_categorical_accuracy"],
     )
     history = model.fit(
         x_train,
         y_train,
-        batch_size=BATCH_SIZE,
-        epochs=EPOCHS,
+        batch_size=wandb.config["batch_size"],
+        epochs=wandb.config.epochs,
         callbacks=callbacks,
         validation_split=0.2,
         validation_data=(x_val, y_val),
@@ -147,6 +157,19 @@ def evaluate_model():
     evaluate_model_on_test_data(x_test.astype('float32'), y_test.astype('float32'))
 
 
-if __name__ == '__main__':
+def train_procedure(hyperparameter_config=None):
+    set_up_wandb(hyperparameter_config)
     prepare_and_train_model()
     evaluate_model()
+
+
+if __name__ == '__main__':
+
+    try:
+        with open(".\\configs\\example_run_config.yaml") as f:
+            hyperparameter_config = yaml.safe_load(f)
+    except FileNotFoundError:
+        print("Could not find config file!")
+        raise
+
+    train_procedure(hyperparameter_config)
