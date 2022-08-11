@@ -52,7 +52,7 @@ def iterate_through_input_data(z_norm, altering_format, data_path, data_type):
             curr_voltages = z_normalize_time_series(curr_voltages)
         voltages.append(curr_voltages)
     equalize_sample_sizes(voltages)
-    np.savez("data/%s_data.npz" % data_type, data_type, np.array(voltages, dtype=object), np.array(labels))
+    np.savez("data/%s_data.npz" % data_type, np.array(voltages, dtype=object), np.array(labels))
 
 
 def dir_path(path):
