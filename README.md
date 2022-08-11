@@ -17,6 +17,21 @@ The task comes down to binary time series classification.
 - [**tensorflow**](https://pypi.org/project/tensorflow/): open source machine learning framework
 - [**pandas**](https://pandas.pydata.org/): data analysis and manipulation tool
 
+## Usage
+
+**Preprocessing**
+```
+$ python preprocess.py [--znorm] [--altering_format] --path /TRAINING_DATA --type {training | validation | test}
+```
+**Training**
+```
+$ python train.py --train_path TRAIN_DATA.npz --val_path VAL_DATA.npz --test_path TEST_DATA.npz
+```
+**Grad-CAM**
+```
+$ python grad_cam.py [--znorm] [--altering_format] --sample_path SAMPLE.csv --model_path MODEL.h5
+```
+
 ## Positive and Negative Sample for each Component
 
 ### Battery:
