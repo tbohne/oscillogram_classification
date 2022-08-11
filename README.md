@@ -8,8 +8,14 @@ Example of the time series data to be considered (voltage over time).
 The task comes down to binary time series classification.
 
 ## CNN Architecture
-
 <img src="img/model.png" width="300">
+
+## Dependencies
+
+- [**matplotlib**](https://matplotlib.org/): library for creating visualizations
+- [**numpy**](https://numpy.org/): scientific computing with Python
+- [**tensorflow**](https://pypi.org/project/tensorflow/): open source machine learning framework
+- [**pandas**](https://pandas.pydata.org/): data analysis and manipulation tool
 
 ## Positive and Negative Sample for each Component
 
