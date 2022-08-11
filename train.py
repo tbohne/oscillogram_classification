@@ -2,14 +2,17 @@
 # -*- coding: utf-8 -*-
 # @author Tim Bohne
 
+import argparse
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 from tensorflow import keras
 
 from training_data import TrainingData
 
-EPOCHS = 100
-BATCH_SIZE = 1  # 32
+EPOCHS = 50
+BATCH_SIZE = 32
 
 
 def visualize_n_samples_per_class(x, y):
@@ -112,8 +115,8 @@ def evaluate_model_on_test_data(x_test, y_test):
     print("test loss:", test_loss)
 
 
-def prepare_and_train_model():
-    data = TrainingData(np.load("data/synthetic_battery_data/training_data.npz", allow_pickle=True))
+def prepare_and_train_model(train_data_path, val_data_path):
+    data = TrainingData(np.load(train_data_path, allow_pickle=True))
     x_train = data[:][0]
     y_train = data[:][1]
 
@@ -131,7 +134,7 @@ def prepare_and_train_model():
     y_train = np.asarray(y_train).astype('float32')
 
     # read validation data
-    val_data = TrainingData(np.load("data/synthetic_battery_data/validation_data.npz", allow_pickle=True))
+    val_data = TrainingData(np.load(val_data_path, allow_pickle=True))
     x_val = val_data[:][0]
     y_val = val_data[:][1]
 
@@ -140,13 +143,26 @@ def prepare_and_train_model():
     train_model(model, x_train, y_train, x_val.astype('float32'), y_val.astype('float32'))
 
 
-def evaluate_model():
-    test_data = TrainingData(np.load("data/synthetic_battery_data/test_data.npz", allow_pickle=True))
+def evaluate_model(test_data_path):
+    test_data = TrainingData(np.load(test_data_path, allow_pickle=True))
     x_test = test_data[:][0]
     y_test = test_data[:][1]
     evaluate_model_on_test_data(x_test.astype('float32'), y_test.astype('float32'))
 
 
+def file_path(path):
+    if os.path.isfile(path):
+        return path
+    else:
+        raise argparse.ArgumentTypeError(f"{path} is not a valid file")
+
+
 if __name__ == '__main__':
-    prepare_and_train_model()
-    evaluate_model()
+    parser = argparse.ArgumentParser(description='Training CNN with time series data..')
+    parser.add_argument('--train_path', type=file_path, required=True)
+    parser.add_argument('--val_path', type=file_path, required=True)
+    parser.add_argument('--test_path', type=file_path, required=True)
+    args = parser.parse_args()
+
+    prepare_and_train_model(args.train_path, args.val_path)
+    evaluate_model(args.test_path)
