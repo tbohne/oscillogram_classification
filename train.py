@@ -120,6 +120,7 @@ def evaluate_model_on_test_data(x_test, y_test):
     test_loss, test_acc = trained_model.evaluate(x_test, y_test)
     print("test accuracy:", test_acc)
     print("test loss:", test_loss)
+    wandb.log({"test_loss": test_loss, "test_accuracy": test_acc})
 
 
 def prepare_and_train_model():
