@@ -105,6 +105,12 @@ def plot_gradcam(cam, voltage_vals):
 
 
 def file_path(path):
+    """
+    Returns path if it's valid, raises error otherwise.
+
+    :param path: path to be checked
+    :return: feasible path or error
+    """
     if os.path.isfile(path):
         return path
     else:

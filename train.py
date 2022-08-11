@@ -16,6 +16,12 @@ BATCH_SIZE = 32
 
 
 def visualize_n_samples_per_class(x, y):
+    """
+    Iteratively visualizes one sample per class until the user enters '+'.
+
+    :param x: sample series
+    :param y: corresponding labels
+    """
     plt.figure()
     classes = np.unique(y, axis=0)
     samples_by_class = {c: x[y == c] for c in classes}
@@ -32,6 +38,13 @@ def visualize_n_samples_per_class(x, y):
 
 
 def create_model(input_shape, num_classes):
+    """
+    Defines the CNN architecture to be worked with.
+
+    :param input_shape: shape of the input layer
+    :param num_classes: number of unique classes to be considered
+    :return: CNN model
+    """
     # input shape -> number of data points per sample
     input_layer = keras.layers.Input(input_shape)
 
@@ -55,6 +68,15 @@ def create_model(input_shape, num_classes):
 
 
 def train_model(model, x_train, y_train, x_val, y_val):
+    """
+    Trains the CNN model.
+
+    :param model: CNN model to be trained
+    :param x_train: training samples
+    :param y_train: corresponding training labels
+    :param x_val: validation samples
+    :param y_val: corresponding validation labels
+    """
     print("training model:")
     print("total training samples:", len(x_train))
     for c in np.unique(y_train, axis=0):
@@ -87,6 +109,11 @@ def train_model(model, x_train, y_train, x_val, y_val):
 
 
 def plot_training_and_validation_loss(history):
+    """
+    Plots the learning curves.
+
+    :param history: training history
+    """
     metric = "sparse_categorical_accuracy"
     plt.figure()
     plt.plot(history.history[metric])
@@ -100,6 +127,12 @@ def plot_training_and_validation_loss(history):
 
 
 def evaluate_model_on_test_data(x_test, y_test):
+    """
+    Evaluates the trained model on the specified test data.
+
+    :param x_test: test samples
+    :param y_test: corresponding labels
+    """
     print("evaluating model:")
     print("total test samples:", len(x_test))
     for c in np.unique(y_test, axis=0):
@@ -116,6 +149,12 @@ def evaluate_model_on_test_data(x_test, y_test):
 
 
 def prepare_and_train_model(train_data_path, val_data_path):
+    """
+    Prepares and initiates the training process.
+
+    :param train_data_path: path to read training data from
+    :param val_data_path: path to read validation data from
+    """
     data = TrainingData(np.load(train_data_path, allow_pickle=True))
     x_train = data[:][0]
     y_train = data[:][1]
@@ -144,6 +183,11 @@ def prepare_and_train_model(train_data_path, val_data_path):
 
 
 def evaluate_model(test_data_path):
+    """
+    Initiates model evaluation.
+
+    :param test_data_path: path to read test data from
+    """
     test_data = TrainingData(np.load(test_data_path, allow_pickle=True))
     x_test = test_data[:][0]
     y_test = test_data[:][1]
@@ -151,6 +195,12 @@ def evaluate_model(test_data_path):
 
 
 def file_path(path):
+    """
+    Returns path if it's valid, raises error otherwise.
+
+    :param path: path to be checked
+    :return: feasible path or error
+    """
     if os.path.isfile(path):
         return path
     else:
