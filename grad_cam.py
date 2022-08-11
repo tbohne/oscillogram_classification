@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 # @author Tim Bohne
 
+import argparse
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
@@ -101,12 +104,30 @@ def plot_gradcam(cam, voltage_vals):
     plt.show()
 
 
+def file_path(path):
+    if os.path.isfile(path):
+        return path
+    else:
+        raise argparse.ArgumentTypeError(f"{path} is not a valid file")
+
+
 if __name__ == '__main__':
-    _, voltages = preprocess.read_voltage_only_format_recording(
-        "data/positive_samples/training/augemented_downsampled/synthetic66.csv"
-    )
-    voltages = preprocess.z_normalize_time_series(voltages)
-    model = keras.models.load_model("stochastic_GD/best_model.h5")
+    parser = argparse.ArgumentParser(description='Apply Grad-CAM to trained model to understand predictions..')
+    parser.add_argument('--altering_format', action='store_true', help='using the "only voltage" format')
+    parser.add_argument('--sample_path', type=file_path, required=True)
+    parser.add_argument('--znorm', action='store_true', help='z-normalize time series')
+    parser.add_argument('--model_path', type=file_path, required=True)
+    args = parser.parse_args()
+
+    if args.altering_format:
+        _, voltages = preprocess.read_voltage_only_format_recording(args.sample_path)
+    else:
+        _, voltages = preprocess.read_oscilloscope_recording(args.sample_path)
+
+    if args.znorm:
+        voltages = preprocess.z_normalize_time_series(voltages)
+
+    model = keras.models.load_model(args.model_path)
     net_input_size = model.layers[0].output_shape[0][1]
 
     assert net_input_size == len(voltages)
