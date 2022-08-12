@@ -10,3 +10,7 @@ optimizer:
   value: keras.optimizers.Adam
 epochs:
   value: 3
+models:
+  values: 
+  - FCN
+  - ResNet
