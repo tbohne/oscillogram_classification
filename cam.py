@@ -25,16 +25,15 @@ def retrieve_last_conv_layer(trained_model):
             return layer.name
 
 
-def generate_gradcam(input_array, trained_model, pred_idx=None):
+def compute_gradients_and_last_conv_layer_output(input_array, trained_model, pred_idx):
     """
-    Generates the Grad-CAM (Gradient-weighted Class Activation Map) for the specified input, trained model
-    and optionally prediction. It is essentially used to get a sense of what regions of the input the CNN is looking
-    at in order to make a prediction.
+    Computes the gradients of the predicted class for the input series with respect to the activations of the last conv
+    layer and returns them together with the output of the last conv layer.
 
     :param input_array: input to understand prediction for
     :param trained_model: trained model that produces the prediction to be understood
     :param pred_idx: index of the prediction to be analyzed (default is the "best guess")
-    :return: class activation map (heatmap) that highlights the most relevant parts for the classification
+    :return: (computed gradients, output of last conv layer)
     """
     # remove the last layer's softmax
     trained_model.layers[-1].activation = None
@@ -58,27 +57,38 @@ def generate_gradcam(input_array, trained_model, pred_idx=None):
     # gradient of the output neuron (top predicted) w.r.t. the output feature map of the last conv layer
     grads = tape.gradient(pred_value, last_conv_layer_output)
 
-    # now a channel could have a high gradient but still a low activation (we want to consider both)
-    # thus:
-    # multiply each channel in the feature map by how important it is w.r.t. the top
-    # predicted class, then sum all the channels to obtain the heatmap class activation
-    last_conv_layer_output = last_conv_layer_output[0]
+    return grads, last_conv_layer_output[0]
+
+
+def generate_gradcam(input_array, trained_model, pred_idx=None):
+    """
+    Generates the Grad-CAM (Gradient-weighted Class Activation Map) for the specified input, trained model
+    and optionally prediction. It is essentially used to get a sense of what regions of the input the CNN is looking
+    at in order to make a prediction.
+
+    :param input_array: input to understand prediction for
+    :param trained_model: trained model that produces the prediction to be understood
+    :param pred_idx: index of the prediction to be analyzed (default is the "best guess")
+    :return: class activation map (heatmap) that highlights the most relevant parts for the classification
+    """
+    grads, last_conv_layer_output = compute_gradients_and_last_conv_layer_output(input_array, trained_model, pred_idx)
 
     # vector where each entry is the mean intensity of the gradient over a specific feature map channel
     # -> average of gradient values as weights
     pooled_grads = tf.reduce_mean(grads, axis=(0, 1))
-
     print("conv out:", last_conv_layer_output.shape)
     print("pooled grads:", pooled_grads[:, tf.newaxis].shape)
 
-    # new axis necessary so that the dimensions fit for matrix multiplication
+    # now a channel could have a high gradient but still a low activation (we want to consider both)
+    # thus:
+    # multiply each channel in the feature map by how important it is w.r.t. the top
+    # predicted class, then sum all the channels to obtain the heatmap class activation
+    # [new axis necessary so that the dimensions fit for matrix multiplication]
     cam = last_conv_layer_output @ pooled_grads[:, tf.newaxis]
-
     print("cam shape:", cam.shape)
 
     # get back to time series shape (1D) -> remove dimension of size 1
     cam = tf.squeeze(cam)
-
     # for visualization purpose, normalize heatmap
     cam = tf.maximum(cam, 0) / tf.math.reduce_max(cam)
     return cam.numpy()
