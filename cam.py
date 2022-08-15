@@ -216,24 +216,31 @@ def generate_hirescam(input_array, trained_model, pred_idx=None):
     return cam.numpy()
 
 
-def plot_cam(cam, voltage_vals):
+def plot_heatmaps(cams, voltage_vals):
     """
-    Visualizes the class activation map (heatmap).
+    Visualizes the class activation maps (heatmaps).
 
-    :param cam: class activation map to be visualized
+    :param cams: class activation maps to be visualized
     :param voltage_vals: voltage values to be visualized
     """
-    plt.rcParams["figure.figsize"] = 10, 4
-    fig, (ax, ax2) = plt.subplots(nrows=2, sharex=True)
-
+    plt.rcParams["figure.figsize"] = 70, 4
+    fig, axes = plt.subplots(nrows=2, ncols=len(cams), sharex=True)
     # bounding box in data coordinates that the image will fill (left, right, bottom, top)
-    extent = [0, cam.shape[0], 0, 1]
-
-    ax.imshow(cam[np.newaxis, :], cmap="plasma", aspect="auto", extent=extent)
-    ax.set_yticks([])
-    ax.set_xlim(extent[0], extent[1])
+    extent = [0, cams[0].shape[0], 0, 1]
     data_points = [i for i in range(len(voltage_vals))]
-    ax2.plot(data_points, voltage_vals)
+
+    for i in range(len(cams)):
+        # first row (heatmaps)
+        curr_above = axes[0][i]
+        curr_above.set_yticks([])
+        curr_above.set_xlim(extent[0], extent[1])
+
+        # second row (voltages)
+        curr_below = axes[1][i]
+
+        curr_above.imshow(cams[i][np.newaxis, :], cmap="plasma", aspect="auto", extent=extent)
+        curr_below.plot(data_points, voltage_vals)
+
     plt.tight_layout()
     plt.show()
 
@@ -288,23 +295,31 @@ if __name__ == '__main__':
     prediction = model.predict(np.array([net_input]))
     print("predicted class", np.argmax(prediction), " with score", np.max(prediction))
 
-    heatmap = None
+    heatmaps = []
     if args.method == "gradcam":
-        heatmap = generate_gradcam(np.array([net_input]), model)
+        heatmaps.append(generate_gradcam(np.array([net_input]), model))
     elif args.method == "tf-keras-gradcam":
-        heatmap = tf_keras_gradcam(np.array([net_input]), model, prediction)
+        heatmaps.append(tf_keras_gradcam(np.array([net_input]), model, prediction))
     elif args.method == "tf-keras-gradcam++":
-        heatmap = tf_keras_gradcam_plus_plus(np.array([net_input]), model, prediction)
+        heatmaps.append(tf_keras_gradcam_plus_plus(np.array([net_input]), model, prediction))
     elif args.method == "tf-keras-scorecam":
-        heatmap = tf_keras_scorecam(np.array([net_input]), model, prediction)
+        heatmaps.append(tf_keras_scorecam(np.array([net_input]), model, prediction))
     elif args.method == "tf-keras-layercam":
-        heatmap = tf_keras_layercam(np.array([net_input]), model, prediction)
+        heatmaps.append(tf_keras_layercam(np.array([net_input]), model, prediction))
     elif args.method == "tf-keras-smoothgrad":
-        heatmap = tf_keras_smooth_grad(np.array([net_input]), model, prediction)
+        heatmaps.append(tf_keras_smooth_grad(np.array([net_input]), model, prediction))
     elif args.method == "hirescam":
-        heatmap = generate_hirescam(np.array([net_input]), model)
+        heatmaps.append(generate_hirescam(np.array([net_input]), model))
+    elif args.method == "all":
+        heatmaps = [generate_gradcam(np.array([net_input]), model),
+                    tf_keras_gradcam(np.array([net_input]), model, prediction),
+                    tf_keras_gradcam_plus_plus(np.array([net_input]), model, prediction),
+                    tf_keras_scorecam(np.array([net_input]), model, prediction),
+                    tf_keras_layercam(np.array([net_input]), model, prediction),
+                    tf_keras_smooth_grad(np.array([net_input]), model, prediction),
+                    generate_hirescam(np.array([net_input]), model)]
     else:
         print("specified unknown CAM method:", args.method)
 
-    if heatmap is not None:
-        plot_cam(heatmap, voltages)
+    if len(heatmaps) > 0:
+        plot_heatmaps(heatmaps, voltages)
