@@ -223,7 +223,7 @@ def plot_heatmaps(cams, voltage_vals):
     :param cams: class activation maps to be visualized
     :param voltage_vals: voltage values to be visualized
     """
-    plt.rcParams["figure.figsize"] = 70, 4
+    plt.rcParams["figure.figsize"] = len(cams) * 10, 4
     fig, axes = plt.subplots(nrows=2, ncols=len(cams), sharex=True)
     # bounding box in data coordinates that the image will fill (left, right, bottom, top)
     extent = [0, cams[0].shape[0], 0, 1]
@@ -231,12 +231,12 @@ def plot_heatmaps(cams, voltage_vals):
 
     for i in range(len(cams)):
         # first row (heatmaps)
-        curr_above = axes[0][i]
+        curr_above = axes[0][i] if len(cams) > 1 else axes[0]
         curr_above.set_yticks([])
         curr_above.set_xlim(extent[0], extent[1])
 
         # second row (voltages)
-        curr_below = axes[1][i]
+        curr_below = axes[1][i] if len(cams) > 1 else axes[1]
 
         curr_above.imshow(cams[i][np.newaxis, :], cmap="plasma", aspect="auto", extent=extent)
         curr_below.plot(data_points, voltage_vals)
