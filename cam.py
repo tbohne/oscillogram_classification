@@ -95,7 +95,26 @@ def generate_gradcam(input_array, trained_model, pred_idx=None):
 
 
 def generate_hirescam(input_array, trained_model, pred_idx=None):
-    pass
+    """
+    Generates the HiResCAM for the specified input, trained model and optionally prediction. It is essentially used to
+    get a sense of what regions of the input the CNN is looking at in order to make a prediction.
+
+    :param input_array: input to understand prediction for
+    :param trained_model: trained model that produces the prediction to be understood
+    :param pred_idx: index of the prediction to be analyzed (default is the "best guess")
+    :return: class activation map (heatmap) that highlights the most relevant parts for the classification
+    """
+    grads, last_conv_layer_output = compute_gradients_and_last_conv_layer_output(input_array, trained_model, pred_idx)
+    grads = tf.squeeze(grads)
+
+    # element-wise product between the raw gradients and feature maps
+    cam = np.multiply(last_conv_layer_output, grads)
+    # sum over feature dimensions
+    cam = cam.sum(axis=1)
+
+    # for visualization purpose, normalize heatmap
+    cam = tf.maximum(cam, 0) / tf.math.reduce_max(cam)
+    return cam.numpy()
 
 
 def plot_cam(cam, voltage_vals):
