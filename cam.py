@@ -315,10 +315,10 @@ if __name__ == '__main__':
         heatmaps["gradcam"] = generate_gradcam(np.array([net_input]), model)
         heatmaps["tf-keras-gradcam"] = tf_keras_gradcam(np.array([net_input]), model, prediction)
         heatmaps["tf-keras-gradcam++"] = tf_keras_gradcam_plus_plus(np.array([net_input]), model, prediction)
+        heatmaps["hirescam"] = generate_hirescam(np.array([net_input]), model)
         heatmaps["tf-keras-scorecam"] = tf_keras_scorecam(np.array([net_input]), model, prediction)
         heatmaps["tf-keras-layercam"] = tf_keras_layercam(np.array([net_input]), model, prediction)
         heatmaps["tf-keras-smoothgrad"] = tf_keras_smooth_grad(np.array([net_input]), model, prediction)
-        heatmaps["hirescam"] = generate_hirescam(np.array([net_input]), model)
     else:
         print("specified unknown CAM method:", args.method)
 
