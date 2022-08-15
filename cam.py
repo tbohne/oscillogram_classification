@@ -13,11 +13,13 @@ from tensorflow import keras
 from tf_keras_vis.gradcam import Gradcam
 from tf_keras_vis.gradcam_plus_plus import GradcamPlusPlus
 from tf_keras_vis.scorecam import Scorecam
+from tf_keras_vis.layercam import Layercam
 from tf_keras_vis.saliency import Saliency
 from tf_keras_vis.utils.model_modifiers import ReplaceToLinear
 from tf_keras_vis.utils.scores import CategoricalScore
 
-METHODS = ["gradcam", "hirescam", "tf-keras-gradcam", "tf-keras-gradcam++", "tf-keras-scorecam", "tf-keras-smoothgrad"]
+METHODS = ["gradcam", "hirescam", "tf-keras-gradcam", "tf-keras-gradcam++", "tf-keras-scorecam",
+           "tf-keras-smoothgrad", "tf-keras-layercam"]
 
 
 def retrieve_last_conv_layer(trained_model):
@@ -155,6 +157,24 @@ def tf_keras_scorecam(input_array, trained_model, pred):
     return cam.numpy()
 
 
+def tf_keras_layercam(input_array, trained_model, pred):
+    """
+    Generates LayerCAM heatmap using the tf-keras-vis library.
+
+    :param input_array: input to understand prediction for
+    :param trained_model: trained model that produces the prediction to be understood
+    :param pred: considered prediction
+    :return: class activation map (heatmap) that highlights the most relevant parts for the classification
+    """
+    layercam = Layercam(trained_model)
+    score = CategoricalScore([np.argmax(pred)])
+    cam = layercam(score, input_array, penultimate_layer=-1)
+    cam = tf.squeeze(cam)
+    # for visualization purpose, normalize heatmap
+    cam = tf.maximum(cam, 0) / tf.math.reduce_max(cam)
+    return cam.numpy()
+
+
 def tf_keras_smooth_grad(input_array, trained_model, pred):
     """
     Generates SmoothGrad saliency map using the tf-keras-vis library.
@@ -277,6 +297,8 @@ if __name__ == '__main__':
         heatmap = tf_keras_gradcam_plus_plus(np.array([net_input]), model, prediction)
     elif args.method == "tf-keras-scorecam":
         heatmap = tf_keras_scorecam(np.array([net_input]), model, prediction)
+    elif args.method == "tf-keras-layercam":
+        heatmap = tf_keras_layercam(np.array([net_input]), model, prediction)
     elif args.method == "tf-keras-smoothgrad":
         heatmap = tf_keras_smooth_grad(np.array([net_input]), model, prediction)
     elif args.method == "hirescam":
