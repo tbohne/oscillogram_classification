@@ -84,9 +84,13 @@ def generate_gradcam(input_array, trained_model, pred_idx=None):
     return cam.numpy()
 
 
-def plot_gradcam(cam, voltage_vals):
+def generate_hirescam(input_array, trained_model, pred_idx=None):
+    pass
+
+
+def plot_cam(cam, voltage_vals):
     """
-    Visualizes the Grad-CAM.
+    Visualizes the class activation map (heatmap).
 
     :param cam: class activation map to be visualized
     :param voltage_vals: voltage values to be visualized
@@ -120,11 +124,13 @@ def file_path(path):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Apply Grad-CAM to trained model to understand predictions..')
+    parser = argparse.ArgumentParser(description='Apply diff. CAM methods to trained model to understand predictions..')
     parser.add_argument('--altering_format', action='store_true', help='using the "only voltage" format')
     parser.add_argument('--sample_path', type=file_path, required=True)
     parser.add_argument('--znorm', action='store_true', help='z-normalize time series')
     parser.add_argument('--model_path', type=file_path, required=True)
+    parser.add_argument('--method', action='store', type=str, help='method: ["gradcam", "hirescam"]', required=True)
+
     args = parser.parse_args()
 
     if args.altering_format:
@@ -154,5 +160,13 @@ if __name__ == '__main__':
     prediction = model.predict(np.array([net_input]))
     print("prediction:", prediction)
 
-    heatmap = generate_gradcam(np.array([net_input]), model)
-    plot_gradcam(heatmap, voltages)
+    heatmap = None
+    if args.method == "gradcam":
+        heatmap = generate_gradcam(np.array([net_input]), model)
+    elif args.method == "hirescam":
+        heatmap = generate_hirescam(np.array([net_input]), model)
+    else:
+        print("specified unknown CAM method:", args.method)
+
+    if heatmap is not None:
+        plot_cam(heatmap, voltages)
