@@ -29,7 +29,7 @@ $ python train.py --train_path TRAIN_DATA.npz --val_path VAL_DATA.npz --test_pat
 ```
 **CAM (Grad-CAM | HiResCAM)**
 ```
-$ python cam.py [--znorm] [--altering_format] --method {gradcam | hirescam} --sample_path SAMPLE.csv --model_path MODEL.h5
+$ python cam.py [--znorm] [--altering_format] --method {gradcam | hirescam | tf-keras-gradcam | tf-keras-gradcam++ | tf-keras-scorecam | tf-keras-smoothgrad} --sample_path SAMPLE.csv --model_path MODEL.h5
 ```
 
 ## Positive and Negative Sample for each Component
