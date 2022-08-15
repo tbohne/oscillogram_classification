@@ -11,6 +11,7 @@ import tensorflow as tf
 from oscillogram_classification import preprocess
 from tensorflow import keras
 from tf_keras_vis.gradcam import Gradcam
+from tf_keras_vis.gradcam_plus_plus import GradcamPlusPlus
 from tf_keras_vis.utils.model_modifiers import ReplaceToLinear
 from tf_keras_vis.utils.scores import CategoricalScore
 
@@ -114,6 +115,24 @@ def tf_keras_gradcam(input_array, trained_model, pred):
     return cam.numpy()
 
 
+def tf_keras_gradcam_plus_plus(input_array, trained_model, pred):
+    """
+    Generates Grad-CAM++ heatmap using the tf-keras-vis library.
+
+    :param input_array: input to understand prediction for
+    :param trained_model: trained model that produces the prediction to be understood
+    :param pred: considered prediction
+    :return: class activation map (heatmap) that highlights the most relevant parts for the classification
+    """
+    gradcam = GradcamPlusPlus(trained_model, model_modifier=ReplaceToLinear(), clone=True)
+    score = CategoricalScore([np.argmax(pred)])
+    cam = gradcam(score, input_array, penultimate_layer=-1)
+    cam = tf.squeeze(cam)
+    # for visualization purpose, normalize heatmap
+    cam = tf.maximum(cam, 0) / tf.math.reduce_max(cam)
+    return cam.numpy()
+
+
 def generate_hirescam(input_array, trained_model, pred_idx=None):
     """
     Generates the HiResCAM for the specified input, trained model and optionally prediction. It is essentially used to
@@ -178,7 +197,9 @@ if __name__ == '__main__':
     parser.add_argument('--sample_path', type=file_path, required=True)
     parser.add_argument('--znorm', action='store_true', help='z-normalize time series')
     parser.add_argument('--model_path', type=file_path, required=True)
-    parser.add_argument('--method', action='store', type=str, help='method: ["gradcam", "hirescam", "tf-keras-gradcam"]', required=True)
+    parser.add_argument('--method', action='store', type=str,
+                        help='method: ["gradcam", "hirescam", "tf-keras-gradcam", "tf-keras-gradcam++"]',
+                        required=True)
 
     args = parser.parse_args()
 
@@ -214,6 +235,8 @@ if __name__ == '__main__':
         heatmap = generate_gradcam(np.array([net_input]), model)
     elif args.method == "tf-keras-gradcam":
         heatmap = tf_keras_gradcam(np.array([net_input]), model, prediction)
+    elif args.method == "tf-keras-gradcam++":
+        heatmap = tf_keras_gradcam_plus_plus(np.array([net_input]), model, prediction)
     elif args.method == "hirescam":
         heatmap = generate_hirescam(np.array([net_input]), model)
     else:
