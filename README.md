@@ -29,8 +29,9 @@ $ python train.py --train_path TRAIN_DATA.npz --val_path VAL_DATA.npz --test_pat
 ```
 **Class Activation / Saliency Map Generation**
 ```
-$ python cam.py [--znorm] [--altering_format] --method {gradcam | hirescam | tf-keras-gradcam | tf-keras-gradcam++ | tf-keras-scorecam | tf-keras-layercam | tf-keras-smoothgrad} --sample_path SAMPLE.csv --model_path MODEL.h5
+$ python cam.py [--znorm] [--altering_format] --method {gradcam | hirescam | tf-keras-gradcam | tf-keras-gradcam++ | tf-keras-scorecam | tf-keras-layercam | tf-keras-smoothgrad | all} --sample_path SAMPLE.csv --model_path MODEL.h5
 ```
+*Note: Using `all` as method results in a side-by-side plot of all methods.*
 
 ## Positive and Negative Sample for each Component
 
@@ -47,3 +48,6 @@ $ python cam.py [--znorm] [--altering_format] --method {gradcam | hirescam | tf-
 
 ### Grad-CAM Example
 ![](img/heatmap.png)
+
+### All CAM Methods Side-by-Side
+![](img/all.png)

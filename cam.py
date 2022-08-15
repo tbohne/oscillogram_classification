@@ -19,7 +19,7 @@ from tf_keras_vis.utils.model_modifiers import ReplaceToLinear
 from tf_keras_vis.utils.scores import CategoricalScore
 
 METHODS = ["gradcam", "hirescam", "tf-keras-gradcam", "tf-keras-gradcam++", "tf-keras-scorecam",
-           "tf-keras-smoothgrad", "tf-keras-layercam"]
+           "tf-keras-smoothgrad", "tf-keras-layercam", "all"]
 
 
 def retrieve_last_conv_layer(trained_model):
