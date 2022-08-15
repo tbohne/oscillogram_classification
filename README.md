@@ -27,9 +27,9 @@ $ python preprocess.py [--znorm] [--altering_format] --path /TRAINING_DATA --typ
 ```
 $ python train.py --train_path TRAIN_DATA.npz --val_path VAL_DATA.npz --test_path TEST_DATA.npz
 ```
-**Grad-CAM**
+**CAM (Grad-CAM | HiResCAM)**
 ```
-$ python grad_cam.py [--znorm] [--altering_format] --sample_path SAMPLE.csv --model_path MODEL.h5
+$ python cam.py [--znorm] [--altering_format] --method {gradcam | hirescam} --sample_path SAMPLE.csv --model_path MODEL.h5
 ```
 
 ## Positive and Negative Sample for each Component
