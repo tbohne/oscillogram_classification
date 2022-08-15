@@ -57,14 +57,16 @@ def generate_gradcam(input_array, trained_model, pred_idx=None):
 
     # gradient of the output neuron (top predicted) w.r.t. the output feature map of the last conv layer
     grads = tape.gradient(pred_value, last_conv_layer_output)
-    # vector where each entry is the mean intensity of the gradient over a specific feature map channel
-    pooled_grads = tf.reduce_mean(grads, axis=(0, 1))
 
     # now a channel could have a high gradient but still a low activation (we want to consider both)
     # thus:
     # multiply each channel in the feature map by how important it is w.r.t. the top
     # predicted class, then sum all the channels to obtain the heatmap class activation
     last_conv_layer_output = last_conv_layer_output[0]
+
+    # vector where each entry is the mean intensity of the gradient over a specific feature map channel
+    # -> average of gradient values as weights
+    pooled_grads = tf.reduce_mean(grads, axis=(0, 1))
 
     print("conv out:", last_conv_layer_output.shape)
     print("pooled grads:", pooled_grads[:, tf.newaxis].shape)
