@@ -223,11 +223,14 @@ def plot_heatmaps_as_overlay(cams, voltage_vals):
     :param cams: dictionary containing the class activation maps to be visualized (+ method names)
     :param voltage_vals: voltage values to be visualized
     """
-    plt.rcParams["figure.figsize"] = len(cams) * 10, 2
+    plt.rcParams["figure.figsize"] = len(cams) * 10, 3
     fig, axes = plt.subplots(nrows=1, ncols=len(cams), sharex=True, sharey=True)
     # bounding box in data coordinates that the image will fill (left, right, bottom, top)
     extent = [0, cams[list(cams.keys())[0]].shape[0], 0, 15]
     data_points = np.array([i for i in range(len(voltage_vals))])
+
+    if len(cams) == 1:
+        axes = [axes]
 
     for i in range(len(cams)):
         axes[i].set_xlim(extent[0], extent[1])
