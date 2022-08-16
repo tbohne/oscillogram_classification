@@ -216,6 +216,31 @@ def generate_hirescam(input_array, trained_model, pred_idx=None):
     return cam.numpy()
 
 
+def plot_heatmaps_as_overlay(cams, voltage_vals):
+    """
+    Visualizes the class activation maps (heatmaps) - time series as overlay.
+
+    :param cams: dictionary containing the class activation maps to be visualized (+ method names)
+    :param voltage_vals: voltage values to be visualized
+    """
+    plt.rcParams["figure.figsize"] = len(cams) * 10, 2
+    fig, axes = plt.subplots(nrows=1, ncols=len(cams), sharex=True, sharey=True)
+    # bounding box in data coordinates that the image will fill (left, right, bottom, top)
+    extent = [0, cams[list(cams.keys())[0]].shape[0], 0, 15]
+    data_points = np.array([i for i in range(len(voltage_vals))])
+
+    for i in range(len(cams)):
+        axes[i].set_xlim(extent[0], extent[1])
+        axes[i].title.set_text(list(cams.keys())[i])
+        # heatmap
+        axes[i].imshow(cams[list(cams.keys())[i]][np.newaxis, :], cmap="plasma", aspect="auto", alpha=1, extent=extent)
+        # data
+        axes[i].plot(data_points, voltage_vals, '#ffffff')
+
+    plt.tight_layout()
+    plt.show()
+
+
 def plot_heatmaps(cams, voltage_vals):
     """
     Visualizes the class activation maps (heatmaps).
@@ -224,7 +249,7 @@ def plot_heatmaps(cams, voltage_vals):
     :param voltage_vals: voltage values to be visualized
     """
     plt.rcParams["figure.figsize"] = len(cams) * 10, 4
-    fig, axes = plt.subplots(nrows=2, ncols=len(cams), sharex=True)
+    fig, axes = plt.subplots(nrows=2, ncols=len(cams), sharex=True, sharey=True)
     # bounding box in data coordinates that the image will fill (left, right, bottom, top)
     extent = [0, cams[list(cams.keys())[0]].shape[0], 0, 1]
     data_points = [i for i in range(len(voltage_vals))]
@@ -323,4 +348,4 @@ if __name__ == '__main__':
         print("specified unknown CAM method:", args.method)
 
     if len(heatmaps) > 0:
-        plot_heatmaps(heatmaps, voltages)
+        plot_heatmaps_as_overlay(heatmaps, voltages)
