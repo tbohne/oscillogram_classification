@@ -49,5 +49,11 @@ $ python cam.py [--znorm] [--altering_format] --method {gradcam | hirescam | tf-
 ### Grad-CAM Example
 ![](img/heatmap.png)
 
+*As overlay*:
+![](img/gradcam_over.png)
+
 ### All CAM Methods Side-by-Side
 ![](img/all.png)
+
+*As overlay*:
+![](img/all_overlay.png)
