@@ -226,7 +226,7 @@ def plot_heatmaps_as_overlay(cams, voltage_vals):
     plt.rcParams["figure.figsize"] = len(cams) * 10, 3
     fig, axes = plt.subplots(nrows=1, ncols=len(cams), sharex=True, sharey=True)
     # bounding box in data coordinates that the image will fill (left, right, bottom, top)
-    extent = [0, cams[list(cams.keys())[0]].shape[0], 0, 15]
+    extent = [0, cams[list(cams.keys())[0]].shape[0], np.floor(np.min(voltage_vals)), np.ceil(np.max(voltage_vals))]
     data_points = np.array([i for i in range(len(voltage_vals))])
 
     if len(cams) == 1:
@@ -236,9 +236,9 @@ def plot_heatmaps_as_overlay(cams, voltage_vals):
         axes[i].set_xlim(extent[0], extent[1])
         axes[i].title.set_text(list(cams.keys())[i])
         # heatmap
-        axes[i].imshow(cams[list(cams.keys())[i]][np.newaxis, :], cmap="plasma", aspect="auto", alpha=1, extent=extent)
+        axes[i].imshow(cams[list(cams.keys())[i]][np.newaxis, :], cmap="plasma", aspect="auto", alpha=.75, extent=extent)
         # data
-        axes[i].plot(data_points, voltage_vals, '#ffffff')
+        axes[i].plot(data_points, voltage_vals, '#000000')
 
     plt.tight_layout()
     plt.show()
@@ -254,13 +254,13 @@ def plot_heatmaps(cams, voltage_vals):
     plt.rcParams["figure.figsize"] = len(cams) * 10, 4
     fig, axes = plt.subplots(nrows=2, ncols=len(cams), sharex=True, sharey=True)
     # bounding box in data coordinates that the image will fill (left, right, bottom, top)
-    extent = [0, cams[list(cams.keys())[0]].shape[0], 0, 1]
+    extent = [0, cams[list(cams.keys())[0]].shape[0], np.floor(np.min(voltage_vals)), np.ceil(np.max(voltage_vals))]
     data_points = [i for i in range(len(voltage_vals))]
 
     for i in range(len(cams)):
         # first row (heatmaps)
         curr_above = axes[0][i] if len(cams) > 1 else axes[0]
-        curr_above.set_yticks([])
+        #curr_above.set_yticks([])
         curr_above.set_xlim(extent[0], extent[1])
         curr_above.title.set_text(list(cams.keys())[i])
 
@@ -268,7 +268,7 @@ def plot_heatmaps(cams, voltage_vals):
         curr_below = axes[1][i] if len(cams) > 1 else axes[1]
 
         curr_above.imshow(cams[list(cams.keys())[i]][np.newaxis, :], cmap="plasma", aspect="auto", extent=extent)
-        curr_below.plot(data_points, voltage_vals)
+        curr_below.plot(data_points, voltage_vals, '#000000')
 
     plt.tight_layout()
     plt.show()
@@ -294,6 +294,7 @@ if __name__ == '__main__':
     parser.add_argument('--znorm', action='store_true', help='z-normalize time series')
     parser.add_argument('--model_path', type=file_path, required=True)
     parser.add_argument('--method', action='store', type=str, help='methods: %s' % METHODS, required=True)
+    parser.add_argument('--overlay', action='store_true', help='overlay heatmap and time series')
 
     args = parser.parse_args()
 
@@ -351,4 +352,7 @@ if __name__ == '__main__':
         print("specified unknown CAM method:", args.method)
 
     if len(heatmaps) > 0:
-        plot_heatmaps_as_overlay(heatmaps, voltages)
+        if args.overlay:
+            plot_heatmaps_as_overlay(heatmaps, voltages)
+        else:
+            plot_heatmaps(heatmaps, voltages)
