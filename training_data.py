@@ -3,6 +3,11 @@
 # @author Tim Bohne
 
 class TrainingData:
+    """
+    Training data representation:
+        - X: data points (time series)
+        - Y: labels
+    """
 
     def __init__(self, data):
         self.X = data['arr_0']

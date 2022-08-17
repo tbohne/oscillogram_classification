@@ -2,15 +2,17 @@
 # -*- coding: utf-8 -*-
 # @author Tim Bohne
 
+import argparse
+import os
+
 import matplotlib.pyplot as plt
 import numpy as np
 from tensorflow import keras
 import wandb
 from wandb.keras import WandbCallback
-import yaml
 
 from training_data import TrainingData
-from configs import api_key
+from configs import api_key, example_run_config
 import models
 
 
@@ -20,6 +22,12 @@ def set_up_wandb(wandb_config):
 
 
 def visualize_n_samples_per_class(x, y):
+    """
+    Iteratively visualizes one sample per class until the user enters '+'.
+
+    :param x: sample series
+    :param y: corresponding labels
+    """
     plt.figure()
     classes = np.unique(y, axis=0)
     samples_by_class = {c: x[y == c] for c in classes}
@@ -36,6 +44,15 @@ def visualize_n_samples_per_class(x, y):
 
 
 def train_model(model, x_train, y_train, x_val, y_val):
+    """
+    Trains the CNN model.
+
+    :param model: CNN model to be trained
+    :param x_train: training samples
+    :param y_train: corresponding training labels
+    :param x_val: validation samples
+    :param y_val: corresponding validation labels
+    """
     print("training model:")
     print("total training samples:", len(x_train))
     for c in np.unique(y_train, axis=0):
@@ -72,6 +89,11 @@ def train_model(model, x_train, y_train, x_val, y_val):
 
 
 def plot_training_and_validation_loss(history):
+    """
+    Plots the learning curves.
+
+    :param history: training history
+    """
     metric = "sparse_categorical_accuracy"
     plt.figure()
     plt.plot(history.history[metric])
@@ -85,6 +107,12 @@ def plot_training_and_validation_loss(history):
 
 
 def evaluate_model_on_test_data(x_test, y_test):
+    """
+    Evaluates the trained model on the specified test data.
+
+    :param x_test: test samples
+    :param y_test: corresponding labels
+    """
     print("evaluating model:")
     print("total test samples:", len(x_test))
     for c in np.unique(y_test, axis=0):
@@ -101,8 +129,14 @@ def evaluate_model_on_test_data(x_test, y_test):
     wandb.log({"test_loss": test_loss, "test_accuracy": test_acc})
 
 
-def prepare_and_train_model():
-    data = TrainingData(np.load("data/synthetic_battery_data/training_data.npz", allow_pickle=True))
+def prepare_and_train_model(train_data_path, val_data_path):
+    """
+    Prepares and initiates the training process.
+
+    :param train_data_path: path to read training data from
+    :param val_data_path: path to read validation data from
+    """
+    data = TrainingData(np.load(train_data_path, allow_pickle=True))
     x_train = data[:][0]
     y_train = data[:][1]
 
@@ -120,7 +154,7 @@ def prepare_and_train_model():
     y_train = np.asarray(y_train).astype('float32')
 
     # read validation data
-    val_data = TrainingData(np.load("data/synthetic_battery_data/validation_data.npz", allow_pickle=True))
+    val_data = TrainingData(np.load(val_data_path, allow_pickle=True))
     x_val = val_data[:][0]
     y_val = val_data[:][1]
 
@@ -129,26 +163,41 @@ def prepare_and_train_model():
     train_model(model, x_train, y_train, x_val.astype('float32'), y_val.astype('float32'))
 
 
-def evaluate_model():
-    test_data = TrainingData(np.load("data/synthetic_battery_data/test_data.npz", allow_pickle=True))
+def evaluate_model(test_data_path):
+    """
+    Initiates model evaluation.
+
+    :param test_data_path: path to read test data from
+    """
+    test_data = TrainingData(np.load(test_data_path, allow_pickle=True))
     x_test = test_data[:][0]
     y_test = test_data[:][1]
     evaluate_model_on_test_data(x_test.astype('float32'), y_test.astype('float32'))
 
 
-def train_procedure(hyperparameter_config=None):
+def train_procedure(train_path, val_path, test_path, hyperparameter_config=example_run_config.hyperparameter_config):
     set_up_wandb(hyperparameter_config)
-    prepare_and_train_model()
-    evaluate_model()
+    prepare_and_train_model(train_path, val_path)
+    evaluate_model(test_path)
+
+
+def file_path(path):
+    """
+    Returns path if it's valid, raises error otherwise.
+
+    :param path: path to be checked
+    :return: feasible path or error
+    """
+    if os.path.isfile(path):
+        return path
+    else:
+        raise argparse.ArgumentTypeError(f"{path} is not a valid file")
 
 
 if __name__ == '__main__':
-
-    try:
-        with open(".\\configs\\example_run_config.yaml") as f:
-            hyperparameter_config = yaml.safe_load(f)
-    except FileNotFoundError:
-        print("Could not find config file!")
-        raise
-
-    train_procedure(hyperparameter_config)
+    parser = argparse.ArgumentParser(description='Training CNN with time series data..')
+    parser.add_argument('--train_path', type=file_path, required=True)
+    parser.add_argument('--val_path', type=file_path, required=True)
+    parser.add_argument('--test_path', type=file_path, required=True)
+    args = parser.parse_args()
+    train_procedure(args.train_path, args.val_path, args.test_path)

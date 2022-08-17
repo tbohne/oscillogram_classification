@@ -1,6 +1,13 @@
 from tensorflow import keras
 
 def create_fcn_model(input_shape, num_classes):
+    """
+    Defines the CNN architecture to be worked with.
+
+    :param input_shape: shape of the input layer
+    :param num_classes: number of unique classes to be considered
+    :return: CNN model
+    """
     # input shape -> number of data points per sample
     input_layer = keras.layers.Input(input_shape)
 
