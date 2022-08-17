@@ -200,4 +200,5 @@ if __name__ == '__main__':
     parser.add_argument('--val_path', type=file_path, required=True)
     parser.add_argument('--test_path', type=file_path, required=True)
     args = parser.parse_args()
+
     train_procedure(args.train_path, args.val_path, args.test_path)

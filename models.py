@@ -1,5 +1,6 @@
 from tensorflow import keras
 
+
 def create_fcn_model(input_shape, num_classes):
     """
     Defines the CNN architecture to be worked with.
