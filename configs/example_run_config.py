@@ -5,4 +5,3 @@ hyperparameter_config = {
     "epochs": 100,
     "model": "ResNet"
 }
-

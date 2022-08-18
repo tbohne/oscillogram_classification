@@ -12,9 +12,9 @@ from oscillogram_classification import preprocess
 from tensorflow import keras
 from tf_keras_vis.gradcam import Gradcam
 from tf_keras_vis.gradcam_plus_plus import GradcamPlusPlus
-from tf_keras_vis.scorecam import Scorecam
 from tf_keras_vis.layercam import Layercam
 from tf_keras_vis.saliency import Saliency
+from tf_keras_vis.scorecam import Scorecam
 from tf_keras_vis.utils.model_modifiers import ReplaceToLinear
 from tf_keras_vis.utils.scores import CategoricalScore
 
@@ -236,7 +236,8 @@ def plot_heatmaps_as_overlay(cams, voltage_vals):
         axes[i].set_xlim(extent[0], extent[1])
         axes[i].title.set_text(list(cams.keys())[i])
         # heatmap
-        axes[i].imshow(cams[list(cams.keys())[i]][np.newaxis, :], cmap="plasma", aspect="auto", alpha=.75, extent=extent)
+        axes[i].imshow(cams[list(cams.keys())[i]][np.newaxis, :], cmap="plasma", aspect="auto", alpha=.75,
+                       extent=extent)
         # data
         axes[i].plot(data_points, voltage_vals, '#000000')
 
@@ -260,7 +261,7 @@ def plot_heatmaps(cams, voltage_vals):
     for i in range(len(cams)):
         # first row (heatmaps)
         curr_above = axes[0][i] if len(cams) > 1 else axes[0]
-        #curr_above.set_yticks([])
+        # curr_above.set_yticks([])
         curr_above.set_xlim(extent[0], extent[1])
         curr_above.title.set_text(list(cams.keys())[i])
 

@@ -1,13 +1,17 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @author Tim Bohne, Patricia Windler
+
 from tensorflow import keras
 
 
 def create_fcn_model(input_shape, num_classes):
     """
-    Defines the CNN architecture to be worked with.
+    Defines the CNN (FCN) architecture to be worked with.
 
     :param input_shape: shape of the input layer
     :param num_classes: number of unique classes to be considered
-    :return: CNN model
+    :return: CNN (FCN) model
     """
     # input shape -> number of data points per sample
     input_layer = keras.layers.Input(input_shape)
@@ -34,6 +38,7 @@ def create_fcn_model(input_shape, num_classes):
 def create_resnet_model(input_shape, num_classes):
     """
     Defines the ResNet architecture to be worked with.
+
     :param input_shape: shape of the input layer
     :param num_classes: number of unique classes to be considered
     :return: ResNet model
@@ -43,7 +48,6 @@ def create_resnet_model(input_shape, num_classes):
     input_layer = keras.layers.Input(input_shape)
 
     # BLOCK 1
-
     conv_x = keras.layers.Conv1D(filters=n_feature_maps, kernel_size=8, padding='same')(input_layer)
     conv_x = keras.layers.BatchNormalization()(conv_x)
     conv_x = keras.layers.Activation('relu')(conv_x)
@@ -63,7 +67,6 @@ def create_resnet_model(input_shape, num_classes):
     output_block_1 = keras.layers.Activation('relu')(output_block_1)
 
     # BLOCK 2
-
     conv_x = keras.layers.Conv1D(filters=n_feature_maps * 2, kernel_size=8, padding='same')(output_block_1)
     conv_x = keras.layers.BatchNormalization()(conv_x)
     conv_x = keras.layers.Activation('relu')(conv_x)
@@ -83,7 +86,6 @@ def create_resnet_model(input_shape, num_classes):
     output_block_2 = keras.layers.Activation('relu')(output_block_2)
 
     # BLOCK 3
-
     conv_x = keras.layers.Conv1D(filters=n_feature_maps * 2, kernel_size=8, padding='same')(output_block_2)
     conv_x = keras.layers.BatchNormalization()(conv_x)
     conv_x = keras.layers.Activation('relu')(conv_x)
@@ -102,7 +104,6 @@ def create_resnet_model(input_shape, num_classes):
     output_block_3 = keras.layers.Activation('relu')(output_block_3)
 
     # FINAL
-
     gap_layer = keras.layers.GlobalAveragePooling1D()(output_block_3)
 
     output_layer = keras.layers.Dense(num_classes, activation='softmax')(gap_layer)
@@ -115,8 +116,10 @@ def create_resnet_model(input_shape, num_classes):
 def create_model(input_shape, num_classes, architecture="FCN"):
     """
     Initiates model generation based on the specified architecture (or default).
+
     :param input_shape: shape of the input layer
     :param num_classes: number of unique classes to be considered
+    :param architecture: architecture to be generated
     :return: created model
     """
     if architecture == "FCN":

@@ -7,22 +7,23 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-from tensorflow import keras
 import wandb
+from tensorflow import keras
 from wandb.keras import WandbCallback
 
-from training_data import TrainingData
-from configs import api_key, example_run_config
 import models
+from configs import api_key, example_run_config
+from training_data import TrainingData
 
 
 def set_up_wandb(wandb_config):
     """
     Setup for 'weights and biases'.
+
     :param wandb_config: configuration to be used
     """
     wandb.login(key=api_key.wandb_api_key)
-    wandb.init(project="Oscillogram Classification CNN", entity="awindler", config=wandb_config)
+    wandb.init(project="Oscillogram Classification", config=wandb_config)
 
 
 def visualize_n_samples_per_class(x, y):
@@ -162,7 +163,7 @@ def prepare_and_train_model(train_data_path, val_data_path):
     x_val = val_data[:][0]
     y_val = val_data[:][1]
 
-    model = models.create_model(x_train.shape[1:], len(np.unique(y_train)),architecture=wandb.config["model"])
+    model = models.create_model(x_train.shape[1:], len(np.unique(y_train)), architecture=wandb.config["model"])
     keras.utils.plot_model(model, to_file="img/model.png", show_shapes=True)
     train_model(model, x_train, y_train, x_val.astype('float32'), y_val.astype('float32'))
 
@@ -182,10 +183,11 @@ def evaluate_model(test_data_path):
 def train_procedure(train_path, val_path, test_path, hyperparameter_config=example_run_config.hyperparameter_config):
     """
     Initiates the training procedure.
+
     :param train_path: path to training data
     :param val_path: path to validation data
     :param test_path: path to test data
-    :param hyperparameter_config: hyper parameter specification
+    :param hyperparameter_config: hyperparameter specification
     """
     set_up_wandb(hyperparameter_config)
     prepare_and_train_model(train_path, val_path)

@@ -1,20 +1,30 @@
-import wandb
-import os
-import train
-import argparse
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @author Patricia Windler, Tim Bohne
 
-from train import file_path
+import argparse
+import os
+
+import wandb
+
+import train
 from configs import api_key, example_sweep_config
+from train import file_path
 
 TUNING_METHOD = 'random'
 N_RUNS_IN_SWEEP = 3
 
+
 def main():
-
     def call_training_procedure(config_dict=None):
-        return train.train_procedure(args.train_path, args.val_path, args.test_path, hyperparameter_config=config_dict)
+        """
+        Wrapper for the training procedure.
 
-    parser = argparse.ArgumentParser(description='Hyperparametertunig with Weights&biases sweep')
+        :param config_dict: hyperparameter config
+        """
+        train.train_procedure(args.train_path, args.val_path, args.test_path, hyperparameter_config=config_dict)
+
+    parser = argparse.ArgumentParser(description='hyper parameter tuning with "weights & biases sweep"')
     parser.add_argument('--train_path', type=file_path, required=True)
     parser.add_argument('--val_path', type=file_path, required=True)
     parser.add_argument('--test_path', type=file_path, required=True)
