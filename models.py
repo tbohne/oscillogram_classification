@@ -113,6 +113,12 @@ def create_resnet_model(input_shape, num_classes):
 
 
 def create_model(input_shape, num_classes, architecture="FCN"):
+    """
+    Initiates model generation based on the specified architecture (or default).
+    :param input_shape: shape of the input layer
+    :param num_classes: number of unique classes to be considered
+    :return: created model
+    """
     if architecture == "FCN":
         return create_fcn_model(input_shape, num_classes)
     elif architecture == "ResNet":
