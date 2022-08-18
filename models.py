@@ -124,4 +124,4 @@ def create_model(input_shape, num_classes, architecture="FCN"):
     elif architecture == "ResNet":
         return create_resnet_model(input_shape, num_classes)
     else:
-        raise ValueError("Unknown model architecture: "+architecture)
+        raise ValueError("Unknown model architecture: " + architecture)
