@@ -208,7 +208,7 @@ def file_path(path):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Training CNN with time series data..')
+    parser = argparse.ArgumentParser(description='Training model with time series data..')
     parser.add_argument('--train_path', type=file_path, required=True)
     parser.add_argument('--val_path', type=file_path, required=True)
     parser.add_argument('--test_path', type=file_path, required=True)

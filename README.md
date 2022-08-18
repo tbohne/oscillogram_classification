@@ -10,6 +10,8 @@ The task comes down to binary time series classification.
 ## CNN Architecture
 <img src="img/model.png" width="300">
 
+*Note: See ResNet architecture in `img/ResNet.png`*
+
 ## Dependencies
 
 - [**matplotlib**](https://matplotlib.org/): library for creating visualizations
