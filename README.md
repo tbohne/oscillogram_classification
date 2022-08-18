@@ -16,6 +16,45 @@ The task comes down to binary time series classification.
 - [**numpy**](https://numpy.org/): scientific computing with Python
 - [**tensorflow**](https://pypi.org/project/tensorflow/): open source machine learning framework
 - [**pandas**](https://pandas.pydata.org/): data analysis and manipulation tool
+- [**wandb**](https://pypi.org/project/wandb/): *Weights and Biases* - hyperparameter optimization, i.e., model tuning
+
+**WandB Setup**
+```
+$ touch config/api_key.py  # enter: wandb_api_key = "YOUR_KEY"
+```
+
+## Config
+
+Hyperparameter configuration in `config/run_config.py`, e.g.:
+```
+hyperparameter_config = {
+    "batch_size": 32,
+    "learning_rate": 0.001,
+    "optimizer": "keras.optimizers.Adam",
+    "epochs": 100,
+    "model": "ResNet"
+}
+```
+WandB sweep config in `config/sweep_config.py`, e.g.:
+```
+sweep_config = {
+    "batch_size": {
+        "values": [4, 16, 32]
+    },
+    "learning_rate": {
+        "values": [0.01, 0.0001]
+    },
+    "optimizer": {
+        "value": "keras.optimizers.Adam"
+    },
+    "epochs": {
+        "values": [10, 30, 50, 100]
+    },
+    "models": {
+        "values": ["FCN", "ResNet"]
+    }
+}
+```
 
 ## Usage
 
@@ -43,7 +82,7 @@ $ python run_sweep.py --train_path TRAIN_DATA.npz --val_path VAL_DATA.npz --test
 
 ## Positive and Negative Sample for each Component
 
-### Battery:
+### Battery (Engine Starting Process)
 <img src="img/example.png" width="420">
 
 ## Training and Validation Loss
