@@ -12,7 +12,7 @@ from tensorflow import keras
 from wandb.keras import WandbCallback
 
 import models
-from configs import api_key, example_run_config
+from config import api_key, run_config
 from training_data import TrainingData
 
 
@@ -180,7 +180,7 @@ def evaluate_model(test_data_path):
     evaluate_model_on_test_data(x_test.astype('float32'), y_test.astype('float32'))
 
 
-def train_procedure(train_path, val_path, test_path, hyperparameter_config=example_run_config.hyperparameter_config):
+def train_procedure(train_path, val_path, test_path, hyperparameter_config=run_config.hyperparameter_config):
     """
     Initiates the training procedure.
 

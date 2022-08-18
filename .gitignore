@@ -3,5 +3,5 @@ data/
 __pycache__/
 *.pyc
 best_model.h5
-configs/api_key.py
+config/api_key.py
 wandb/

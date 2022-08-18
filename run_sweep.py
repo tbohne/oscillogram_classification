@@ -8,7 +8,7 @@ import os
 import wandb
 
 import train
-from configs import api_key, example_sweep_config
+from config import api_key, sweep_config
 from train import file_path
 
 TUNING_METHOD = 'random'
@@ -31,8 +31,8 @@ def main():
     args = parser.parse_args()
 
     os.environ["WANDB_API_KEY"] = api_key.wandb_api_key
-    sweep_config = {'method': TUNING_METHOD, 'parameters': example_sweep_config.sweep_config}
-    sweep_id = wandb.sweep(sweep_config, project="Oscillogram Classification")
+    config = {'method': TUNING_METHOD, 'parameters': sweep_config.sweep_config}
+    sweep_id = wandb.sweep(config, project="Oscillogram Classification")
     wandb.agent(sweep_id, call_training_procedure, count=N_RUNS_IN_SWEEP)
 
 
