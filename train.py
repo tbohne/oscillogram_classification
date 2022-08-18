@@ -17,6 +17,10 @@ import models
 
 
 def set_up_wandb(wandb_config):
+    """
+    Setup for 'weights and biases'.
+    :param wandb_config: configuration to be used
+    """
     wandb.login(key=api_key.wandb_api_key)
     wandb.init(project="Oscillogram Classification CNN", entity="awindler", config=wandb_config)
 
