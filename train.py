@@ -180,6 +180,13 @@ def evaluate_model(test_data_path):
 
 
 def train_procedure(train_path, val_path, test_path, hyperparameter_config=example_run_config.hyperparameter_config):
+    """
+    Initiates the training procedure.
+    :param train_path: path to training data
+    :param val_path: path to validation data
+    :param test_path: path to test data
+    :param hyperparameter_config: hyper parameter specification
+    """
     set_up_wandb(hyperparameter_config)
     prepare_and_train_model(train_path, val_path)
     evaluate_model(test_path)
