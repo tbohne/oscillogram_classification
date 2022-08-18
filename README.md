@@ -8,7 +8,7 @@ Example of the time series data to be considered (voltage over time).
 The task comes down to binary time series classification.
 
 ## CNN Architecture
-<img src="img/model.png" width="300">
+<img src="img/FCN.png" width="300">
 
 *Note: See ResNet architecture in `img/ResNet.png`*
 
