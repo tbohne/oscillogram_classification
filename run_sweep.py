@@ -22,7 +22,7 @@ def main():
 
     os.environ["WANDB_API_KEY"] = api_key.wandb_api_key
     sweep_config = {'method': TUNING_METHOD, 'parameters': example_sweep_config.sweep_config}
-    sweep_id = wandb.sweep(sweep_config, project="Oscillogram Classification CNN")
+    sweep_id = wandb.sweep(sweep_config, project="Oscillogram Classification")
     wandb.agent(sweep_id, call_training_procedure, count=N_RUNS_IN_SWEEP)
 
 
