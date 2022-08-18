@@ -32,6 +32,12 @@ def create_fcn_model(input_shape, num_classes):
 
 
 def create_resnet_model(input_shape, num_classes):
+    """
+    Defines the ResNet architecture to be worked with.
+    :param input_shape: shape of the input layer
+    :param num_classes: number of unique classes to be considered
+    :return: ResNet model
+    """
     n_feature_maps = 64
 
     input_layer = keras.layers.Input(input_shape)
