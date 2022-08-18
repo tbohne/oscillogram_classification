@@ -33,6 +33,14 @@ $ python cam.py [--znorm] [--altering_format] [--overlay] --method {gradcam | hi
 ```
 *Note: Using `all` as method results in a side-by-side plot of all methods.*
 
+**WandB Sweeps (Hyperparameter Optimization)**
+
+*"Hyperparameter sweeps provide an organized and efficient way to conduct a battle royale of models and pick the most accurate model. They enable this by automatically searching through combinations of hyperparameter values (e.g. learning rate, batch size, number of hidden layers, optimizer type) to find the most optimal values."* - [wandb.ai](https://wandb.ai/site/articles/introduction-hyperparameter-sweeps)
+
+```
+$ python run_sweep.py --train_path TRAIN_DATA.npz --val_path VAL_DATA.npz --test_path TEST_DATA.npz
+```
+
 ## Positive and Negative Sample for each Component
 
 ### Battery:
