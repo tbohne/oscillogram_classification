@@ -5,3 +5,4 @@ __pycache__/
 best_model.h5
 config/api_key.py
 wandb/
+img/model.png
