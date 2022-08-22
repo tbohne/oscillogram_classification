@@ -61,9 +61,11 @@ def train_model(model, x_train, y_train, x_val, y_val):
     print("training model:")
     print("total training samples:", len(x_train))
     for c in np.unique(y_train, axis=0):
+        assert len(x_train[y_train == c]) > 0
         print("training samples for class", str(c), ":", len(x_train[y_train == c]))
     print("total validation samples:", len(x_val))
     for c in np.unique(y_val, axis=0):
+        assert len(x_val[y_val == c]) > 0
         print("validation samples for class", str(c), ":", len(x_val[y_val == c]))
 
     callbacks = [
@@ -121,6 +123,7 @@ def evaluate_model_on_test_data(x_test, y_test):
     print("evaluating model:")
     print("total test samples:", len(x_test))
     for c in np.unique(y_test, axis=0):
+        assert len(x_test[y_test == c]) > 0
         print("test samples for class", str(c), ":", len(x_test[y_test == c]))
 
     trained_model = keras.models.load_model("best_model.h5")
