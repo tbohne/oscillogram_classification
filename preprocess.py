@@ -67,12 +67,12 @@ def z_normalize_time_series(series):
     return (series - np.mean(series)) / np.std(series)
 
 
-def iterate_through_input_data(z_norm, altering_format, data_path, data_type):
+def iterate_through_input_data(z_norm, diff_format, data_path, data_type):
     """
     Iterates through input data and generates an accumulated test / train / validation data set (.npz).
 
     :param z_norm: whether each sample should be z-normalized
-    :param altering_format: whether the samples are provided in altering format (see above)
+    :param diff_format: whether the samples are provided in a differing format (see above)
     :param data_path: path to sample data
     :param data_type: train | test | validation
     """
@@ -80,7 +80,7 @@ def iterate_through_input_data(z_norm, altering_format, data_path, data_type):
     voltage_series = []
     for path in Path(data_path).glob('**/*.csv'):
         label, curr_voltages = read_oscilloscope_recording(
-            path) if not altering_format else read_voltage_only_format_recording(path)
+            path) if not diff_format else read_voltage_only_format_recording(path)
         labels.append(label)
         if z_norm:
             curr_voltages = z_normalize_time_series(curr_voltages)
@@ -107,10 +107,10 @@ if __name__ == '__main__':
     # output: preprocessed data (one training / testing / validation data file containing data of all recordings)
     parser = argparse.ArgumentParser(description='Preprocess time series data..')
     parser.add_argument('--znorm', action='store_true', help='z-normalize time series')
-    parser.add_argument('--altering_format', action='store_true', help='using the "only voltage" format')
+    parser.add_argument('--diff_format', action='store_true', help='using the "only voltage" format')
     parser.add_argument('--path', type=dir_path, required=True)
     parser.add_argument(
         '--type', action='store', type=str, help='type of data: ["training", "validation", "test"]', required=True)
 
     args = parser.parse_args()
-    iterate_through_input_data(args.znorm, args.altering_format, args.path, args.type)
+    iterate_through_input_data(args.znorm, args.diff_format, args.path, args.type)

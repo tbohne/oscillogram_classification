@@ -290,7 +290,7 @@ def file_path(path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Apply diff. CAM methods to trained model to understand predictions..')
-    parser.add_argument('--altering_format', action='store_true', help='using the "only voltage" format')
+    parser.add_argument('--diff_format', action='store_true', help='using the "only voltage" format')
     parser.add_argument('--sample_path', type=file_path, required=True)
     parser.add_argument('--znorm', action='store_true', help='z-normalize time series')
     parser.add_argument('--model_path', type=file_path, required=True)
@@ -299,7 +299,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if args.altering_format:
+    if args.diff_format:
         _, voltages = preprocess.read_voltage_only_format_recording(args.sample_path)
     else:
         _, voltages = preprocess.read_oscilloscope_recording(args.sample_path)

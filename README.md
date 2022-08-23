@@ -62,7 +62,7 @@ sweep_config = {
 
 **Preprocessing**
 ```
-$ python preprocess.py [--znorm] [--altering_format] --path /TRAINING_DATA --type {training | validation | test}
+$ python preprocess.py [--znorm] [--diff_format] --path /TRAINING_DATA --type {training | validation | test}
 ```
 **Training**
 ```
@@ -70,7 +70,7 @@ $ python train.py --train_path TRAIN_DATA.npz --val_path VAL_DATA.npz --test_pat
 ```
 **Class Activation / Saliency Map Generation**
 ```
-$ python cam.py [--znorm] [--altering_format] [--overlay] --method {gradcam | hirescam | tf-keras-gradcam | tf-keras-gradcam++ | tf-keras-scorecam | tf-keras-layercam | tf-keras-smoothgrad | all} --sample_path SAMPLE.csv --model_path MODEL.h5
+$ python cam.py [--znorm] [--diff_format] [--overlay] --method {gradcam | hirescam | tf-keras-gradcam | tf-keras-gradcam++ | tf-keras-scorecam | tf-keras-layercam | tf-keras-smoothgrad | all} --sample_path SAMPLE.csv --model_path MODEL.h5
 ```
 *Note: Using `all` as method results in a side-by-side plot of all methods.*
 
