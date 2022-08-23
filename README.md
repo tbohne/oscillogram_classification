@@ -52,7 +52,7 @@ sweep_config = {
     "epochs": {
         "values": [10, 30, 50, 100]
     },
-    "models": {
+    "model": {
         "values": ["FCN", "ResNet"]
     }
 }
