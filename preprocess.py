@@ -8,6 +8,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from tsfresh import extract_features
+from tsfresh import select_features
+from tsfresh.utilities.dataframe_functions import impute
 
 
 def read_oscilloscope_recording(rec_file):
@@ -76,17 +79,59 @@ def iterate_through_input_data(z_norm, diff_format, data_path, data_type):
     :param data_path: path to sample data
     :param data_type: train | test | validation
     """
-    labels = []
-    voltage_series = []
-    for path in Path(data_path).glob('**/*.csv'):
-        label, curr_voltages = read_oscilloscope_recording(
-            path) if not diff_format else read_voltage_only_format_recording(path)
-        labels.append(label)
-        if z_norm:
-            curr_voltages = z_normalize_time_series(curr_voltages)
-        voltage_series.append(curr_voltages)
-    equalize_sample_sizes(voltage_series)
-    np.savez("data/%s_data.npz" % data_type, np.array(voltage_series, dtype=object), np.array(labels))
+
+    feature_extraction = True
+
+    if not feature_extraction:
+        labels = []
+        voltage_series = []
+        for path in Path(data_path).glob('**/*.csv'):
+            label, curr_voltages = read_oscilloscope_recording(
+                path) if not diff_format else read_voltage_only_format_recording(path)
+            labels.append(label)
+            if z_norm:
+                curr_voltages = z_normalize_time_series(curr_voltages)
+            voltage_series.append(curr_voltages)
+        equalize_sample_sizes(voltage_series)
+        np.savez("data/%s_data.npz" % data_type, np.array(voltage_series, dtype=object), np.array(labels))
+    else:
+        indices = ["A", "B", "C", "D"]
+        idx = 0
+        df = None
+        labels = {}
+        for path in Path(data_path).glob('**/*.csv'):
+            print("reading oscilloscope recording from", path)
+            assert "pos" in str(path).lower() or "neg" in str(path).lower()
+            # label: pos (1) / neg (0)
+            label = 1 if "pos" in str(path).lower() else 0
+
+            curr_df = pd.read_csv(path, delimiter=';', na_values=['-∞', '∞'])
+            curr_df = curr_df[1:].apply(lambda x: x.str.replace(',', '.')).astype(float).dropna()
+            curr_df.insert(0, "id", [indices[idx] for _ in range(len(curr_df))], True)
+
+            if idx == 0:
+                df = curr_df
+            else:
+                df = pd.concat([df, curr_df], ignore_index=True)
+                # df.append(curr_df)
+
+            labels[indices[idx]] = label
+
+            idx += 1
+            if idx == 4:
+                break
+
+        print(df)
+        labels = pd.Series(labels)
+        print(labels)
+
+        # TODO: apply tsfresh (feature extraction)
+        extracted_features = extract_features(df, column_id="id", column_sort="Zeit", column_value=None, column_kind=None)
+        impute(extracted_features)
+        print("LEN X:", len(extracted_features), "LEN Y:", len(labels))
+        features_filtered = select_features(extracted_features, labels)
+        print("The selected features:")
+        print(features_filtered)
 
 
 def dir_path(path):
