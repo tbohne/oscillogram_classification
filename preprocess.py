@@ -79,7 +79,18 @@ def z_normalize_time_series(series):
 
 
 def dask_feature_extraction_for_large_input_data(dataframe, partitions, on_chunk=True, simple_return=True):
+    """
+    Performs feature extraction / selection with tsfresh using Dask dataframes.
 
+        "Dask dataframes allow you to scale your computation beyond your local memory (via partitioning
+         the data internally) and even to large clusters of machines."
+
+    :param dataframe: pandas dataframe to perform feature extraction on
+    :param partitions: number of partitions to be generated in the Dask dataframe
+    :param on_chunk: perform feature extraction on chunk
+    :param simple_return: simply returns the features (no further processing)
+    :return: extracted / selected features
+    """
     # convert pandas df to dask df
     df = dd.from_pandas(dataframe, npartitions=partitions)
     print(df.head())
@@ -105,42 +116,54 @@ def dask_feature_extraction_for_large_input_data(dataframe, partitions, on_chunk
             features = features.reset_index(drop=True)
             feature_table = features.pivot_table(index="id", columns="variable", values="value", aggfunc="sum")
             print(feature_table)
-
     else:
         print("extract features..")
         features = extract_features(df, column_id="id", column_sort="Zeit", pivot=False)
         print("ext. features:")
         print(features)
         print(features.head(compute=False))
-
         # TODO: runs out of memory when computing the pandas dataframe
-        # TODO: for some reason also has a key error "id" now
-        # result = features.compute()
-        # print(result)
+        result = features.compute()
+        print(result)
 
     # TODO: takes too much time / memory
-    # print(features.head())
-
+    print(features.head())
     return features
 
 
 def pandas_feature_extraction(df, labels):
-    # TODO: takes too much time / memory
+    """
+    Performs feature extraction / selection using tsfresh.
+
+    :param df: pandas dataframe (set of time series)
+    :param labels: corresponding labels
+    :return: extracted / selected features
+    """
     print("ext. features..")
-    # n_jobs = 0 -> no parallelization -> reduces memory consumption
-    # however, memory consumption still too high
-    return extract_relevant_features(df, labels, column_id="id", column_sort="Zeit", n_jobs=0)
+    # n_jobs = 0 -> no parallelization -> reduces memory consumption (however, memory consumption still too high)
+    # using EfficientFCParameters to reduce memory consumption, ignoring features that are too computationally expensive
+    return extract_relevant_features(
+        df, labels, column_id="id", column_sort="Zeit", default_fc_parameters=EfficientFCParameters()
+    )
 
 
 def pandas_feature_extraction_manual(df, labels):
+    """
+    Performs feature extraction / selection using tsfresh (all steps manually).
+
+    :param df: pandas dataframe (set of time series)
+    :param labels: corresponding labels
+    :return: extracted / selected features
+    """
+    print("ext. features..")
     # uses EfficientFCParameters to make it feasible on my machine (RAM-wise)
     extracted_features = extract_features(
         df, column_id="id", column_sort="Zeit", default_fc_parameters=EfficientFCParameters()
     )
     print("impute..")
     impute(extracted_features)
+    print("select relevant features..")
     features_filtered = select_features(extracted_features, labels, n_jobs=0)
-    print("the selected features:")
     print(features_filtered)
     return features_filtered
 
@@ -202,19 +225,7 @@ def iterate_through_input_data(z_norm, diff_format, data_path, data_type):
         # features = dask_feature_extraction_for_large_input_data(df, 4, on_chunk=False, simple_return=True)
         # features = pandas_feature_extraction(df, labels)
         features = pandas_feature_extraction_manual(df, labels)
-
-        print(features)
-
-        #first_partition = features[features.id == 'A']
-        #print("LENGTH:", len(first_partition))
-        #print(first_partition.head())
-
         print(features.head())
-
-        #features = features.compute()
-        #
-        # print("total:")
-        # print(features)
 
 
 def dir_path(path):
