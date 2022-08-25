@@ -128,16 +128,17 @@ def dask_feature_extraction_for_large_input_data(dataframe, partitions, on_chunk
 def pandas_feature_extraction(df, labels):
     # TODO: takes too much time / memory
     print("ext. features..")
-    return extract_relevant_features(df, labels, column_id="id", column_sort="Zeit")
+    # n_jobs = 0 -> no parallelization -> reduces memory consumption
+    # however, memory consumption still too high
+    return extract_relevant_features(df, labels, column_id="id", column_sort="Zeit", n_jobs=0)
 
 
 def pandas_feature_extraction_manual(df, labels):
     # TODO: takes too much time / memory
-    extracted_features = extract_features(df, column_id="id", column_sort="Zeit")
+    extracted_features = extract_features(df, column_id="id", column_sort="Zeit", n_jobs=0)
     print("IMPUTE..")
     impute(extracted_features)
-    print("LEN X:", len(extracted_features), "LEN Y:", len(labels))
-    features_filtered = select_features(extracted_features, labels)
+    features_filtered = select_features(extracted_features, labels, n_jobs=0)
     print("The selected features:")
     print(features_filtered)
     return features_filtered
@@ -197,9 +198,11 @@ def iterate_through_input_data(z_norm, diff_format, data_path, data_type):
         labels = pd.Series(labels)
         print(labels)
 
-        features = dask_feature_extraction_for_large_input_data(df, 4, on_chunk=True, simple_return=True)
+        # features = dask_feature_extraction_for_large_input_data(df, 4, on_chunk=True, simple_return=True)
         # features = pandas_feature_extraction(df, labels)
-        # features = pandas_feature_extraction_manual(df, labels)
+        features = pandas_feature_extraction_manual(df, labels)
+
+        print(features)
 
         #first_partition = features[features.id == 'A']
         #print("LENGTH:", len(first_partition))
