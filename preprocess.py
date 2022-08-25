@@ -168,7 +168,7 @@ def pandas_feature_extraction_manual(df, labels):
     return features_filtered
 
 
-def iterate_through_input_data(z_norm, diff_format, data_path, data_type):
+def iterate_through_input_data(z_norm, diff_format, data_path, data_type, feature_extraction):
     """
     Iterates through input data and generates an accumulated test / train / validation data set (.npz).
 
@@ -176,10 +176,8 @@ def iterate_through_input_data(z_norm, diff_format, data_path, data_type):
     :param diff_format: whether the samples are provided in a differing format (see above)
     :param data_path: path to sample data
     :param data_type: train | test | validation
+    :param feature_extraction: whether feature extraction should be performed
     """
-
-    feature_extraction = True
-
     if not feature_extraction:
         labels = []
         voltage_series = []
@@ -193,6 +191,7 @@ def iterate_through_input_data(z_norm, diff_format, data_path, data_type):
         equalize_sample_sizes(voltage_series)
         np.savez("data/%s_data.npz" % data_type, np.array(voltage_series, dtype=object), np.array(labels))
     else:
+        print("preparing feature extraction..")
         indices = ["A", "B", "C", "D"]
         idx = 0
         df = None
@@ -248,8 +247,9 @@ if __name__ == '__main__':
     parser.add_argument('--znorm', action='store_true', help='z-normalize time series')
     parser.add_argument('--diff_format', action='store_true', help='using the "only voltage" format')
     parser.add_argument('--path', type=dir_path, required=True)
+    parser.add_argument('--feature_extraction', action='store_true', help='apply feature extraction')
     parser.add_argument(
         '--type', action='store', type=str, help='type of data: ["training", "validation", "test"]', required=True)
 
     args = parser.parse_args()
-    iterate_through_input_data(args.znorm, args.diff_format, args.path, args.type)
+    iterate_through_input_data(args.znorm, args.diff_format, args.path, args.type, args.feature_extraction)
