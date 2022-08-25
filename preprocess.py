@@ -8,9 +8,17 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from tsfresh import extract_relevant_features
 from tsfresh import extract_features
 from tsfresh import select_features
 from tsfresh.utilities.dataframe_functions import impute
+
+from tsfresh.convenience.bindings import dask_feature_extraction_on_chunk
+from tsfresh.feature_extraction.settings import ComprehensiveFCParameters
+
+import dask
+
+import dask.dataframe as dd
 
 
 def read_oscilloscope_recording(rec_file):
@@ -70,6 +78,71 @@ def z_normalize_time_series(series):
     return (series - np.mean(series)) / np.std(series)
 
 
+def dask_feature_extraction_for_large_input_data(dataframe, partitions, on_chunk=True, simple_return=True):
+
+    # transforming data to expected format
+    #dataframe.insert(1, "kind", "F_x", True)
+
+    # convert pandas df to dask df
+    df = dd.from_pandas(dataframe, npartitions=partitions)
+    print(df.head())
+
+    if on_chunk:
+        df_grouped = df.groupby(["id"])
+        print(df_grouped)
+        print("extract features..")
+        features = dask_feature_extraction_on_chunk(df_grouped,
+                                                    column_id="id", column_kind="id", column_sort="Zeit",
+                                                    column_value="Kanal A",
+                                                    default_fc_parameters=ComprehensiveFCParameters())
+
+        if simple_return:
+            print("ext. features:")
+            print(features)
+            # TODO: runs out of memory when computing the pandas dataframe (compute=True by default)
+            print(features.head(npartitions=-1, compute=False))
+            print(features.columns)
+        else:
+            # TODO: causes OOB error
+            features = features.categorize(columns=["variable"])
+            features = features.reset_index(drop=True)
+            feature_table = features.pivot_table(index="id", columns="variable", values="value", aggfunc="sum")
+            print(feature_table)
+
+    else:
+        print("extract features..")
+        features = extract_features(df, column_id="id", column_sort="Zeit", pivot=False)
+        print("ext. features:")
+        print(features)
+        # TODO: runs out of memory when computing the pandas dataframe
+        # TODO: for some reason also has a key error "id" now
+        # result = features.compute()
+        # print(result)
+
+    # TODO: takes too much time / memory
+    # print(features.head())
+
+    return features
+
+
+def pandas_feature_extraction(df, labels):
+    # TODO: takes too much time / memory
+    print("ext. features..")
+    return extract_relevant_features(df, labels, column_id="id", column_sort="Zeit")
+
+
+def pandas_feature_extraction_manual(df, labels):
+    # TODO: takes too much time / memory
+    extracted_features = extract_features(df, column_id="id", column_sort="Zeit")
+    print("IMPUTE..")
+    impute(extracted_features)
+    print("LEN X:", len(extracted_features), "LEN Y:", len(labels))
+    features_filtered = select_features(extracted_features, labels)
+    print("The selected features:")
+    print(features_filtered)
+    return features_filtered
+
+
 def iterate_through_input_data(z_norm, diff_format, data_path, data_type):
     """
     Iterates through input data and generates an accumulated test / train / validation data set (.npz).
@@ -113,7 +186,6 @@ def iterate_through_input_data(z_norm, diff_format, data_path, data_type):
                 df = curr_df
             else:
                 df = pd.concat([df, curr_df], ignore_index=True)
-                # df.append(curr_df)
 
             labels[indices[idx]] = label
 
@@ -125,13 +197,20 @@ def iterate_through_input_data(z_norm, diff_format, data_path, data_type):
         labels = pd.Series(labels)
         print(labels)
 
-        # TODO: apply tsfresh (feature extraction)
-        extracted_features = extract_features(df, column_id="id", column_sort="Zeit", column_value=None, column_kind=None)
-        impute(extracted_features)
-        print("LEN X:", len(extracted_features), "LEN Y:", len(labels))
-        features_filtered = select_features(extracted_features, labels)
-        print("The selected features:")
-        print(features_filtered)
+        features = dask_feature_extraction_for_large_input_data(df, 4, on_chunk=True, simple_return=True)
+        # features = pandas_feature_extraction(df, labels)
+        # features = pandas_feature_extraction_manual(df, labels)
+
+        #first_partition = features[features.id == 'A']
+        #print("LENGTH:", len(first_partition))
+        #print(first_partition.head())
+
+        print(features.head())
+
+        #features = features.compute()
+        #
+        # print("total:")
+        # print(features)
 
 
 def dir_path(path):
