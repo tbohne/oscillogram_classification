@@ -14,7 +14,7 @@ from tsfresh import select_features
 from tsfresh.utilities.dataframe_functions import impute
 
 from tsfresh.convenience.bindings import dask_feature_extraction_on_chunk
-from tsfresh.feature_extraction.settings import ComprehensiveFCParameters
+from tsfresh.feature_extraction.settings import ComprehensiveFCParameters, EfficientFCParameters
 
 import dask
 
@@ -80,9 +80,6 @@ def z_normalize_time_series(series):
 
 def dask_feature_extraction_for_large_input_data(dataframe, partitions, on_chunk=True, simple_return=True):
 
-    # transforming data to expected format
-    #dataframe.insert(1, "kind", "F_x", True)
-
     # convert pandas df to dask df
     df = dd.from_pandas(dataframe, npartitions=partitions)
     print(df.head())
@@ -114,6 +111,8 @@ def dask_feature_extraction_for_large_input_data(dataframe, partitions, on_chunk
         features = extract_features(df, column_id="id", column_sort="Zeit", pivot=False)
         print("ext. features:")
         print(features)
+        print(features.head(compute=False))
+
         # TODO: runs out of memory when computing the pandas dataframe
         # TODO: for some reason also has a key error "id" now
         # result = features.compute()
@@ -134,12 +133,14 @@ def pandas_feature_extraction(df, labels):
 
 
 def pandas_feature_extraction_manual(df, labels):
-    # TODO: takes too much time / memory
-    extracted_features = extract_features(df, column_id="id", column_sort="Zeit", n_jobs=0)
-    print("IMPUTE..")
+    # uses EfficientFCParameters to make it feasible on my machine (RAM-wise)
+    extracted_features = extract_features(
+        df, column_id="id", column_sort="Zeit", default_fc_parameters=EfficientFCParameters()
+    )
+    print("impute..")
     impute(extracted_features)
     features_filtered = select_features(extracted_features, labels, n_jobs=0)
-    print("The selected features:")
+    print("the selected features:")
     print(features_filtered)
     return features_filtered
 
@@ -198,7 +199,7 @@ def iterate_through_input_data(z_norm, diff_format, data_path, data_type):
         labels = pd.Series(labels)
         print(labels)
 
-        # features = dask_feature_extraction_for_large_input_data(df, 4, on_chunk=True, simple_return=True)
+        # features = dask_feature_extraction_for_large_input_data(df, 4, on_chunk=False, simple_return=True)
         # features = pandas_feature_extraction(df, labels)
         features = pandas_feature_extraction_manual(df, labels)
 
