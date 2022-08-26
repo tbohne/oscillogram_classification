@@ -4,21 +4,18 @@
 
 import argparse
 import os
+import uuid
 from pathlib import Path
 
+import dask.dataframe as dd
 import numpy as np
 import pandas as pd
-from tsfresh import extract_relevant_features
 from tsfresh import extract_features
+from tsfresh import extract_relevant_features
 from tsfresh import select_features
-from tsfresh.utilities.dataframe_functions import impute
-
 from tsfresh.convenience.bindings import dask_feature_extraction_on_chunk
 from tsfresh.feature_extraction.settings import ComprehensiveFCParameters, EfficientFCParameters
-
-import dask
-
-import dask.dataframe as dd
+from tsfresh.utilities.dataframe_functions import impute
 
 
 def read_oscilloscope_recording(rec_file):
@@ -197,8 +194,6 @@ def create_feature_vector_dataset(data_path):
     :param data_path: path to sample data
     """
     print("preparing feature extraction..")
-    indices = ["A", "B", "C", "D"]
-    idx = 0
     df = None
     labels = {}
     for path in Path(data_path).glob('**/*.csv'):
@@ -209,18 +204,15 @@ def create_feature_vector_dataset(data_path):
 
         curr_df = pd.read_csv(path, delimiter=';', na_values=['-∞', '∞'])
         curr_df = curr_df[1:].apply(lambda x: x.str.replace(',', '.')).astype(float).dropna()
-        curr_df.insert(0, "id", [indices[idx] for _ in range(len(curr_df))], True)
 
-        if idx == 0:
+        unique_id = uuid.uuid4().hex
+        curr_df.insert(0, "id", [unique_id for _ in range(len(curr_df))], True)
+        labels[unique_id] = label
+
+        if df is None:
             df = curr_df
         else:
             df = pd.concat([df, curr_df], ignore_index=True)
-
-        labels[indices[idx]] = label
-
-        idx += 1
-        if idx == 4:
-            break
 
     print(df)
     labels = pd.Series(labels)
