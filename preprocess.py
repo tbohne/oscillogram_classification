@@ -168,7 +168,71 @@ def pandas_feature_extraction_manual(df, labels):
     return features_filtered
 
 
-def iterate_through_input_data(z_norm, diff_format, data_path, data_type, feature_extraction):
+def create_processed_time_series_dataset(data_path, diff_format, z_norm, data_type):
+    """
+    Creates a processed time series dataset (.npz file containing all samples).
+
+    :param data_path: path to sample data
+    :param diff_format: whether the samples are provided in a differing format (see above)
+    :param z_norm: whether each sample should be z-normalized
+    :param data_type: train | test | validation
+    """
+    labels = []
+    voltage_series = []
+    for path in Path(data_path).glob('**/*.csv'):
+        label, curr_voltages = read_oscilloscope_recording(
+            path) if not diff_format else read_voltage_only_format_recording(path)
+        labels.append(label)
+        if z_norm:
+            curr_voltages = z_normalize_time_series(curr_voltages)
+        voltage_series.append(curr_voltages)
+    equalize_sample_sizes(voltage_series)
+    np.savez("data/%s_data.npz" % data_type, np.array(voltage_series, dtype=object), np.array(labels))
+
+
+def create_feature_vector_dataset(data_path):
+    """
+    Creates a dataset based on extracted / selected features of the time series.
+
+    :param data_path: path to sample data
+    """
+    print("preparing feature extraction..")
+    indices = ["A", "B", "C", "D"]
+    idx = 0
+    df = None
+    labels = {}
+    for path in Path(data_path).glob('**/*.csv'):
+        print("reading oscilloscope recording from", path)
+        assert "pos" in str(path).lower() or "neg" in str(path).lower()
+        # label: pos (1) / neg (0)
+        label = 1 if "pos" in str(path).lower() else 0
+
+        curr_df = pd.read_csv(path, delimiter=';', na_values=['-∞', '∞'])
+        curr_df = curr_df[1:].apply(lambda x: x.str.replace(',', '.')).astype(float).dropna()
+        curr_df.insert(0, "id", [indices[idx] for _ in range(len(curr_df))], True)
+
+        if idx == 0:
+            df = curr_df
+        else:
+            df = pd.concat([df, curr_df], ignore_index=True)
+
+        labels[indices[idx]] = label
+
+        idx += 1
+        if idx == 4:
+            break
+
+    print(df)
+    labels = pd.Series(labels)
+    print(labels)
+
+    # features = dask_feature_extraction_for_large_input_data(df, 4, on_chunk=False, simple_return=True)
+    # features = pandas_feature_extraction(df, labels)
+    features = pandas_feature_extraction_manual(df, labels)
+    print(features.head())
+
+
+def create_dataset(z_norm, diff_format, data_path, data_type, feature_extraction):
     """
     Iterates through input data and generates an accumulated test / train / validation data set (.npz).
 
@@ -179,52 +243,9 @@ def iterate_through_input_data(z_norm, diff_format, data_path, data_type, featur
     :param feature_extraction: whether feature extraction should be performed
     """
     if not feature_extraction:
-        labels = []
-        voltage_series = []
-        for path in Path(data_path).glob('**/*.csv'):
-            label, curr_voltages = read_oscilloscope_recording(
-                path) if not diff_format else read_voltage_only_format_recording(path)
-            labels.append(label)
-            if z_norm:
-                curr_voltages = z_normalize_time_series(curr_voltages)
-            voltage_series.append(curr_voltages)
-        equalize_sample_sizes(voltage_series)
-        np.savez("data/%s_data.npz" % data_type, np.array(voltage_series, dtype=object), np.array(labels))
+        create_processed_time_series_dataset(data_path, diff_format, z_norm, data_type)
     else:
-        print("preparing feature extraction..")
-        indices = ["A", "B", "C", "D"]
-        idx = 0
-        df = None
-        labels = {}
-        for path in Path(data_path).glob('**/*.csv'):
-            print("reading oscilloscope recording from", path)
-            assert "pos" in str(path).lower() or "neg" in str(path).lower()
-            # label: pos (1) / neg (0)
-            label = 1 if "pos" in str(path).lower() else 0
-
-            curr_df = pd.read_csv(path, delimiter=';', na_values=['-∞', '∞'])
-            curr_df = curr_df[1:].apply(lambda x: x.str.replace(',', '.')).astype(float).dropna()
-            curr_df.insert(0, "id", [indices[idx] for _ in range(len(curr_df))], True)
-
-            if idx == 0:
-                df = curr_df
-            else:
-                df = pd.concat([df, curr_df], ignore_index=True)
-
-            labels[indices[idx]] = label
-
-            idx += 1
-            if idx == 4:
-                break
-
-        print(df)
-        labels = pd.Series(labels)
-        print(labels)
-
-        # features = dask_feature_extraction_for_large_input_data(df, 4, on_chunk=False, simple_return=True)
-        # features = pandas_feature_extraction(df, labels)
-        features = pandas_feature_extraction_manual(df, labels)
-        print(features.head())
+        create_feature_vector_dataset(data_path)
 
 
 def dir_path(path):
@@ -252,4 +273,4 @@ if __name__ == '__main__':
         '--type', action='store', type=str, help='type of data: ["training", "validation", "test"]', required=True)
 
     args = parser.parse_args()
-    iterate_through_input_data(args.znorm, args.diff_format, args.path, args.type, args.feature_extraction)
+    create_dataset(args.znorm, args.diff_format, args.path, args.type, args.feature_extraction)
