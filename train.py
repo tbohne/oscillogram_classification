@@ -68,6 +68,24 @@ def train_model(model, x_train, y_train, x_val, y_val):
         assert len(x_val[y_val == c]) > 0
         print("validation samples for class", str(c), ":", len(x_val[y_val == c]))
 
+    x_train = np.squeeze(x_train)
+    x_val = np.squeeze(x_val)
+
+    print("train shape:", x_train.shape)
+    print("val shape:", x_val.shape)
+
+    if x_train.shape[1] > x_val.shape[1]:
+        # pad validation feature vector
+        x_val = np.pad(x_val, ((0, 0), (0, x_train.shape[1] - x_val.shape[1])), mode='empty')
+    elif x_val.shape[1] > x_train.shape[1]:
+        # pad training feature vector
+        x_train = np.pad(x_train, ((0, 0), (0, x_val.shape[1] - x_train.shape[1])), mode='empty')
+
+    print("train shape:", x_train.shape)
+    print("val shape:", x_val.shape)
+
+    assert x_train.shape[1] == x_val.shape[1]
+
     callbacks = [
         keras.callbacks.ModelCheckpoint("best_model.h5", save_best_only=True, monitor="val_loss"),
         keras.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.5, patience=20, min_lr=0.0001),
