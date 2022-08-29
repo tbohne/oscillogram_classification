@@ -160,7 +160,7 @@ def pandas_feature_extraction_manual(df, labels):
     print("impute..")
     impute(extracted_features)
     print("select relevant features..")
-    features_filtered = select_features(extracted_features, labels, n_jobs=0)
+    features_filtered = select_features(extracted_features, labels)
     print(features_filtered)
     return features_filtered
 
@@ -187,11 +187,12 @@ def create_processed_time_series_dataset(data_path, diff_format, z_norm, data_ty
     np.savez("data/%s_data.npz" % data_type, np.array(voltage_series, dtype=object), np.array(labels))
 
 
-def create_feature_vector_dataset(data_path):
+def create_feature_vector_dataset(data_path, data_type):
     """
     Creates a dataset based on extracted / selected features of the time series.
 
     :param data_path: path to sample data
+    :param data_type: train | test | validation
     """
     print("preparing feature extraction..")
     df = None
@@ -223,6 +224,10 @@ def create_feature_vector_dataset(data_path):
     features = pandas_feature_extraction_manual(df, labels)
     print(features.head())
 
+    res_feature_vectors = features.to_numpy()
+    print(res_feature_vectors)
+    np.savez("data/%s_feature_vectors.npz" % data_type, res_feature_vectors, labels.to_numpy())
+
 
 def create_dataset(z_norm, diff_format, data_path, data_type, feature_extraction):
     """
@@ -237,7 +242,7 @@ def create_dataset(z_norm, diff_format, data_path, data_type, feature_extraction
     if not feature_extraction:
         create_processed_time_series_dataset(data_path, diff_format, z_norm, data_type)
     else:
-        create_feature_vector_dataset(data_path)
+        create_feature_vector_dataset(data_path, data_type)
 
 
 def dir_path(path):
