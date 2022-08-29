@@ -144,7 +144,16 @@ def evaluate_model_on_test_data(x_test, y_test):
         assert len(x_test[y_test == c]) > 0
         print("test samples for class", str(c), ":", len(x_test[y_test == c]))
 
+    print("x_test shape:", x_test.shape)
+
     trained_model = keras.models.load_model("best_model.h5")
+    expected_feature_vector_len = trained_model.layers[0].output_shape[0][1]
+    print("expected:", expected_feature_vector_len)
+
+    # feature vectors not necessarily of same length
+    if x_test.shape[1] < expected_feature_vector_len:
+        # pad feature vector
+        x_test = np.pad(x_test, ((0, 0), (0, expected_feature_vector_len - x_test.shape[1])), mode='empty')
     # test samples should match model input length
     assert x_test.shape[1] == trained_model.layers[0].output_shape[0][1]
     # TODO: think about whether it should be able to deal with not matching input lengths
