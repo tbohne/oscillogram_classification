@@ -8,6 +8,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import wandb
+from sklearn.metrics import accuracy_score, classification_report
 from tensorflow import keras
 from wandb.keras import WandbCallback
 
@@ -48,44 +49,16 @@ def visualize_n_samples_per_class(x, y):
         plt.close()
 
 
-def train_model(model, x_train, y_train, x_val, y_val):
+def train_keras_model(model, x_train, y_train, x_val, y_val):
     """
-    Trains the CNN model.
+    Trains the specified Keras model on the specified data.
 
-    :param model: CNN model to be trained
-    :param x_train: training samples
-    :param y_train: corresponding training labels
-    :param x_val: validation samples
-    :param y_val: corresponding validation labels
+    :param model: model to be trained
+    :param x_train: training data samples
+    :param y_train: training data labels
+    :param x_val: validation data samples
+    :param y_val: validation data labels
     """
-    print("training model:")
-    print("total training samples:", len(x_train))
-    for c in np.unique(y_train, axis=0):
-        assert len(x_train[y_train == c]) > 0
-        print("training samples for class", str(c), ":", len(x_train[y_train == c]))
-    print("total validation samples:", len(x_val))
-    for c in np.unique(y_val, axis=0):
-        assert len(x_val[y_val == c]) > 0
-        print("validation samples for class", str(c), ":", len(x_val[y_val == c]))
-
-    x_train = np.squeeze(x_train)
-    x_val = np.squeeze(x_val)
-
-    print("train shape:", x_train.shape)
-    print("val shape:", x_val.shape)
-
-    if x_train.shape[1] > x_val.shape[1]:
-        # pad validation feature vector
-        x_val = np.pad(x_val, ((0, 0), (0, x_train.shape[1] - x_val.shape[1])), mode='empty')
-    elif x_val.shape[1] > x_train.shape[1]:
-        # pad training feature vector
-        x_train = np.pad(x_train, ((0, 0), (0, x_val.shape[1] - x_train.shape[1])), mode='empty')
-
-    print("train shape:", x_train.shape)
-    print("val shape:", x_val.shape)
-
-    assert x_train.shape[1] == x_val.shape[1]
-
     callbacks = [
         keras.callbacks.ModelCheckpoint("best_model.h5", save_best_only=True, monitor="val_loss"),
         keras.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.5, patience=20, min_lr=0.0001),
@@ -113,6 +86,50 @@ def train_model(model, x_train, y_train, x_val, y_val):
     plot_training_and_validation_loss(history)
 
 
+def train_model(model, x_train, y_train, x_val, y_val):
+    """
+    Trains the selected model (classifier).
+
+    :param model: model to be trained
+    :param x_train: training samples
+    :param y_train: corresponding training labels
+    :param x_val: validation samples
+    :param y_val: corresponding validation labels
+    """
+    print("training model:")
+    print("total training samples:", len(x_train))
+    for c in np.unique(y_train, axis=0):
+        assert len(x_train[y_train == c]) > 0
+        print("training samples for class", str(c), ":", len(x_train[y_train == c]))
+    print("total validation samples:", len(x_val))
+    for c in np.unique(y_val, axis=0):
+        assert len(x_val[y_val == c]) > 0
+        print("validation samples for class", str(c), ":", len(x_val[y_val == c]))
+
+    x_train = np.squeeze(x_train)
+    x_val = np.squeeze(x_val)
+
+    print("train shape:", x_train.shape)
+    print("val shape:", x_val.shape)
+
+    if x_train.shape[1] > x_val.shape[1]:
+        # pad validation feature vector
+        x_val = np.pad(x_val, ((0, 0), (0, x_train.shape[1] - x_val.shape[1])), mode='constant')
+    elif x_val.shape[1] > x_train.shape[1]:
+        # pad training feature vector
+        x_train = np.pad(x_train, ((0, 0), (0, x_val.shape[1] - x_train.shape[1])), mode='constant')
+
+    print("train shape:", x_train.shape)
+    print("val shape:", x_val.shape)
+
+    assert x_train.shape[1] == x_val.shape[1]
+
+    if 'keras' in str(type(model)):
+        train_keras_model(model, x_train, y_train, x_val, y_val)
+    else:
+        model.fit(x_train, y_train)
+
+
 def plot_training_and_validation_loss(history):
     """
     Plots the learning curves.
@@ -131,12 +148,13 @@ def plot_training_and_validation_loss(history):
     plt.close()
 
 
-def evaluate_model_on_test_data(x_test, y_test):
+def evaluate_model_on_test_data(x_test, y_test, model):
     """
     Evaluates the trained model on the specified test data.
 
     :param x_test: test samples
     :param y_test: corresponding labels
+    :param model: trained model to be evaluated
     """
     print("evaluating model:")
     print("total test samples:", len(x_test))
@@ -146,30 +164,42 @@ def evaluate_model_on_test_data(x_test, y_test):
 
     print("x_test shape:", x_test.shape)
 
-    trained_model = keras.models.load_model("best_model.h5")
-    expected_feature_vector_len = trained_model.layers[0].output_shape[0][1]
-    print("expected:", expected_feature_vector_len)
+    if 'keras' in str(type(model)):
+        # should be the same, but read from file
+        model = keras.models.load_model("best_model.h5")
+        expected_feature_vector_len = model.layers[0].output_shape[0][1]
+    else:
+        expected_feature_vector_len = model.n_features_in_
 
     # feature vectors not necessarily of same length
     if x_test.shape[1] < expected_feature_vector_len:
         # pad feature vector
-        x_test = np.pad(x_test, ((0, 0), (0, expected_feature_vector_len - x_test.shape[1])), mode='empty')
+        x_test = np.pad(x_test, ((0, 0), (0, expected_feature_vector_len - x_test.shape[1])), mode='constant')
     # test samples should match model input length
-    assert x_test.shape[1] == trained_model.layers[0].output_shape[0][1]
-    # TODO: think about whether it should be able to deal with not matching input lengths
-    #       if so: x_test[:, :trained_model.layers[0].output_shape[0][1]]
-    test_loss, test_acc = trained_model.evaluate(x_test, y_test)
-    print("test accuracy:", test_acc)
-    print("test loss:", test_loss)
-    wandb.log({"test_loss": test_loss, "test_accuracy": test_acc})
+    assert x_test.shape[1] == expected_feature_vector_len
+
+    if 'keras' in str(type(model)):
+        test_loss, test_acc = model.evaluate(x_test, y_test)
+        print("test accuracy:", test_acc)
+        print("test loss:", test_loss)
+        wandb.log({"test_loss": test_loss, "test_accuracy": test_acc})
+    else:
+        y_pred_test = model.predict(x_test)
+        print("test accuracy:", accuracy_score(y_test, y_pred_test))
+        print("CLASSIFICATION REPORT:")
+        res_dict = classification_report(y_test, y_pred_test, output_dict=True)
+        for k in res_dict.keys():
+            print("k:", k)
+            print(res_dict[k])
 
 
-def prepare_and_train_model(train_data_path, val_data_path):
+def prepare_data(train_data_path, val_data_path):
     """
-    Prepares and initiates the training process.
+    Prepares the data for the training process.
 
     :param train_data_path: path to read training data from
     :param val_data_path: path to read validation data from
+    :return: (x_train, y_train, x_val, y_val)
     """
     data = TrainingData(np.load(train_data_path, allow_pickle=True))
     x_train = data[:][0]
@@ -177,6 +207,7 @@ def prepare_and_train_model(train_data_path, val_data_path):
 
     visualize_n_samples_per_class(x_train, y_train)
 
+    # TODO: could this be a problem for the feature vectors?
     # generally applicable to multivariate time series
     x_train = x_train.reshape((x_train.shape[0], x_train.shape[1], 1))
 
@@ -193,21 +224,20 @@ def prepare_and_train_model(train_data_path, val_data_path):
     x_val = val_data[:][0]
     y_val = val_data[:][1]
 
-    model = models.create_model(x_train.shape[1:], len(np.unique(y_train)), architecture=wandb.config["model"])
-    keras.utils.plot_model(model, to_file="img/model.png", show_shapes=True)
-    train_model(model, x_train, y_train, x_val.astype('float32'), y_val.astype('float32'))
+    return x_train, y_train, x_val.astype('float32'), y_val.astype('float32')
 
 
-def evaluate_model(test_data_path):
+def evaluate_model(test_data_path, model):
     """
     Initiates model evaluation.
 
     :param test_data_path: path to read test data from
+    :param model: trained model to be evaluated
     """
     test_data = TrainingData(np.load(test_data_path, allow_pickle=True))
     x_test = test_data[:][0]
     y_test = test_data[:][1]
-    evaluate_model_on_test_data(x_test.astype('float32'), y_test.astype('float32'))
+    evaluate_model_on_test_data(x_test.astype('float32'), y_test.astype('float32'), model)
 
 
 def train_procedure(train_path, val_path, test_path, hyperparameter_config=run_config.hyperparameter_config):
@@ -220,8 +250,16 @@ def train_procedure(train_path, val_path, test_path, hyperparameter_config=run_c
     :param hyperparameter_config: hyperparameter specification
     """
     set_up_wandb(hyperparameter_config)
-    prepare_and_train_model(train_path, val_path)
-    evaluate_model(test_path)
+    x_train, y_train, x_val, y_val = prepare_data(train_path, val_path)
+
+    model = models.create_model(x_train.shape[1:], len(np.unique(y_train)), architecture=wandb.config["model"])
+
+    if 'keras' in str(type(model)):
+        keras.utils.plot_model(model, to_file="img/model.png", show_shapes=True)
+
+    train_model(model, x_train, y_train, x_val, y_val)
+
+    evaluate_model(test_path, model)
 
 
 def file_path(path):
