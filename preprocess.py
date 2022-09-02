@@ -150,7 +150,7 @@ def pandas_feature_extraction_manual(df, labels):
 
     :param df: pandas dataframe (set of time series)
     :param labels: corresponding labels
-    :return: extracted / selected features
+    :return: (filtered features, all extracted features)
     """
     print("ext. features..")
     # uses EfficientFCParameters to make it feasible on my machine (RAM-wise)
@@ -159,10 +159,13 @@ def pandas_feature_extraction_manual(df, labels):
     )
     print("impute..")
     impute(extracted_features)
+
     print("select relevant features..")
-    features_filtered = select_features(extracted_features, labels)
-    print(features_filtered)
-    return features_filtered
+    filtered_features = select_features(extracted_features, labels)
+    print("selected features:")
+    print(filtered_features)
+
+    return filtered_features, extracted_features
 
 
 def create_processed_time_series_dataset(data_path, diff_format, z_norm, data_type):
@@ -221,12 +224,13 @@ def create_feature_vector_dataset(data_path, data_type):
 
     # features = dask_feature_extraction_for_large_input_data(df, 4, on_chunk=False, simple_return=True)
     # features = pandas_feature_extraction(df, labels)
-    features = pandas_feature_extraction_manual(df, labels)
-    print(features.head())
-
-    res_feature_vectors = features.to_numpy()
+    filtered_features, all_extracted_features = pandas_feature_extraction_manual(df, labels)
+    print(filtered_features.head())
+    res_feature_vectors = filtered_features.to_numpy()
     print(res_feature_vectors)
-    np.savez("data/%s_feature_vectors.npz" % data_type, res_feature_vectors, labels.to_numpy())
+    np.savez("data/%s_filtered_feature_vectors.npz" % data_type, res_feature_vectors, labels.to_numpy())
+    res_complete_feature_vectors = all_extracted_features.to_numpy()
+    np.savez("data/%s_complete_feature_vectors.npz" % data_type, res_complete_feature_vectors, labels.to_numpy())
 
 
 def create_dataset(z_norm, diff_format, data_path, data_type, feature_extraction):
