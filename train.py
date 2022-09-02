@@ -193,12 +193,13 @@ def evaluate_model_on_test_data(x_test, y_test, model):
             print(res_dict[k])
 
 
-def prepare_data(train_data_path, val_data_path):
+def prepare_data(train_data_path, val_data_path, keras_model):
     """
     Prepares the data for the training process.
 
     :param train_data_path: path to read training data from
     :param val_data_path: path to read validation data from
+    :param keras_model: whether the data is prepared for a keras model
     :return: (x_train, y_train, x_val, y_val)
     """
     data = TrainingData(np.load(train_data_path, allow_pickle=True))
@@ -207,9 +208,9 @@ def prepare_data(train_data_path, val_data_path):
 
     visualize_n_samples_per_class(x_train, y_train)
 
-    # TODO: could this be a problem for the feature vectors?
-    # generally applicable to multivariate time series
-    x_train = x_train.reshape((x_train.shape[0], x_train.shape[1], 1))
+    if keras_model:
+        # generally applicable to multivariate time series
+        x_train = x_train.reshape((x_train.shape[0], x_train.shape[1], 1))
 
     # shuffle training set
     idx = np.random.permutation(len(x_train))
@@ -250,8 +251,8 @@ def train_procedure(train_path, val_path, test_path, hyperparameter_config=run_c
     :param hyperparameter_config: hyperparameter specification
     """
     set_up_wandb(hyperparameter_config)
-    x_train, y_train, x_val, y_val = prepare_data(train_path, val_path)
-
+    keras_model = wandb.config["model"] in ["FCN", "ResNet"]
+    x_train, y_train, x_val, y_val = prepare_data(train_path, val_path, keras_model)
     model = models.create_model(x_train.shape[1:], len(np.unique(y_train)), architecture=wandb.config["model"])
 
     if 'keras' in str(type(model)):
