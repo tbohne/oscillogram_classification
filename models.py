@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 # @author Tim Bohne, Patricia Windler
 
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neural_network import MLPClassifier
 from tensorflow import keras
 
 
@@ -126,5 +128,9 @@ def create_model(input_shape, num_classes, architecture="FCN"):
         return create_fcn_model(input_shape, num_classes)
     elif architecture == "ResNet":
         return create_resnet_model(input_shape, num_classes)
+    elif architecture == "RandomForest":
+        return RandomForestClassifier(verbose=1)
+    elif architecture == "MLP":
+        return MLPClassifier(activation="relu", verbose=1, n_iter_no_change=50)
     else:
         raise ValueError("Unknown model architecture: " + architecture)
