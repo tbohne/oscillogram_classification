@@ -10,6 +10,7 @@ from pathlib import Path
 import dask.dataframe as dd
 import numpy as np
 import pandas as pd
+import tsfresh.feature_extraction.settings
 from tsfresh import extract_features
 from tsfresh import extract_relevant_features
 from tsfresh import select_features
@@ -165,6 +166,14 @@ def pandas_feature_extraction_manual(df, labels):
     print("selected features:")
     print(filtered_features)
 
+    print("saving to csv..")
+    extracted_features.to_csv('extracted_features.csv', encoding='utf-8', index=False)
+    filtered_features.to_csv('filtered_features.csv', encoding='utf-8', index=False)
+
+    # print("settings:")
+    # kind_to_fc_params = tsfresh.feature_extraction.settings.from_columns(filtered_features)
+    # print(kind_to_fc_params)
+
     return filtered_features, extracted_features
 
 
@@ -226,11 +235,17 @@ def create_feature_vector_dataset(data_path, data_type):
     # features = pandas_feature_extraction(df, labels)
     filtered_features, all_extracted_features = pandas_feature_extraction_manual(df, labels)
     print(filtered_features.head())
+
+    filtered_feature_columns = np.array(filtered_features.columns)
+    complete_feature_columns = np.array(all_extracted_features.columns)
+
     res_feature_vectors = filtered_features.to_numpy()
     print(res_feature_vectors)
     np.savez("data/%s_filtered_feature_vectors.npz" % data_type, res_feature_vectors, labels.to_numpy())
+    np.savez("data/%s_list_of_features_filtered.npz" % data_type, filtered_feature_columns)
     res_complete_feature_vectors = all_extracted_features.to_numpy()
     np.savez("data/%s_complete_feature_vectors.npz" % data_type, res_complete_feature_vectors, labels.to_numpy())
+    np.savez("data/%s_list_of_features_complete.npz" % data_type, complete_feature_columns)
 
 
 def create_dataset(z_norm, diff_format, data_path, data_type, feature_extraction):
