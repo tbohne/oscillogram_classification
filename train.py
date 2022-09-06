@@ -193,14 +193,15 @@ def evaluate_model_on_test_data(x_test, y_test, model):
             print(res_dict[k])
 
 
-def prepare_data(train_data_path, val_data_path, keras_model):
+def prepare_data(train_data_path, val_data_path, test_data_path, keras_model):
     """
-    Prepares the data for the training process.
+    Prepares the data for the training / evaluation process.
 
     :param train_data_path: path to read training data from
     :param val_data_path: path to read validation data from
+    :param test_data_path: path to read test data from
     :param keras_model: whether the data is prepared for a keras model
-    :return: (x_train, y_train, x_val, y_val)
+    :return: (x_train, y_train, x_val, y_val, x_test, y_test)
     """
     data = TrainingData(np.load(train_data_path, allow_pickle=True))
     x_train = data[:][0]
@@ -225,25 +226,18 @@ def prepare_data(train_data_path, val_data_path, keras_model):
     x_val = val_data[:][0]
     y_val = val_data[:][1]
 
-    return x_train, y_train, x_val.astype('float32'), y_val.astype('float32')
-
-
-def evaluate_model(test_data_path, model):
-    """
-    Initiates model evaluation.
-
-    :param test_data_path: path to read test data from
-    :param model: trained model to be evaluated
-    """
+    # read test data
     test_data = TrainingData(np.load(test_data_path, allow_pickle=True))
     x_test = test_data[:][0]
     y_test = test_data[:][1]
-    evaluate_model_on_test_data(x_test.astype('float32'), y_test.astype('float32'), model)
+
+    return x_train, y_train, x_val.astype('float32'), y_val.astype('float32'), \
+        x_test.astype('float32'), y_test.astype('float32')
 
 
 def train_procedure(train_path, val_path, test_path, hyperparameter_config=run_config.hyperparameter_config):
     """
-    Initiates the training procedure.
+    Initiates the training and evaluation procedures.
 
     :param train_path: path to training data
     :param val_path: path to validation data
@@ -252,15 +246,14 @@ def train_procedure(train_path, val_path, test_path, hyperparameter_config=run_c
     """
     set_up_wandb(hyperparameter_config)
     keras_model = wandb.config["model"] in ["FCN", "ResNet"]
-    x_train, y_train, x_val, y_val = prepare_data(train_path, val_path, keras_model)
+    x_train, y_train, x_val, y_val, x_test, y_test = prepare_data(train_path, val_path, test_path, keras_model)
     model = models.create_model(x_train.shape[1:], len(np.unique(y_train)), architecture=wandb.config["model"])
 
     if 'keras' in str(type(model)):
         keras.utils.plot_model(model, to_file="img/model.png", show_shapes=True)
 
     train_model(model, x_train, y_train, x_val, y_val)
-
-    evaluate_model(test_path, model)
+    evaluate_model_on_test_data(x_test, y_test, model)
 
 
 def file_path(path):
