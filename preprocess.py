@@ -145,12 +145,13 @@ def pandas_feature_extraction(df, labels):
     )
 
 
-def pandas_feature_extraction_manual(df, labels):
+def pandas_feature_extraction_manual(df, labels, data_type):
     """
     Performs feature extraction / selection using tsfresh (all steps manually).
 
     :param df: pandas dataframe (set of time series)
     :param labels: corresponding labels
+    :param data_type: train | test | validation
     :return: (filtered features, all extracted features)
     """
     print("ext. features..")
@@ -167,8 +168,8 @@ def pandas_feature_extraction_manual(df, labels):
     print(filtered_features)
 
     print("saving to csv..")
-    extracted_features.to_csv('data/extracted_features.csv', encoding='utf-8', index=False)
-    filtered_features.to_csv('data/filtered_features.csv', encoding='utf-8', index=False)
+    extracted_features.to_csv('data/%s_extracted_features.csv' % data_type, encoding='utf-8', index=False)
+    filtered_features.to_csv('data/%s_filtered_features.csv' % data_type, encoding='utf-8', index=False)
 
     # print("settings:")
     # kind_to_fc_params = tsfresh.feature_extraction.settings.from_columns(filtered_features)
@@ -233,7 +234,7 @@ def create_feature_vector_dataset(data_path, data_type):
 
     # features = dask_feature_extraction_for_large_input_data(df, 4, on_chunk=False, simple_return=True)
     # features = pandas_feature_extraction(df, labels)
-    filtered_features, all_extracted_features = pandas_feature_extraction_manual(df, labels)
+    filtered_features, all_extracted_features = pandas_feature_extraction_manual(df, labels, data_type)
     print(filtered_features.head())
 
     filtered_feature_columns = np.array(filtered_features.columns)
@@ -241,11 +242,11 @@ def create_feature_vector_dataset(data_path, data_type):
 
     res_feature_vectors = filtered_features.to_numpy()
     print(res_feature_vectors)
-    np.savez("data/%s_filtered_feature_vectors.npz" % data_type, res_feature_vectors, labels.to_numpy())
-    np.savez("data/%s_list_of_features_filtered.npz" % data_type, filtered_feature_columns)
+    np.savez("data/%s_filtered_feature_vectors.npz" % data_type,
+             res_feature_vectors, labels.to_numpy(), filtered_feature_columns)
     res_complete_feature_vectors = all_extracted_features.to_numpy()
-    np.savez("data/%s_complete_feature_vectors.npz" % data_type, res_complete_feature_vectors, labels.to_numpy())
-    np.savez("data/%s_list_of_features_complete.npz" % data_type, complete_feature_columns)
+    np.savez("data/%s_complete_feature_vectors.npz" % data_type,
+             res_complete_feature_vectors, labels.to_numpy(), complete_feature_columns)
 
 
 def create_dataset(z_norm, diff_format, data_path, data_type, feature_extraction):
