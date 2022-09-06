@@ -200,6 +200,9 @@ def perform_consistency_check(train_data, val_data, test_data, z_train, z_val, z
         - if the data consists of feature vectors, all three sets should contain
           exactly the same features in the same order
 
+    The underlying assumption is that we always should extract the same features for training, testing,
+    and finally when applying the trained model.
+
     :param train_data: training dataset
     :param val_data: validation dataset
     :param test_data: test dataset
@@ -228,6 +231,8 @@ def prepare_data(train_data_path, val_data_path, test_data_path, keras_model):
     :param keras_model: whether the data is prepared for a keras model
     :return: (x_train, y_train, x_val, y_val, x_test, y_test)
     """
+    z_train = z_val = z_test = []
+
     data = TrainingData(np.load(train_data_path, allow_pickle=True))
     x_train = data[:][0]
     y_train = data[:][1]
@@ -265,7 +270,7 @@ def prepare_data(train_data_path, val_data_path, test_data_path, keras_model):
     perform_consistency_check(data, val_data, test_data, z_train, z_val, z_test)
 
     return x_train, y_train, x_val.astype('float32'), y_val.astype('float32'), \
-        x_test.astype('float32'), y_test.astype('float32')
+           x_test.astype('float32'), y_test.astype('float32')
 
 
 def train_procedure(train_path, val_path, test_path, hyperparameter_config=run_config.hyperparameter_config):
