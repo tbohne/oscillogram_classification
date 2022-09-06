@@ -193,6 +193,31 @@ def evaluate_model_on_test_data(x_test, y_test, model):
             print(res_dict[k])
 
 
+def perform_consistency_check(train_data, val_data, test_data, z_train, z_val, z_test):
+    """
+    Performs a consistency check for the provided data:
+        - all three (train, val, test) should either provide feature info or not
+        - if the data consists of feature vectors, all three sets should contain
+          exactly the same features in the same order
+
+    :param train_data: training dataset
+    :param val_data: validation dataset
+    :param test_data: test dataset
+    :param z_train: features of the training dataset (or empty)
+    :param z_val: features of the validation dataset (or empty)
+    :param z_test: features of the test dataset (or empty)
+    """
+    print("performing consistency check..")
+    # equal number of dimensions (either all have feature info or none)
+    assert len(train_data[:]) == len(val_data[:]) == len(test_data[:])
+    # equal number of considered features
+    assert len(z_train) == len(z_val) == len(z_test)
+    # check whether all features are the same (+ same order)
+    for i in range(len(z_train)):
+        assert z_train[i] == z_val[i] == z_test[i]
+    print("consistency check passed..")
+
+
 def prepare_data(train_data_path, val_data_path, test_data_path, keras_model):
     """
     Prepares the data for the training / evaluation process.
@@ -206,6 +231,8 @@ def prepare_data(train_data_path, val_data_path, test_data_path, keras_model):
     data = TrainingData(np.load(train_data_path, allow_pickle=True))
     x_train = data[:][0]
     y_train = data[:][1]
+    if len(data[:]) == 3:
+        z_train = data[:][2]
 
     visualize_n_samples_per_class(x_train, y_train)
 
@@ -225,11 +252,17 @@ def prepare_data(train_data_path, val_data_path, test_data_path, keras_model):
     val_data = TrainingData(np.load(val_data_path, allow_pickle=True))
     x_val = val_data[:][0]
     y_val = val_data[:][1]
+    if len(val_data[:]) == 3:
+        z_val = data[:][2]
 
     # read test data
     test_data = TrainingData(np.load(test_data_path, allow_pickle=True))
     x_test = test_data[:][0]
     y_test = test_data[:][1]
+    if len(test_data[:]) == 3:
+        z_test = test_data[:][2]
+
+    perform_consistency_check(data, val_data, test_data, z_train, z_val, z_test)
 
     return x_train, y_train, x_val.astype('float32'), y_val.astype('float32'), \
         x_test.astype('float32'), y_test.astype('float32')
