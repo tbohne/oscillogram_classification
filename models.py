@@ -3,6 +3,7 @@
 # @author Tim Bohne, Patricia Windler
 
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.neural_network import MLPClassifier
 from tensorflow import keras
 
@@ -131,6 +132,8 @@ def create_model(input_shape, num_classes, architecture="FCN"):
     elif architecture == "RandomForest":
         return RandomForestClassifier(verbose=1)
     elif architecture == "MLP":
-        return MLPClassifier(activation="relu", verbose=1, n_iter_no_change=50)
+        return MLPClassifier(verbose=1, random_state=1, n_iter_no_change=3000, max_iter=100000)
+    elif architecture == "DecisionTree":
+        return DecisionTreeClassifier(max_depth=None)
     else:
         raise ValueError("Unknown model architecture: " + architecture)
