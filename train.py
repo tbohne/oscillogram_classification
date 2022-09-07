@@ -250,6 +250,9 @@ def prepare_data(train_data_path, val_data_path, test_data_path, keras_model):
     """
     z_train = z_val = z_test = []
 
+    # avoid calls with .csv data
+    assert '.npz' in train_data_path and '.npz' in val_data_path and '.npz' in test_data_path
+
     data = TrainingData(np.load(train_data_path, allow_pickle=True))
     x_train = data[:][0]
     y_train = data[:][1]
