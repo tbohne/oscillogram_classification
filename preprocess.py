@@ -161,14 +161,17 @@ def pandas_feature_extraction_manual(df, labels, data_type):
     print("impute..")
     impute(extracted_features)
 
-    print("select relevant features..")
-    filtered_features = select_features(extracted_features, labels)
-    print("selected features:")
-    print(filtered_features)
+    filtered_features = None
+    # filtering is based on statistics and requires at least more than 1 sample
+    if len(labels) > 1:
+        print("select relevant features..")
+        filtered_features = select_features(extracted_features, labels)
+        print("selected features:")
+        print(filtered_features)
+        filtered_features.to_csv('data/%s_filtered_features.csv' % data_type, encoding='utf-8', index=False)
 
     print("saving to csv..")
     extracted_features.to_csv('data/%s_extracted_features.csv' % data_type, encoding='utf-8', index=False)
-    filtered_features.to_csv('data/%s_filtered_features.csv' % data_type, encoding='utf-8', index=False)
 
     # print("settings:")
     # kind_to_fc_params = tsfresh.feature_extraction.settings.from_columns(filtered_features)
@@ -234,15 +237,17 @@ def create_feature_vector_dataset(data_path, data_type):
     # features = dask_feature_extraction_for_large_input_data(df, 4, on_chunk=False, simple_return=True)
     # features = pandas_feature_extraction(df, labels)
     filtered_features, all_extracted_features = pandas_feature_extraction_manual(df, labels, data_type)
-    print(filtered_features.head())
 
-    filtered_feature_columns = np.array(filtered_features.columns)
+    # filtered features only provided when sample size is large enough
+    if filtered_features is not None:
+        print(filtered_features.head())
+        filtered_feature_columns = np.array(filtered_features.columns)
+        res_feature_vectors = filtered_features.to_numpy()
+        print(res_feature_vectors)
+        np.savez("data/%s_filtered_feature_vectors.npz" % data_type,
+                 res_feature_vectors, labels.to_numpy(), filtered_feature_columns)
+
     complete_feature_columns = np.array(all_extracted_features.columns)
-
-    res_feature_vectors = filtered_features.to_numpy()
-    print(res_feature_vectors)
-    np.savez("data/%s_filtered_feature_vectors.npz" % data_type,
-             res_feature_vectors, labels.to_numpy(), filtered_feature_columns)
     res_complete_feature_vectors = all_extracted_features.to_numpy()
     np.savez("data/%s_complete_feature_vectors.npz" % data_type,
              res_complete_feature_vectors, labels.to_numpy(), complete_feature_columns)
