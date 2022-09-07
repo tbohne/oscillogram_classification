@@ -267,9 +267,6 @@ def prepare_data(train_data_path, val_data_path, test_data_path, keras_model):
     x_train = x_train[idx]
     y_train = y_train[idx]
 
-    x_train = np.asarray(x_train).astype('float32')
-    y_train = np.asarray(y_train)
-
     # read validation data
     val_data = TrainingData(np.load(val_data_path, allow_pickle=True))
     x_val = val_data[:][0]
@@ -286,7 +283,7 @@ def prepare_data(train_data_path, val_data_path, test_data_path, keras_model):
 
     perform_consistency_check(data, val_data, test_data, z_train, z_val, z_test)
 
-    return x_train, y_train, x_val.astype('float32'), y_val, x_test.astype('float32'), y_test
+    return x_train.astype('float32'), y_train, x_val.astype('float32'), y_val, x_test.astype('float32'), y_test
 
 
 def train_procedure(train_path, val_path, test_path, hyperparameter_config=run_config.hyperparameter_config):
