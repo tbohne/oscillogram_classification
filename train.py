@@ -8,7 +8,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import wandb
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score, classification_report, precision_score
 from tensorflow import keras
 from wandb.keras import WandbCallback
 
@@ -95,6 +95,7 @@ def train_model(model, x_train, y_train, x_val, y_val):
     :param y_train: corresponding training labels
     :param x_val: validation samples
     :param y_val: corresponding validation labels
+    :return trained model
     """
     print("training model:")
     print("total training samples:", len(x_train))
@@ -126,8 +127,11 @@ def train_model(model, x_train, y_train, x_val, y_val):
 
     if 'keras' in str(type(model)):
         train_keras_model(model, x_train, y_train, x_val, y_val)
+        return model
     else:
-        model.fit(x_train, y_train)
+        print("neurons of input layer:", len(x_train[0]))
+        print("neurons of output layer:", len(np.unique(y_train)))
+        return model.fit(x_train, y_train)
 
 
 def plot_training_and_validation_loss(history):
@@ -178,6 +182,11 @@ def evaluate_model_on_test_data(x_test, y_test, model):
     # test samples should match model input length
     assert x_test.shape[1] == expected_feature_vector_len
 
+    # shuffle test data
+    idx = np.random.permutation(len(x_test))
+    x_test = x_test[idx]
+    y_test = y_test[idx]
+
     if 'keras' in str(type(model)):
         test_loss, test_acc = model.evaluate(x_test, y_test)
         print("test accuracy:", test_acc)
@@ -185,7 +194,15 @@ def evaluate_model_on_test_data(x_test, y_test, model):
         wandb.log({"test_loss": test_loss, "test_accuracy": test_acc})
     else:
         y_pred_test = model.predict(x_test)
+        # accuracy score -> set of labels predicted for a sample must exactly match the corresponding set of labels
+        print("YTEST:")
+        print(y_test)
+        print("YPRED:")
+        print(y_pred_test)
         print("test accuracy:", accuracy_score(y_test, y_pred_test))
+        print("score:", model.score(x_test, y_test))
+        # precision -> ability of the classifier not to label as positive a sample that is negative
+        print("precision:", precision_score(y_test, y_pred_test))
         print("CLASSIFICATION REPORT:")
         res_dict = classification_report(y_test, y_pred_test, output_dict=True)
         for k in res_dict.keys():
@@ -251,7 +268,7 @@ def prepare_data(train_data_path, val_data_path, test_data_path, keras_model):
     y_train = y_train[idx]
 
     x_train = np.asarray(x_train).astype('float32')
-    y_train = np.asarray(y_train).astype('float32')
+    y_train = np.asarray(y_train)
 
     # read validation data
     val_data = TrainingData(np.load(val_data_path, allow_pickle=True))
@@ -269,8 +286,7 @@ def prepare_data(train_data_path, val_data_path, test_data_path, keras_model):
 
     perform_consistency_check(data, val_data, test_data, z_train, z_val, z_test)
 
-    return x_train, y_train, x_val.astype('float32'), y_val.astype('float32'), \
-           x_test.astype('float32'), y_test.astype('float32')
+    return x_train, y_train, x_val.astype('float32'), y_val, x_test.astype('float32'), y_test
 
 
 def train_procedure(train_path, val_path, test_path, hyperparameter_config=run_config.hyperparameter_config):
@@ -290,8 +306,8 @@ def train_procedure(train_path, val_path, test_path, hyperparameter_config=run_c
     if 'keras' in str(type(model)):
         keras.utils.plot_model(model, to_file="img/model.png", show_shapes=True)
 
-    train_model(model, x_train, y_train, x_val, y_val)
-    evaluate_model_on_test_data(x_test, y_test, model)
+    trained_model = train_model(model, x_train, y_train, x_val, y_val)
+    evaluate_model_on_test_data(x_test, y_test, trained_model)
 
 
 def file_path(path):
