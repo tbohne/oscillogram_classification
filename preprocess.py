@@ -10,7 +10,6 @@ from pathlib import Path
 import dask.dataframe as dd
 import numpy as np
 import pandas as pd
-import tsfresh.feature_extraction.settings
 from tsfresh import extract_features
 from tsfresh import extract_relevant_features
 from tsfresh import select_features
@@ -285,7 +284,7 @@ if __name__ == '__main__':
     parser.add_argument('--znorm', action='store_true', help='z-normalize time series')
     parser.add_argument('--diff_format', action='store_true', help='using the "only voltage" format')
     parser.add_argument('--path', type=dir_path, required=True, help='path to the data to be processed')
-    parser.add_argument('--feature_extraction', action='store_true', help='apply feature extraction')
+    parser.add_argument('--feature_extraction', action='store_true', help='apply feature extraction (and selection)')
     parser.add_argument(
         '--type', action='store', type=str, help='type of data: ["training", "validation", "test"]', required=True)
 

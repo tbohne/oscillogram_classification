@@ -75,10 +75,14 @@ Currently supported models: `FCN`, `ResNet`, `RandomForest`, `MLP`, `DecisionTre
 ```
 $ python preprocess.py [--znorm] [--diff_format] [--feature_extraction] --path /DATA --type {training | validation | test}
 ```
+*Note: In the event of `feature_extraction`, in addition to the actual generated records, two csv files (e.g. `training_extracted_features.csv`) are generated, which contain the list of the features considered in each case.*
+
 **Training**
 ```
 $ python train.py --train_path TRAIN_DATA.npz --val_path VAL_DATA.npz --test_path TEST_DATA.npz
 ```
+*Note: Before training, a consistency check is performed, which is particularly relevant for training on feature vectors. It is checked whether each of the datasets (train, test, validation) contains exactly the same features in the same order.*
+
 **Class Activation / Saliency Map Generation**
 ```
 $ python cam.py [--znorm] [--diff_format] [--overlay] --method {gradcam | hirescam | tf-keras-gradcam | tf-keras-gradcam++ | tf-keras-scorecam | tf-keras-layercam | tf-keras-smoothgrad | all} --sample_path SAMPLE.csv --model_path MODEL.h5
