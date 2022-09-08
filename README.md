@@ -75,7 +75,7 @@ Currently supported models: `FCN`, `ResNet`, `RandomForest`, `MLP`, `DecisionTre
 ```
 $ python preprocess.py [--znorm] [--diff_format] [--feature_extraction] [--feature_list] --path /DATA --type {training | validation | test}
 ```
-*Note: In the event of `feature_extraction`, in addition to the actual generated records, csv files (e.g. `training_extracted_features.csv`) are generated, which contain the list of the features considered in each case.*
+*Note: In the event of `feature_extraction`, in addition to the actual generated records, csv files (e.g. `training_complete_features.csv`) are generated, which contain the list of the features considered in each case.*
 
 **Manual Feature Selection**
 
@@ -85,7 +85,7 @@ The training datasets were created with the `--feature_extraction` option, resul
 ```
 training_complete_feature_vectors.npz
 training_filtered_feature_vectors.npz
-training_extracted_features.csv
+training_complete_features.csv
 training_filtered_features.csv
 ```
 Now the model is to be trained using the filtered features. The validation dataset should correspond to this feature selection and thus be generated as follows:
