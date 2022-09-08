@@ -279,6 +279,8 @@ def create_feature_vector_dataset(data_path, data_type, feature_list):
         manually_filtered_features = filter_extracted_features_based_on_list(feature_list, all_extracted_features)
         filtered_feature_columns = np.array(manually_filtered_features.columns)
         print("number of features:", len(filtered_feature_columns))
+        manually_filtered_features.to_csv(
+            'data/%s_manually_filtered_features.csv' % data_type, encoding='utf-8', index=False)
         manually_filtered_features = manually_filtered_features.to_numpy()
         np.savez("data/%s_manually_filtered_feature_vectors.npz" % data_type,
                  manually_filtered_features, labels.to_numpy(), filtered_feature_columns)
