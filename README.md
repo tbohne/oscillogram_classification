@@ -73,9 +73,26 @@ Currently supported models: `FCN`, `ResNet`, `RandomForest`, `MLP`, `DecisionTre
 
 **Preprocessing**
 ```
-$ python preprocess.py [--znorm] [--diff_format] [--feature_extraction] --path /DATA --type {training | validation | test}
+$ python preprocess.py [--znorm] [--diff_format] [--feature_extraction] [--feature_list] --path /DATA --type {training | validation | test}
 ```
-*Note: In the event of `feature_extraction`, in addition to the actual generated records, two csv files (e.g. `training_extracted_features.csv`) are generated, which contain the list of the features considered in each case.*
+*Note: In the event of `feature_extraction`, in addition to the actual generated records, csv files (e.g. `training_extracted_features.csv`) are generated, which contain the list of the features considered in each case.*
+
+**Manual Feature Selection**
+
+When training the model using feature vectors, it is critical that the test, validation, and finally the application data contain the same set of features as those used for training. This can be achieved by manual feature selection, which is shown in the following example:
+
+The training datasets were created with the `--feature_extraction` option, resulting in the following files:
+```
+training_complete_feature_vectors.npz
+training_filtered_feature_vectors.npz
+training_extracted_features.csv
+training_filtered_features.csv
+```
+Now the model is to be trained using the filtered features. The validation dataset should correspond to this feature selection and thus be generated as follows:
+```
+$ python preprocess.py --path /VALIDATION_DATA --feature_extraction --feature_list data/training_filtered_features.csv --type validation
+```
+This in turn leads to a set of files corresponding to the different feature vectors. In the described scenario, the file to be used for training would be `validation_manually_filtered_feature_vectors.npz`. The generation of the test data set works analogously.
 
 **Training**
 ```
