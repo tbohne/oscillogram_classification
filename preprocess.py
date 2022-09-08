@@ -171,7 +171,7 @@ def pandas_feature_extraction_manual(df, labels, data_type):
         filtered_features.to_csv('data/%s_filtered_features.csv' % data_type, encoding='utf-8', index=False)
 
     print("saving to csv..")
-    extracted_features.to_csv('data/%s_extracted_features.csv' % data_type, encoding='utf-8', index=False)
+    extracted_features.to_csv('data/%s_complete_features.csv' % data_type, encoding='utf-8', index=False)
 
     # print("settings:")
     # kind_to_fc_params = tsfresh.feature_extraction.settings.from_columns(filtered_features)
