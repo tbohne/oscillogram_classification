@@ -213,6 +213,10 @@ def filter_extracted_features_based_on_list(feature_list, all_extracted_features
     """
     to_drop = [feature for feature in all_extracted_features.columns if feature not in feature_list]
     filtered_features = all_extracted_features.drop(columns=to_drop)
+
+    # establish same order of features as in feature list (e.g. as in training set)
+    filtered_features = filtered_features.reindex(columns=feature_list)
+
     assert len(filtered_features.columns.to_numpy()) == len(feature_list)
     return filtered_features
 
@@ -343,5 +347,7 @@ if __name__ == '__main__':
         '--type', action='store', type=str, help='type of data: ["training", "validation", "test"]', required=True)
 
     args = parser.parse_args()
-    list_of_features = pd.read_csv(args.feature_list).columns.to_numpy()
+    list_of_features = None
+    if args.feature_list is not None:
+        list_of_features = pd.read_csv(args.feature_list).columns.to_numpy()
     create_dataset(args.znorm, args.diff_format, args.path, args.type, args.feature_extraction, list_of_features)
