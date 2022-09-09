@@ -152,13 +152,15 @@ def plot_training_and_validation_loss(history):
     plt.close()
 
 
-def evaluate_model_on_test_data(x_test, y_test, model):
+def evaluate_model_on_test_data(x_test, y_test, model, x_train, y_train):
     """
     Evaluates the trained model on the specified test data.
 
     :param x_test: test samples
-    :param y_test: corresponding labels
+    :param y_test: test labels
     :param model: trained model to be evaluated
+    :param x_train: trainings samples
+    :param y_train: training labels
     """
     print("evaluating model:")
     print("total test samples:", len(x_test))
@@ -194,13 +196,16 @@ def evaluate_model_on_test_data(x_test, y_test, model):
         wandb.log({"test_loss": test_loss, "test_accuracy": test_acc})
     else:
         y_pred_test = model.predict(x_test)
+        y_pred_train = model.predict(x_train)
         # accuracy score -> set of labels predicted for a sample must exactly match the corresponding set of labels
         print("YTEST:")
         print(y_test)
         print("YPRED:")
         print(y_pred_test)
-        print("test accuracy:", accuracy_score(y_test, y_pred_test))
-        print("score:", model.score(x_test, y_test))
+        print("----------------------------------------------------------------------------")
+        print("accuracy on training data:", accuracy_score(y_train, y_pred_train))
+        print("accuracy on test data:", accuracy_score(y_test, y_pred_test))
+        print("----------------------------------------------------------------------------")
         # precision -> ability of the classifier not to label as positive a sample that is negative
         print("precision:", precision_score(y_test, y_pred_test))
         print("CLASSIFICATION REPORT:")
@@ -307,7 +312,7 @@ def train_procedure(train_path, val_path, test_path, hyperparameter_config=run_c
         keras.utils.plot_model(model, to_file="img/model.png", show_shapes=True)
 
     trained_model = train_model(model, x_train, y_train, x_val, y_val)
-    evaluate_model_on_test_data(x_test, y_test, trained_model)
+    evaluate_model_on_test_data(x_test, y_test, trained_model, x_train, y_train)
 
 
 def file_path(path):
