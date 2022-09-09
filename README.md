@@ -92,7 +92,7 @@ Now the model is to be trained using the filtered features. The validation datas
 ```
 $ python preprocess.py --path /VALIDATION_DATA --feature_extraction --feature_list data/training_filtered_features.csv --type validation
 ```
-This in turn leads to a set of files corresponding to the different feature vectors. In the described scenario, the file to be used for training would be `validation_manually_filtered_feature_vectors.npz`. The generation of the test data set works analogously.
+This in turn leads to a set of files corresponding to the different feature vectors. In the described scenario, the file to be used for training would be `validation_manually_filtered_feature_vectors.npz`. The generation of the test dataset works analogously.
 
 **Training**
 ```

@@ -204,10 +204,7 @@ def evaluate_model_on_test_data(x_test, y_test, model):
         # precision -> ability of the classifier not to label as positive a sample that is negative
         print("precision:", precision_score(y_test, y_pred_test))
         print("CLASSIFICATION REPORT:")
-        res_dict = classification_report(y_test, y_pred_test, output_dict=True)
-        for k in res_dict.keys():
-            print("k:", k)
-            print(res_dict[k])
+        print(classification_report(y_test, y_pred_test))
 
 
 def perform_consistency_check(train_data, val_data, test_data, z_train, z_val, z_test):
