@@ -132,7 +132,8 @@ def create_model(input_shape, num_classes, architecture="FCN"):
     elif architecture == "RandomForest":
         return RandomForestClassifier(verbose=1, n_estimators=5000, max_depth=1000, random_state=42)
     elif architecture == "MLP":
-        return MLPClassifier(verbose=1, random_state=1, max_iter=100000, n_iter_no_change=500, batch_size=32, hidden_layer_sizes=(16,))
+        return MLPClassifier(verbose=1, random_state=1, max_iter=100000, n_iter_no_change=500, batch_size=32,
+                             hidden_layer_sizes=(16,))
     elif architecture == "DecisionTree":
         return DecisionTreeClassifier(criterion='entropy')
     else:
