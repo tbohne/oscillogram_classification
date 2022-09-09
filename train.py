@@ -295,10 +295,13 @@ def train_procedure(train_path, val_path, test_path, hyperparameter_config=run_c
     :param test_path: path to test data
     :param hyperparameter_config: hyperparameter specification
     """
-    set_up_wandb(hyperparameter_config)
-    keras_model = wandb.config["model"] in ["FCN", "ResNet"]
+    keras_model = hyperparameter_config["model"] in ["FCN", "ResNet"]
+
+    if keras_model:
+        set_up_wandb(hyperparameter_config)
+
     x_train, y_train, x_val, y_val, x_test, y_test = prepare_data(train_path, val_path, test_path, keras_model)
-    model = models.create_model(x_train.shape[1:], len(np.unique(y_train)), architecture=wandb.config["model"])
+    model = models.create_model(x_train.shape[1:], len(np.unique(y_train)), architecture=hyperparameter_config["model"])
 
     if 'keras' in str(type(model)):
         keras.utils.plot_model(model, to_file="img/model.png", show_shapes=True)
