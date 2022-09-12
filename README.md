@@ -119,6 +119,9 @@ $ python run_sweep.py --train_path TRAIN_DATA.npz --val_path VAL_DATA.npz --test
 ### Battery (Engine Starting Process)
 <img src="img/example.png" width="420">
 
+### Air Flow Meter
+<img src="img/air_flow_meter.png" width="420">
+
 ## Training and Validation Loss
 
 ### Mini-Batch Gradient Descent
