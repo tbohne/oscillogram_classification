@@ -8,6 +8,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import wandb
+from sklearn.metrics import accuracy_score, classification_report, precision_score
 from tensorflow import keras
 from wandb.keras import WandbCallback
 
@@ -48,26 +49,16 @@ def visualize_n_samples_per_class(x, y):
         plt.close()
 
 
-def train_model(model, x_train, y_train, x_val, y_val):
+def train_keras_model(model, x_train, y_train, x_val, y_val):
     """
-    Trains the CNN model.
+    Trains the specified Keras model on the specified data.
 
-    :param model: CNN model to be trained
-    :param x_train: training samples
-    :param y_train: corresponding training labels
-    :param x_val: validation samples
-    :param y_val: corresponding validation labels
+    :param model: model to be trained
+    :param x_train: training data samples
+    :param y_train: training data labels
+    :param x_val: validation data samples
+    :param y_val: validation data labels
     """
-    print("training model:")
-    print("total training samples:", len(x_train))
-    for c in np.unique(y_train, axis=0):
-        assert len(x_train[y_train == c]) > 0
-        print("training samples for class", str(c), ":", len(x_train[y_train == c]))
-    print("total validation samples:", len(x_val))
-    for c in np.unique(y_val, axis=0):
-        assert len(x_val[y_val == c]) > 0
-        print("validation samples for class", str(c), ":", len(x_val[y_val == c]))
-
     callbacks = [
         keras.callbacks.ModelCheckpoint("best_model.h5", save_best_only=True, monitor="val_loss"),
         keras.callbacks.ReduceLROnPlateau(monitor="val_loss", factor=0.5, patience=20, min_lr=0.0001),
@@ -95,6 +86,54 @@ def train_model(model, x_train, y_train, x_val, y_val):
     plot_training_and_validation_loss(history)
 
 
+def train_model(model, x_train, y_train, x_val, y_val):
+    """
+    Trains the selected model (classifier).
+
+    :param model: model to be trained
+    :param x_train: training samples
+    :param y_train: corresponding training labels
+    :param x_val: validation samples
+    :param y_val: corresponding validation labels
+    :return trained model
+    """
+    print("training model:")
+    print("total training samples:", len(x_train))
+    for c in np.unique(y_train, axis=0):
+        assert len(x_train[y_train == c]) > 0
+        print("training samples for class", str(c), ":", len(x_train[y_train == c]))
+    print("total validation samples:", len(x_val))
+    for c in np.unique(y_val, axis=0):
+        assert len(x_val[y_val == c]) > 0
+        print("validation samples for class", str(c), ":", len(x_val[y_val == c]))
+
+    x_train = np.squeeze(x_train)
+    x_val = np.squeeze(x_val)
+
+    print("train shape:", x_train.shape)
+    print("val shape:", x_val.shape)
+
+    if x_train.shape[1] > x_val.shape[1]:
+        # pad validation feature vector
+        x_val = np.pad(x_val, ((0, 0), (0, x_train.shape[1] - x_val.shape[1])), mode='constant')
+    elif x_val.shape[1] > x_train.shape[1]:
+        # pad training feature vector
+        x_train = np.pad(x_train, ((0, 0), (0, x_val.shape[1] - x_train.shape[1])), mode='constant')
+
+    print("train shape:", x_train.shape)
+    print("val shape:", x_val.shape)
+
+    assert x_train.shape[1] == x_val.shape[1]
+
+    if 'keras' in str(type(model)):
+        train_keras_model(model, x_train, y_train, x_val, y_val)
+        return model
+    else:
+        print("neurons of input layer:", len(x_train[0]))
+        print("neurons of output layer:", len(np.unique(y_train)))
+        return model.fit(x_train, y_train)
+
+
 def plot_training_and_validation_loss(history):
     """
     Plots the learning curves.
@@ -113,12 +152,15 @@ def plot_training_and_validation_loss(history):
     plt.close()
 
 
-def evaluate_model_on_test_data(x_test, y_test):
+def evaluate_model_on_test_data(x_test, y_test, model, x_train, y_train):
     """
     Evaluates the trained model on the specified test data.
 
     :param x_test: test samples
-    :param y_test: corresponding labels
+    :param y_test: test labels
+    :param model: trained model to be evaluated
+    :param x_train: trainings samples
+    :param y_train: training labels
     """
     print("evaluating model:")
     print("total test samples:", len(x_test))
@@ -126,75 +168,151 @@ def evaluate_model_on_test_data(x_test, y_test):
         assert len(x_test[y_test == c]) > 0
         print("test samples for class", str(c), ":", len(x_test[y_test == c]))
 
-    trained_model = keras.models.load_model("best_model.h5")
+    print("x_test shape:", x_test.shape)
+
+    if 'keras' in str(type(model)):
+        # should be the same, but read from file
+        model = keras.models.load_model("best_model.h5")
+        expected_feature_vector_len = model.layers[0].output_shape[0][1]
+    else:
+        expected_feature_vector_len = model.n_features_in_
+
+    # feature vectors not necessarily of same length
+    if x_test.shape[1] < expected_feature_vector_len:
+        # pad feature vector
+        x_test = np.pad(x_test, ((0, 0), (0, expected_feature_vector_len - x_test.shape[1])), mode='constant')
     # test samples should match model input length
-    assert x_test.shape[1] == trained_model.layers[0].output_shape[0][1]
-    # TODO: think about whether it should be able to deal with not matching input lengths
-    #       if so: x_test[:, :trained_model.layers[0].output_shape[0][1]]
-    test_loss, test_acc = trained_model.evaluate(x_test, y_test)
-    print("test accuracy:", test_acc)
-    print("test loss:", test_loss)
-    wandb.log({"test_loss": test_loss, "test_accuracy": test_acc})
+    assert x_test.shape[1] == expected_feature_vector_len
+
+    # shuffle test data
+    idx = np.random.permutation(len(x_test))
+    x_test = x_test[idx]
+    y_test = y_test[idx]
+
+    if 'keras' in str(type(model)):
+        test_loss, test_acc = model.evaluate(x_test, y_test)
+        print("test accuracy:", test_acc)
+        print("test loss:", test_loss)
+        wandb.log({"test_loss": test_loss, "test_accuracy": test_acc})
+    else:
+        y_pred_test = model.predict(x_test)
+        y_pred_train = model.predict(x_train)
+        # accuracy score -> set of labels predicted for a sample must exactly match the corresponding set of labels
+        print("YTEST:")
+        print(y_test)
+        print("YPRED:")
+        print(y_pred_test)
+        print("----------------------------------------------------------------------------")
+        print("accuracy on training data:", accuracy_score(y_train, y_pred_train))
+        print("accuracy on test data:", accuracy_score(y_test, y_pred_test))
+        print("----------------------------------------------------------------------------")
+        # precision -> ability of the classifier not to label as positive a sample that is negative
+        print("precision:", precision_score(y_test, y_pred_test))
+        print("CLASSIFICATION REPORT:")
+        print(classification_report(y_test, y_pred_test))
 
 
-def prepare_and_train_model(train_data_path, val_data_path):
+def perform_consistency_check(train_data, val_data, test_data, z_train, z_val, z_test):
     """
-    Prepares and initiates the training process.
+    Performs a consistency check for the provided data:
+        - all three (train, val, test) should either provide feature info or not
+        - if the data consists of feature vectors, all three sets should contain
+          exactly the same features in the same order
+
+    The underlying assumption is that we always should extract the same features for training, testing,
+    and finally when applying the trained model.
+
+    :param train_data: training dataset
+    :param val_data: validation dataset
+    :param test_data: test dataset
+    :param z_train: features of the training dataset (or empty)
+    :param z_val: features of the validation dataset (or empty)
+    :param z_test: features of the test dataset (or empty)
+    """
+    print("performing consistency check..")
+    # equal number of dimensions (either all have feature info or none)
+    assert len(train_data[:]) == len(val_data[:]) == len(test_data[:])
+    # equal number of considered features
+    assert len(z_train) == len(z_val) == len(z_test)
+    # check whether all features are the same (+ same order)
+    for i in range(len(z_train)):
+        assert z_train[i] == z_val[i] == z_test[i]
+    print("consistency check passed..")
+
+
+def prepare_data(train_data_path, val_data_path, test_data_path, keras_model):
+    """
+    Prepares the data for the training / evaluation process.
 
     :param train_data_path: path to read training data from
     :param val_data_path: path to read validation data from
+    :param test_data_path: path to read test data from
+    :param keras_model: whether the data is prepared for a keras model
+    :return: (x_train, y_train, x_val, y_val, x_test, y_test)
     """
+    z_train = z_val = z_test = []
+
+    # avoid calls with .csv data
+    assert '.npz' in train_data_path and '.npz' in val_data_path and '.npz' in test_data_path
+
     data = TrainingData(np.load(train_data_path, allow_pickle=True))
     x_train = data[:][0]
     y_train = data[:][1]
+    if len(data[:]) == 3:
+        z_train = data[:][2]
 
     visualize_n_samples_per_class(x_train, y_train)
 
-    # generally applicable to multivariate time series
-    x_train = x_train.reshape((x_train.shape[0], x_train.shape[1], 1))
+    if keras_model:
+        # generally applicable to multivariate time series
+        x_train = x_train.reshape((x_train.shape[0], x_train.shape[1], 1))
 
     # shuffle training set
     idx = np.random.permutation(len(x_train))
     x_train = x_train[idx]
     y_train = y_train[idx]
 
-    x_train = np.asarray(x_train).astype('float32')
-    y_train = np.asarray(y_train).astype('float32')
-
     # read validation data
     val_data = TrainingData(np.load(val_data_path, allow_pickle=True))
     x_val = val_data[:][0]
     y_val = val_data[:][1]
+    if len(val_data[:]) == 3:
+        z_val = data[:][2]
 
-    model = models.create_model(x_train.shape[1:], len(np.unique(y_train)), architecture=wandb.config["model"])
-    keras.utils.plot_model(model, to_file="img/model.png", show_shapes=True)
-    train_model(model, x_train, y_train, x_val.astype('float32'), y_val.astype('float32'))
-
-
-def evaluate_model(test_data_path):
-    """
-    Initiates model evaluation.
-
-    :param test_data_path: path to read test data from
-    """
+    # read test data
     test_data = TrainingData(np.load(test_data_path, allow_pickle=True))
     x_test = test_data[:][0]
     y_test = test_data[:][1]
-    evaluate_model_on_test_data(x_test.astype('float32'), y_test.astype('float32'))
+    if len(test_data[:]) == 3:
+        z_test = test_data[:][2]
+
+    perform_consistency_check(data, val_data, test_data, z_train, z_val, z_test)
+
+    return x_train.astype('float32'), y_train, x_val.astype('float32'), y_val, x_test.astype('float32'), y_test
 
 
 def train_procedure(train_path, val_path, test_path, hyperparameter_config=run_config.hyperparameter_config):
     """
-    Initiates the training procedure.
+    Initiates the training and evaluation procedures.
 
     :param train_path: path to training data
     :param val_path: path to validation data
     :param test_path: path to test data
     :param hyperparameter_config: hyperparameter specification
     """
-    set_up_wandb(hyperparameter_config)
-    prepare_and_train_model(train_path, val_path)
-    evaluate_model(test_path)
+    keras_model = hyperparameter_config["model"] in ["FCN", "ResNet"]
+
+    if keras_model:
+        set_up_wandb(hyperparameter_config)
+
+    x_train, y_train, x_val, y_val, x_test, y_test = prepare_data(train_path, val_path, test_path, keras_model)
+    model = models.create_model(x_train.shape[1:], len(np.unique(y_train)), architecture=hyperparameter_config["model"])
+
+    if 'keras' in str(type(model)):
+        keras.utils.plot_model(model, to_file="img/model.png", show_shapes=True)
+
+    trained_model = train_model(model, x_train, y_train, x_val, y_val)
+    evaluate_model_on_test_data(x_test, y_test, trained_model, x_train, y_train)
 
 
 def file_path(path):

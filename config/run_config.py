@@ -3,5 +3,5 @@ hyperparameter_config = {
     "learning_rate": 0.001,
     "optimizer": "keras.optimizers.Adam",
     "epochs": 100,
-    "model": "ResNet"
+    "model": "MLP"
 }
