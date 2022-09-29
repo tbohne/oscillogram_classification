@@ -28,7 +28,7 @@ $ touch config/api_key.py  # enter: wandb_api_key = "YOUR_KEY"
 ## Config
 
 Hyperparameter configuration in `config/run_config.py`, e.g.:
-```
+```python
 hyperparameter_config = {
     "batch_size": 32,
     "learning_rate": 0.001,
@@ -38,7 +38,7 @@ hyperparameter_config = {
 }
 ```
 WandB sweep config in `config/sweep_config.py`, e.g.:
-```
+```python
 sweep_config = {
     "batch_size": {
         "values": [4, 16, 32]
