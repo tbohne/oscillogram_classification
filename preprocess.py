@@ -26,9 +26,12 @@ def read_oscilloscope_recording(rec_file):
     :return: label, list of voltage values (time series)
     """
     print("reading oscilloscope recording from", rec_file)
-    assert "pos" in str(rec_file).lower() or "neg" in str(rec_file).lower()
-    # label: pos (1) / neg (0)
-    label = 1 if "pos" in str(rec_file).lower() else 0
+    # check whether it's a labeled file
+    if "pos" in str(rec_file).lower() or "neg" in str(rec_file).lower():
+        label = 1 if "pos" in str(rec_file).lower() else 0  # label: pos (1) / neg (0)
+    else:
+        label = None
+
     df = pd.read_csv(rec_file, delimiter=';', na_values=['-∞', '∞'])
     df = df[1:].apply(lambda x: x.str.replace(',', '.')).astype(float).dropna()
     curr_voltages = list(df['Kanal A'].values)
