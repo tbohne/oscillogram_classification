@@ -245,15 +245,18 @@ def plot_heatmaps_as_overlay(cams, voltage_vals):
     plt.show()
 
 
-def plot_heatmaps(cams, voltage_vals):
+def plot_heatmaps(cams, voltage_vals, title):
     """
     Visualizes the class activation maps (heatmaps).
 
     :param cams: dictionary containing the class activation maps to be visualized (+ method names)
     :param voltage_vals: voltage values to be visualized
+    :param title: window title, e.g., recorded vehicle component
     """
     plt.rcParams["figure.figsize"] = len(cams) * 10, 4
     fig, axes = plt.subplots(nrows=2, ncols=len(cams), sharex=True, sharey=True)
+    fig.canvas.set_window_title(title)
+
     # bounding box in data coordinates that the image will fill (left, right, bottom, top)
     extent = [0, cams[list(cams.keys())[0]].shape[0], np.floor(np.min(voltage_vals)), np.ceil(np.max(voltage_vals))]
     data_points = [i for i in range(len(voltage_vals))]
@@ -356,4 +359,4 @@ if __name__ == '__main__':
         if args.overlay:
             plot_heatmaps_as_overlay(heatmaps, voltages)
         else:
-            plot_heatmaps(heatmaps, voltages)
+            plot_heatmaps(heatmaps, voltages, 'test_plot')
