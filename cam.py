@@ -85,8 +85,8 @@ def generate_gradcam(input_array, trained_model, pred_idx=None):
     # vector where each entry is the mean intensity of the gradient over a specific feature map channel
     # -> average of gradient values as weights
     pooled_grads = tf.reduce_mean(grads, axis=(0, 1))
-    print("conv out:", last_conv_layer_output.shape)
-    print("pooled grads:", pooled_grads[:, tf.newaxis].shape)
+    # print("conv out:", last_conv_layer_output.shape)
+    # print("pooled grads:", pooled_grads[:, tf.newaxis].shape)
 
     # now a channel could have a high gradient but still a low activation (we want to consider both)
     # thus:
@@ -94,7 +94,7 @@ def generate_gradcam(input_array, trained_model, pred_idx=None):
     # predicted class, then sum all the channels to obtain the heatmap class activation
     # [new axis necessary so that the dimensions fit for matrix multiplication]
     cam = last_conv_layer_output @ pooled_grads[:, tf.newaxis]
-    print("cam shape:", cam.shape)
+    # print("cam shape:", cam.shape)
 
     # get back to time series shape (1D) -> remove dimension of size 1
     cam = tf.squeeze(cam)
@@ -216,15 +216,17 @@ def generate_hirescam(input_array, trained_model, pred_idx=None):
     return cam.numpy()
 
 
-def plot_heatmaps_as_overlay(cams, voltage_vals):
+def plot_heatmaps_as_overlay(cams, voltage_vals, title):
     """
     Visualizes the class activation maps (heatmaps) - time series as overlay.
 
     :param cams: dictionary containing the class activation maps to be visualized (+ method names)
     :param voltage_vals: voltage values to be visualized
+    :param title: window title, e.g., recorded vehicle component
     """
     plt.rcParams["figure.figsize"] = len(cams) * 10, 3
     fig, axes = plt.subplots(nrows=1, ncols=len(cams), sharex=True, sharey=True)
+    fig.canvas.set_window_title(title)
     # bounding box in data coordinates that the image will fill (left, right, bottom, top)
     extent = [0, cams[list(cams.keys())[0]].shape[0], np.floor(np.min(voltage_vals)), np.ceil(np.max(voltage_vals))]
     data_points = np.array([i for i in range(len(voltage_vals))])
@@ -357,6 +359,6 @@ if __name__ == '__main__':
 
     if len(heatmaps) > 0:
         if args.overlay:
-            plot_heatmaps_as_overlay(heatmaps, voltages)
+            plot_heatmaps_as_overlay(heatmaps, voltages, 'test_plot')
         else:
             plot_heatmaps(heatmaps, voltages, 'test_plot')
