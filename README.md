@@ -124,7 +124,7 @@ $ python run_sweep.py --train_path TRAIN_DATA.npz --val_path VAL_DATA.npz --test
 
 ## Training and Validation Loss
 
-### Mini-Batch Gradient Descent
+### Mini-Batch Gradient Descent (Simple Synthetic Dataset)
 <img src="img/mini_batch_gd.png" width="420">
 
 ### Stochastic Gradient Descent
