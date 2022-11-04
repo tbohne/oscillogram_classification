@@ -69,6 +69,18 @@ def compute_gradients_and_last_conv_layer_output(input_array, trained_model, pre
     return grads, last_conv_layer_output[0]
 
 
+def normalize_heatmap(cam):
+    """
+    Normalizes the heatmap for visualization purposes.
+
+    :param cam: class activation map (heatmap)
+    :return: normalized CAM
+    """
+    if len(np.unique(cam)) > 1 or np.unique(cam)[0] != 0:
+        return tf.maximum(cam, 0) / tf.math.reduce_max(cam)
+    return cam
+
+
 def generate_gradcam(input_array, trained_model, pred_idx=None):
     """
     Generates the Grad-CAM (Gradient-weighted Class Activation Map) for the specified input, trained model
@@ -85,6 +97,7 @@ def generate_gradcam(input_array, trained_model, pred_idx=None):
     # vector where each entry is the mean intensity of the gradient over a specific feature map channel
     # -> average of gradient values as weights
     pooled_grads = tf.reduce_mean(grads, axis=(0, 1))
+
     # print("conv out:", last_conv_layer_output.shape)
     # print("pooled grads:", pooled_grads[:, tf.newaxis].shape)
 
@@ -94,12 +107,10 @@ def generate_gradcam(input_array, trained_model, pred_idx=None):
     # predicted class, then sum all the channels to obtain the heatmap class activation
     # [new axis necessary so that the dimensions fit for matrix multiplication]
     cam = last_conv_layer_output @ pooled_grads[:, tf.newaxis]
-    # print("cam shape:", cam.shape)
 
     # get back to time series shape (1D) -> remove dimension of size 1
     cam = tf.squeeze(cam)
-    # for visualization purpose, normalize heatmap
-    cam = tf.maximum(cam, 0) / tf.math.reduce_max(cam)
+    cam = normalize_heatmap(cam)
     return cam.numpy()
 
 
@@ -116,8 +127,7 @@ def tf_keras_gradcam(input_array, trained_model, pred):
     score = CategoricalScore([np.argmax(pred)])
     cam = gradcam(score, input_array, penultimate_layer=-1)
     cam = tf.squeeze(cam)
-    # for visualization purpose, normalize heatmap
-    cam = tf.maximum(cam, 0) / tf.math.reduce_max(cam)
+    cam = normalize_heatmap(cam)
     return cam.numpy()
 
 
@@ -134,8 +144,7 @@ def tf_keras_gradcam_plus_plus(input_array, trained_model, pred):
     score = CategoricalScore([np.argmax(pred)])
     cam = gradcam(score, input_array, penultimate_layer=-1)
     cam = tf.squeeze(cam)
-    # for visualization purpose, normalize heatmap
-    cam = tf.maximum(cam, 0) / tf.math.reduce_max(cam)
+    cam = normalize_heatmap(cam)
     return cam.numpy()
 
 
@@ -149,11 +158,11 @@ def tf_keras_scorecam(input_array, trained_model, pred):
     :return: class activation map (heatmap) that highlights the most relevant parts for the classification
     """
     scorecam = Scorecam(trained_model)
+    # idx of the class to be considered
     score = CategoricalScore([np.argmax(pred)])
     cam = scorecam(score, input_array, penultimate_layer=-1)
     cam = tf.squeeze(cam)
-    # for visualization purpose, normalize heatmap
-    cam = tf.maximum(cam, 0) / tf.math.reduce_max(cam)
+    cam = normalize_heatmap(cam)
     return cam.numpy()
 
 
@@ -170,8 +179,7 @@ def tf_keras_layercam(input_array, trained_model, pred):
     score = CategoricalScore([np.argmax(pred)])
     cam = layercam(score, input_array, penultimate_layer=-1)
     cam = tf.squeeze(cam)
-    # for visualization purpose, normalize heatmap
-    cam = tf.maximum(cam, 0) / tf.math.reduce_max(cam)
+    cam = normalize_heatmap(cam)
     return cam.numpy()
 
 
@@ -188,8 +196,7 @@ def tf_keras_smooth_grad(input_array, trained_model, pred):
     score = CategoricalScore([np.argmax(pred)])
     saliency_map = saliency(score, input_array, smooth_samples=20, smooth_noise=0.20)
     cam = tf.squeeze(saliency_map)
-    # for visualization purpose, normalize heatmap
-    cam = tf.maximum(cam, 0) / tf.math.reduce_max(cam)
+    cam = normalize_heatmap(cam)
     return cam.numpy()
 
 
@@ -210,9 +217,7 @@ def generate_hirescam(input_array, trained_model, pred_idx=None):
     cam = np.multiply(last_conv_layer_output, grads)
     # sum over feature dimensions
     cam = cam.sum(axis=1)
-
-    # for visualization purpose, normalize heatmap
-    cam = tf.maximum(cam, 0) / tf.math.reduce_max(cam)
+    cam = normalize_heatmap(cam)
     return cam.numpy()
 
 
