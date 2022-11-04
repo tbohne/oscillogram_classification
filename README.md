@@ -122,7 +122,7 @@ $ python run_sweep.py --train_path TRAIN_DATA.npz --val_path VAL_DATA.npz --test
 ### Air Flow Meter
 <img src="img/air_flow_meter.png" width="420">
 
-## Training and Validation Loss
+## Training and Validation Accuracy
 
 ### Mini-Batch Gradient Descent (Simple Synthetic Dataset)
 <img src="img/mini_batch_gd.png" width="420">
