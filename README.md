@@ -141,3 +141,6 @@ $ python run_sweep.py --train_path TRAIN_DATA.npz --val_path VAL_DATA.npz --test
 
 *As overlay*:
 ![](img/all_overlay.png)
+
+## Labeling Process
+![](img/labeling.png)
