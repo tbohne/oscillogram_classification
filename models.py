@@ -38,6 +38,35 @@ def create_fcn_model(input_shape, num_classes):
     return keras.models.Model(inputs=input_layer, outputs=output_layer)
 
 
+def create_binary_fcn_model(input_shape):
+    """
+    Defines the binary CNN (FCN) architecture to be worked with (binary classification, only one output neuron).
+
+    :param input_shape: shape of the input layer
+    :return: binary CNN (FCN) model
+    """
+    # input shape -> number of data points per sample
+    input_layer = keras.layers.Input(input_shape)
+
+    conv1 = keras.layers.Conv1D(filters=64, kernel_size=3, padding="same")(input_layer)
+    conv1 = keras.layers.BatchNormalization()(conv1)
+    conv1 = keras.layers.ReLU()(conv1)
+
+    conv2 = keras.layers.Conv1D(filters=64, kernel_size=3, padding="same")(conv1)
+    conv2 = keras.layers.BatchNormalization()(conv2)
+    conv2 = keras.layers.ReLU()(conv2)
+
+    conv3 = keras.layers.Conv1D(filters=64, kernel_size=3, padding="same")(conv2)
+    conv3 = keras.layers.BatchNormalization()(conv3)
+    conv3 = keras.layers.ReLU()(conv3)
+
+    gap = keras.layers.GlobalAveragePooling1D()(conv3)
+
+    output_layer = keras.layers.Dense(1, activation="sigmoid")(gap)
+
+    return keras.models.Model(inputs=input_layer, outputs=output_layer)
+
+
 def create_resnet_model(input_shape, num_classes):
     """
     Defines the ResNet architecture to be worked with.
@@ -127,6 +156,8 @@ def create_model(input_shape, num_classes, architecture="FCN"):
     """
     if architecture == "FCN":
         return create_fcn_model(input_shape, num_classes)
+    elif architecture == "FCN_binary":
+        return create_binary_fcn_model(input_shape)
     elif architecture == "ResNet":
         return create_resnet_model(input_shape, num_classes)
     elif architecture == "RandomForest":
