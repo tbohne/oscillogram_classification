@@ -3,5 +3,7 @@ hyperparameter_config = {
     "learning_rate": 0.001,
     "optimizer": "keras.optimizers.Adam",
     "epochs": 100,
-    "model": "MLP"
+    "model": "FCN_binary",
+    "loss_function": "binary_crossentropy",  # sparse_categorical_crossentropy
+    "accuracy_metric": "binary_accuracy"  # sparse_categorical_accuracy
 }

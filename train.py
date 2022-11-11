@@ -70,8 +70,8 @@ def train_keras_model(model, x_train, y_train, x_val, y_val):
 
     model.compile(
         optimizer=optimizer,
-        loss="sparse_categorical_crossentropy",
-        metrics=["sparse_categorical_accuracy"],
+        loss=wandb.config["loss_function"],
+        metrics=[wandb.config["accuracy_metric"]],
     )
     history = model.fit(
         x_train,
@@ -140,7 +140,7 @@ def plot_training_and_validation_loss(history):
 
     :param history: training history
     """
-    metric = "sparse_categorical_accuracy"
+    metric = wandb.config["accuracy_metric"]
     plt.figure()
     plt.plot(history.history[metric])
     plt.plot(history.history["val_" + metric])
@@ -300,7 +300,7 @@ def train_procedure(train_path, val_path, test_path, hyperparameter_config=run_c
     :param test_path: path to test data
     :param hyperparameter_config: hyperparameter specification
     """
-    keras_model = hyperparameter_config["model"] in ["FCN", "ResNet"]
+    keras_model = hyperparameter_config["model"] in ["FCN", "FCN_binary", "ResNet"]
 
     if keras_model:
         set_up_wandb(hyperparameter_config)
