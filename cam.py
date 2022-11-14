@@ -16,7 +16,7 @@ from tf_keras_vis.layercam import Layercam
 from tf_keras_vis.saliency import Saliency
 from tf_keras_vis.scorecam import Scorecam
 from tf_keras_vis.utils.model_modifiers import ReplaceToLinear
-from tf_keras_vis.utils.scores import CategoricalScore
+from tf_keras_vis.utils.scores import CategoricalScore, BinaryScore
 
 METHODS = ["gradcam", "hirescam", "tf-keras-gradcam", "tf-keras-gradcam++", "tf-keras-scorecam",
            "tf-keras-smoothgrad", "tf-keras-layercam", "all"]
@@ -124,8 +124,15 @@ def tf_keras_gradcam(input_array, trained_model, pred):
     :param pred: considered prediction
     :return: class activation map (heatmap) that highlights the most relevant parts for the classification
     """
+    num_classes = len(pred[0])
+    print("#classes:", num_classes)
+    print("prediction:", pred[0][0])
+
     gradcam = Gradcam(trained_model, model_modifier=ReplaceToLinear(), clone=True)
-    score = CategoricalScore([np.argmax(pred)])
+    if num_classes > 1:
+        score = CategoricalScore([np.argmax(pred)])
+    else:
+        score = BinaryScore(True if pred[0][0] > 0.5 else False)
     cam = gradcam(score, input_array, penultimate_layer=-1)
     cam = tf.squeeze(cam)
     cam = normalize_heatmap(cam)
@@ -141,8 +148,15 @@ def tf_keras_gradcam_plus_plus(input_array, trained_model, pred):
     :param pred: considered prediction
     :return: class activation map (heatmap) that highlights the most relevant parts for the classification
     """
+    num_classes = len(pred[0])
+    print("#classes:", num_classes)
+    print("prediction:", pred[0][0])
+
     gradcam = GradcamPlusPlus(trained_model, model_modifier=ReplaceToLinear(), clone=True)
-    score = CategoricalScore([np.argmax(pred)])
+    if num_classes > 1:
+        score = CategoricalScore([np.argmax(pred)])
+    else:
+        score = BinaryScore(True if pred[0][0] > 0.5 else False)
     cam = gradcam(score, input_array, penultimate_layer=-1)
     cam = tf.squeeze(cam)
     cam = normalize_heatmap(cam)
@@ -158,9 +172,16 @@ def tf_keras_scorecam(input_array, trained_model, pred):
     :param pred: considered prediction
     :return: class activation map (heatmap) that highlights the most relevant parts for the classification
     """
+    num_classes = len(pred[0])
+    print("#classes:", num_classes)
+    print("prediction:", pred[0][0])
+
     scorecam = Scorecam(trained_model)
-    # idx of the class to be considered
-    score = CategoricalScore([np.argmax(pred)])
+    if num_classes > 1:
+        # idx of the class to be considered
+        score = CategoricalScore([np.argmax(pred)])
+    else:
+        score = BinaryScore(True if pred[0][0] > 0.5 else False)
     cam = scorecam(score, input_array, penultimate_layer=-1)
     cam = tf.squeeze(cam)
     cam = normalize_heatmap(cam)
@@ -176,8 +197,15 @@ def tf_keras_layercam(input_array, trained_model, pred):
     :param pred: considered prediction
     :return: class activation map (heatmap) that highlights the most relevant parts for the classification
     """
+    num_classes = len(pred[0])
+    print("#classes:", num_classes)
+    print("prediction:", pred[0][0])
+
     layercam = Layercam(trained_model)
-    score = CategoricalScore([np.argmax(pred)])
+    if num_classes > 1:
+        score = CategoricalScore([np.argmax(pred)])
+    else:
+        score = BinaryScore(True if pred[0][0] > 0.5 else False)
     cam = layercam(score, input_array, penultimate_layer=-1)
     cam = tf.squeeze(cam)
     cam = normalize_heatmap(cam)
@@ -193,8 +221,16 @@ def tf_keras_smooth_grad(input_array, trained_model, pred):
     :param pred: considered prediction
     :return: saliency map that highlights the most relevant parts for the classification
     """
+    num_classes = len(pred[0])
+    print("#classes:", num_classes)
+    print("prediction:", pred[0][0])
+
     saliency = Saliency(trained_model, model_modifier=ReplaceToLinear(), clone=True)
-    score = CategoricalScore([np.argmax(pred)])
+
+    if num_classes > 1:
+        score = CategoricalScore([np.argmax(pred)])
+    else:
+        score = BinaryScore(True if pred[0][0] > 0.5 else False)
     saliency_map = saliency(score, input_array, smooth_samples=20, smooth_noise=0.20)
     cam = tf.squeeze(saliency_map)
     cam = normalize_heatmap(cam)
@@ -213,7 +249,6 @@ def generate_hirescam(input_array, trained_model, pred_idx=None):
     """
     grads, last_conv_layer_output = compute_gradients_and_last_conv_layer_output(input_array, trained_model, pred_idx)
     grads = tf.squeeze(grads)
-
     # element-wise product between the raw gradients and feature maps
     cam = np.multiply(last_conv_layer_output, grads)
     # sum over feature dimensions
@@ -339,6 +374,7 @@ if __name__ == '__main__':
 
     # EXPLAIN PREDICTION WITH GRAD-CAM
     prediction = model.predict(np.array([net_input]))
+    print("PREDICTION:", prediction)
     print("predicted class", np.argmax(prediction), " with score", np.max(prediction))
 
     heatmaps = {}
@@ -359,7 +395,7 @@ if __name__ == '__main__':
     elif args.method == "all":
         heatmaps["gradcam"] = generate_gradcam(np.array([net_input]), model)
         # not needed as it returns exactly the same heatmap as my own implementation above
-        # heatmaps["tf-keras-gradcam"] = tf_keras_gradcam(np.array([net_input]), model, prediction)
+        heatmaps["tf-keras-gradcam"] = tf_keras_gradcam(np.array([net_input]), model, prediction)
         heatmaps["tf-keras-gradcam++"] = tf_keras_gradcam_plus_plus(np.array([net_input]), model, prediction)
         heatmaps["hirescam"] = generate_hirescam(np.array([net_input]), model)
         heatmaps["tf-keras-scorecam"] = tf_keras_scorecam(np.array([net_input]), model, prediction)
