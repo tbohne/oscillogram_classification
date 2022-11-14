@@ -59,6 +59,7 @@ def compute_gradients_and_last_conv_layer_output(input_array, trained_model, pre
         # activations of the last conv layer
         last_conv_layer_output, predictions = grad_model(input_array)
         # no index specified -> use the one with the highest "probability" (the best guess)
+
         if pred_idx is None:
             pred_idx = tf.argmax(predictions[0])
         pred_value = predictions[:, pred_idx]
@@ -321,10 +322,14 @@ if __name__ == '__main__':
     net_input_size = model.layers[0].output_shape[0][1]
 
     assert net_input_size == len(voltages)
+
     # TODO: think about whether it makes sense to fix input size
     # if len(voltages) > net_input_size:
     #     remove = len(voltages) - net_input_size
     #     voltages = voltages[: len(voltages) - remove]
+    # elif net_input_size > len(voltages):
+    #     for _ in range(net_input_size - len(voltages)):
+    #         voltages.append(0)
 
     net_input = np.asarray(voltages).astype('float32')
     net_input = net_input.reshape((net_input.shape[0], 1))
@@ -353,7 +358,8 @@ if __name__ == '__main__':
         heatmaps[args.method] = generate_hirescam(np.array([net_input]), model)
     elif args.method == "all":
         heatmaps["gradcam"] = generate_gradcam(np.array([net_input]), model)
-        heatmaps["tf-keras-gradcam"] = tf_keras_gradcam(np.array([net_input]), model, prediction)
+        # not needed as it returns exactly the same heatmap as my own implementation above
+        # heatmaps["tf-keras-gradcam"] = tf_keras_gradcam(np.array([net_input]), model, prediction)
         heatmaps["tf-keras-gradcam++"] = tf_keras_gradcam_plus_plus(np.array([net_input]), model, prediction)
         heatmaps["hirescam"] = generate_hirescam(np.array([net_input]), model)
         heatmaps["tf-keras-scorecam"] = tf_keras_scorecam(np.array([net_input]), model, prediction)
