@@ -132,7 +132,7 @@ def tf_keras_gradcam(input_array, trained_model, pred):
     if num_classes > 1:
         score = CategoricalScore([np.argmax(pred)])
     else:
-        score = BinaryScore(True if pred[0][0] > 0.5 else False)
+        score = BinaryScore(pred[0][0] > 0.5)
     cam = gradcam(score, input_array, penultimate_layer=-1)
     cam = tf.squeeze(cam)
     cam = normalize_heatmap(cam)
@@ -156,7 +156,7 @@ def tf_keras_gradcam_plus_plus(input_array, trained_model, pred):
     if num_classes > 1:
         score = CategoricalScore([np.argmax(pred)])
     else:
-        score = BinaryScore(True if pred[0][0] > 0.5 else False)
+        score = BinaryScore(pred[0][0] > 0.5)
     cam = gradcam(score, input_array, penultimate_layer=-1)
     cam = tf.squeeze(cam)
     cam = normalize_heatmap(cam)
@@ -181,7 +181,7 @@ def tf_keras_scorecam(input_array, trained_model, pred):
         # idx of the class to be considered
         score = CategoricalScore([np.argmax(pred)])
     else:
-        score = BinaryScore(True if pred[0][0] > 0.5 else False)
+        score = BinaryScore(pred[0][0] > 0.5)
     cam = scorecam(score, input_array, penultimate_layer=-1)
     cam = tf.squeeze(cam)
     cam = normalize_heatmap(cam)
@@ -205,7 +205,7 @@ def tf_keras_layercam(input_array, trained_model, pred):
     if num_classes > 1:
         score = CategoricalScore([np.argmax(pred)])
     else:
-        score = BinaryScore(True if pred[0][0] > 0.5 else False)
+        score = BinaryScore(pred[0][0] > 0.5)
     cam = layercam(score, input_array, penultimate_layer=-1)
     cam = tf.squeeze(cam)
     cam = normalize_heatmap(cam)
@@ -230,7 +230,7 @@ def tf_keras_smooth_grad(input_array, trained_model, pred):
     if num_classes > 1:
         score = CategoricalScore([np.argmax(pred)])
     else:
-        score = BinaryScore(True if pred[0][0] > 0.5 else False)
+        score = BinaryScore(pred[0][0] > 0.5)
     saliency_map = saliency(score, input_array, smooth_samples=20, smooth_noise=0.20)
     cam = tf.squeeze(saliency_map)
     cam = normalize_heatmap(cam)
