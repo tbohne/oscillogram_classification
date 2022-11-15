@@ -125,8 +125,6 @@ def tf_keras_gradcam(input_array, trained_model, pred):
     :return: class activation map (heatmap) that highlights the most relevant parts for the classification
     """
     num_classes = len(pred[0])
-    print("#classes:", num_classes)
-    print("prediction:", pred[0][0])
 
     gradcam = Gradcam(trained_model, model_modifier=ReplaceToLinear(), clone=True)
     if num_classes > 1:
@@ -149,8 +147,6 @@ def tf_keras_gradcam_plus_plus(input_array, trained_model, pred):
     :return: class activation map (heatmap) that highlights the most relevant parts for the classification
     """
     num_classes = len(pred[0])
-    print("#classes:", num_classes)
-    print("prediction:", pred[0][0])
 
     gradcam = GradcamPlusPlus(trained_model, model_modifier=ReplaceToLinear(), clone=True)
     if num_classes > 1:
@@ -173,8 +169,6 @@ def tf_keras_scorecam(input_array, trained_model, pred):
     :return: class activation map (heatmap) that highlights the most relevant parts for the classification
     """
     num_classes = len(pred[0])
-    print("#classes:", num_classes)
-    print("prediction:", pred[0][0])
 
     scorecam = Scorecam(trained_model, model_modifier=ReplaceToLinear())
     if num_classes > 1:
@@ -198,8 +192,6 @@ def tf_keras_layercam(input_array, trained_model, pred):
     :return: class activation map (heatmap) that highlights the most relevant parts for the classification
     """
     num_classes = len(pred[0])
-    print("#classes:", num_classes)
-    print("prediction:", pred[0][0])
 
     layercam = Layercam(trained_model)
     if num_classes > 1:
@@ -222,8 +214,6 @@ def tf_keras_smooth_grad(input_array, trained_model, pred):
     :return: saliency map that highlights the most relevant parts for the classification
     """
     num_classes = len(pred[0])
-    print("#classes:", num_classes)
-    print("prediction:", pred[0][0])
 
     saliency = Saliency(trained_model, model_modifier=ReplaceToLinear(), clone=True)
 
