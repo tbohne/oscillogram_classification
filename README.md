@@ -143,4 +143,4 @@ $ python run_sweep.py --train_path TRAIN_DATA.npz --val_path VAL_DATA.npz --test
 ![](img/all_overlay.png)
 
 ## Labeling Process
-![](img/labeling.png)
+<img src="img/labeling.png" width="450">
