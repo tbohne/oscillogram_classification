@@ -1,6 +1,6 @@
 matplotlib==3.6.2
 numpy==1.23.5
-tensorflow==2.9.1
+tensorflow==2.11.0
 pandas==1.5.2
 wandb==0.13.5
 tsfresh==0.19.0
