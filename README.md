@@ -7,6 +7,9 @@ Example of the time series data to be considered (voltage over time).
 
 The task comes down to binary time series classification.
 
+## Classification and Interpretation of Oscillogram Signals
+<img src="img/TS_classification.png" width="450">
+
 ## CNN Architecture
 <img src="img/FCN.png" width="300">
 
