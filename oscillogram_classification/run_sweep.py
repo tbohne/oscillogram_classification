@@ -8,7 +8,7 @@ import os
 import wandb
 
 import train
-from config import api_key, sweep_config
+from config import sweep_config, api_key
 from train import file_path
 
 TUNING_METHOD = 'random'

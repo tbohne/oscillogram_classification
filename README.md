@@ -26,6 +26,13 @@ The task comes down to (binary) (univariate) time series classification.
 - [**sklearn**](https://scikit-learn.org/stable/): simple and efficient tools for predictive data analysis
 - [**tf_keras_vis**](https://github.com/keisen/tf-keras-vis): neural network visualization toolkit for `tf.keras`
 
+## Installation
+```
+$ git clone https://github.com/tbohne/oscillogram_classification.git
+$ cd oscillogram_classification/
+$ pip install .
+```
+
 **WandB Setup**
 ```
 $ touch config/api_key.py  # enter: wandb_api_key = "YOUR_KEY"
@@ -76,7 +83,7 @@ Currently supported models: `FCN`, `ResNet`, `RandomForest`, `MLP`, `DecisionTre
 
 **Preprocessing**
 ```
-$ python preprocess.py [--znorm] [--diff_format] [--feature_extraction] [--feature_list] --path /DATA --type {training | validation | test}
+$ python oscillogram_classification/preprocess.py [--znorm] [--diff_format] [--feature_extraction] [--feature_list] --path /DATA --type {training | validation | test}
 ```
 *Note: In the event of `feature_extraction`, in addition to the actual generated records, csv files (e.g. `training_complete_features.csv`) are generated, which contain the list of the features considered in each case.*
 
@@ -93,19 +100,19 @@ training_filtered_features.csv
 ```
 Now the model is to be trained using the filtered features. The validation dataset should correspond to this feature selection and thus be generated as follows:
 ```
-$ python preprocess.py --path /VALIDATION_DATA --feature_extraction --feature_list data/training_filtered_features.csv --type validation
+$ python oscillogram_classification/preprocess.py --path /VALIDATION_DATA --feature_extraction --feature_list data/training_filtered_features.csv --type validation
 ```
 This in turn leads to a set of files corresponding to the different feature vectors. In the described scenario, the file to be used for training would be `validation_manually_filtered_feature_vectors.npz`. The generation of the test dataset works analogously.
 
 **Training**
 ```
-$ python train.py --train_path TRAIN_DATA.npz --val_path VAL_DATA.npz --test_path TEST_DATA.npz
+$ python oscillogram_classification/train.py --train_path TRAIN_DATA.npz --val_path VAL_DATA.npz --test_path TEST_DATA.npz
 ```
 *Note: Before training, a consistency check is performed, which is particularly relevant for training on feature vectors. It is checked whether each of the datasets (train, test, validation) contains exactly the same features in the same order.*
 
 **Class Activation / Saliency Map Generation**
 ```
-$ python cam.py [--znorm] [--diff_format] [--overlay] --method {gradcam | hirescam | tf-keras-gradcam | tf-keras-gradcam++ | tf-keras-scorecam | tf-keras-layercam | tf-keras-smoothgrad | all} --sample_path SAMPLE.csv --model_path MODEL.h5
+$ python oscillogram_classification/cam.py [--znorm] [--diff_format] [--overlay] --method {gradcam | hirescam | tf-keras-gradcam | tf-keras-gradcam++ | tf-keras-scorecam | tf-keras-layercam | tf-keras-smoothgrad | all} --sample_path SAMPLE.csv --model_path MODEL.h5
 ```
 *Note: Using `all` as method results in a side-by-side plot of all methods.*
 
@@ -114,7 +121,7 @@ $ python cam.py [--znorm] [--diff_format] [--overlay] --method {gradcam | hiresc
 *"Hyperparameter sweeps provide an organized and efficient way to conduct a battle royale of models and pick the most accurate model. They enable this by automatically searching through combinations of hyperparameter values (e.g. learning rate, batch size, number of hidden layers, optimizer type) to find the most optimal values."* - [wandb.ai](https://wandb.ai/site/articles/introduction-hyperparameter-sweeps)
 
 ```
-$ python run_sweep.py --train_path TRAIN_DATA.npz --val_path VAL_DATA.npz --test_path TEST_DATA.npz
+$ python oscillogram_classification/run_sweep.py --train_path TRAIN_DATA.npz --val_path VAL_DATA.npz --test_path TEST_DATA.npz
 ```
 
 ## Positive (1) and Negative (0) Sample for each Component
