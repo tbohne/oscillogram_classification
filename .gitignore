@@ -3,6 +3,6 @@ data/
 __pycache__/
 *.pyc
 best_model.h5
-config/api_key.py
+oscillogram_classification/config/api_key.py
 wandb/
 img/model.png
