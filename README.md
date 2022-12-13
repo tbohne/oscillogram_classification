@@ -1,16 +1,16 @@
-# oscillogram_classification
+# Oscillogram Classification
 
 Neural network based anomaly detection for vehicle components using oscilloscope recordings.
 
-Example of the time series data to be considered (voltage over time).
+Example of the time series data to be considered (voltage over time):
 ![](img/plot.png)
 
-The task comes down to binary time series classification.
+The task comes down to (binary) (univariate) time series classification.
 
 ## Classification and Interpretation of Oscillogram Signals
 <img src="img/TS_classification.png" width="450">
 
-## CNN Architecture
+## FCN Architecture
 <img src="img/FCN.png" width="300">
 
 *Note: See ResNet architecture in `img/ResNet.png`*
@@ -117,7 +117,7 @@ $ python cam.py [--znorm] [--diff_format] [--overlay] --method {gradcam | hiresc
 $ python run_sweep.py --train_path TRAIN_DATA.npz --val_path VAL_DATA.npz --test_path TEST_DATA.npz
 ```
 
-## Positive and Negative Sample for each Component
+## Positive (1) and Negative (0) Sample for each Component
 
 ### Battery (Engine Starting Process)
 <img src="img/example.png" width="420">
@@ -125,13 +125,13 @@ $ python run_sweep.py --train_path TRAIN_DATA.npz --val_path VAL_DATA.npz --test
 ### Air Flow Meter
 <img src="img/air_flow_meter.png" width="420">
 
-## Training and Validation Accuracy
+## Training and Validation Accuracy of Selected Models
 
-### Mini-Batch Gradient Descent (Simple Synthetic Dataset)
-<img src="img/mini_batch_gd.png" width="420">
+### FCN demo model - mini-batch (4) gradient descent - one output neuron - synthetic dataset (z-normalized)
+<img src="img/demo_model.png" width="420">
 
-### Stochastic Gradient Descent
-<img src="img/stochastic_gd.png" width="420">
+### FCN - mini-batch (8) gradient descent - two output neurons - synthetic dataset (raw)
+<img src="img/two_output_neurons_raw.png" width="420">
 
 ### Grad-CAM Example
 ![](img/heatmap.png)
