@@ -253,10 +253,11 @@ def plot_heatmaps_as_overlay(cams, voltage_vals, title):
 
     :param cams: dictionary containing the class activation maps to be visualized (+ method names)
     :param voltage_vals: voltage values to be visualized
-    :param title: window title, e.g., recorded vehicle component
+    :param title: window title, e.g., recorded vehicle component and classification result
     """
     plt.rcParams["figure.figsize"] = len(cams) * 10, 3
     fig, axes = plt.subplots(nrows=1, ncols=len(cams), sharex=True, sharey=True)
+
     fig.canvas.set_window_title(title)
     # bounding box in data coordinates that the image will fill (left, right, bottom, top)
     extent = [0, cams[list(cams.keys())[0]].shape[0], np.floor(np.min(voltage_vals)), np.ceil(np.max(voltage_vals))]
@@ -284,7 +285,7 @@ def plot_heatmaps(cams, voltage_vals, title):
 
     :param cams: dictionary containing the class activation maps to be visualized (+ method names)
     :param voltage_vals: voltage values to be visualized
-    :param title: window title, e.g., recorded vehicle component
+    :param title: window title, e.g., recorded vehicle component and classification result
     """
     plt.rcParams["figure.figsize"] = len(cams) * 10, 4
     fig, axes = plt.subplots(nrows=2, ncols=len(cams), sharex=True, sharey=True)
@@ -365,7 +366,8 @@ if __name__ == '__main__':
     # EXPLAIN PREDICTION WITH GRAD-CAM
     prediction = model.predict(np.array([net_input]))
     print("PREDICTION:", prediction)
-    print("predicted class", np.argmax(prediction), " with score", np.max(prediction))
+    res = (np.argmax(prediction), np.max(prediction))
+    print("predicted class", res[0], " with score", res[1])
 
     heatmaps = {}
     if args.method == "gradcam":
@@ -397,7 +399,8 @@ if __name__ == '__main__':
         print("specified unknown CAM method:", args.method)
 
     if len(heatmaps) > 0:
+        res_str = (" [ANOMALY" if res[0] == 0 else " [NO ANOMALY") + " - SCORE: " + str(res[1]) + "]"
         if args.overlay:
-            plot_heatmaps_as_overlay(heatmaps, voltages, 'test_plot')
+            plot_heatmaps_as_overlay(heatmaps, voltages, 'test_plot' + res_str)
         else:
-            plot_heatmaps(heatmaps, voltages, 'test_plot')
+            plot_heatmaps(heatmaps, voltages, 'test_plot' + res_str)
