@@ -11,6 +11,9 @@ from training_data import TrainingData
 
 SEED = 42
 NUMBER_OF_CLUSTERS = 2  # atm just POS and NEG
+N_INIT = 5
+MAX_ITER = 50
+MAX_ITER_BARYCENTER = 50
 
 
 def evaluate_performance(y_train, y_pred):
@@ -61,19 +64,40 @@ sz = x_train.shape[1]
 plt.figure()
 
 print("Euclidean k-means")
-km = TimeSeriesKMeans(n_clusters=NUMBER_OF_CLUSTERS, verbose=False, random_state=SEED)
+km = TimeSeriesKMeans(
+    n_clusters=NUMBER_OF_CLUSTERS,
+    n_init=N_INIT,
+    max_iter=MAX_ITER,
+    verbose=False,
+    random_state=SEED
+)
 y_pred = km.fit_predict(x_train)
 plot_results(1, "Euclidean $k$-means", km, x_train, y_train, y_pred)
 
 print("DBA k-means")
 dba_km = TimeSeriesKMeans(
-    n_clusters=NUMBER_OF_CLUSTERS, n_init=2, metric="dtw", verbose=False, max_iter_barycenter=50, random_state=SEED)
+    n_clusters=NUMBER_OF_CLUSTERS,
+    n_init=N_INIT,
+    max_iter=MAX_ITER,
+    metric="dtw",
+    verbose=False,
+    max_iter_barycenter=MAX_ITER_BARYCENTER,
+    random_state=SEED
+)
 y_pred = dba_km.fit_predict(x_train)
 plot_results(3, "DBA $k$-means", dba_km, x_train, y_train, y_pred)
 
 print("Soft-DTW k-means")
 sdtw_km = TimeSeriesKMeans(
-    n_clusters=NUMBER_OF_CLUSTERS, metric="softdtw", metric_params={"gamma": .01}, verbose=False, random_state=SEED)
+    n_clusters=NUMBER_OF_CLUSTERS,
+    n_init=N_INIT,
+    max_iter=MAX_ITER,
+    metric="softdtw",
+    metric_params={"gamma": .01},
+    verbose=False,
+    max_iter_barycenter=MAX_ITER_BARYCENTER,
+    random_state=SEED
+)
 y_pred = sdtw_km.fit_predict(x_train)
 plot_results(5, "Soft-DTW $k$-means", sdtw_km, x_train, y_train, y_pred)
 
