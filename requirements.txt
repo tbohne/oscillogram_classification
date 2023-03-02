@@ -4,5 +4,6 @@ tensorflow
 pandas
 wandb
 tsfresh
+tslearn
 scikit-learn
 tf-keras-vis
