@@ -13,10 +13,24 @@ SEED = 42
 NUMBER_OF_CLUSTERS = 2  # atm just POS and NEG
 
 
+def evaluate_performance(y_train, y_pred):
+    zero_neg_correct = 0
+    assert set(np.unique(y_train)) == set(np.unique(y_pred))
+    for i in range(len(y_train)):
+        if y_train[i][0] == y_pred[i]:
+            zero_neg_correct += 1
+    print("---- correctly classified samples:")
+    acc = (zero_neg_correct / len(y_train))
+    print("if cluster 0 = NEG and cluster 1 = POS, then the accuracy is", acc)
+    print("if cluster 0 = POS and cluster 1 = NEG, then the accuracy is", 1 - acc)
+    print("...determine by visual comparison...")
+
+
 def plot_results(offset, title, clustering, x_train, y_train, y_pred):
     print("#########################################################################################")
     print("results for", title)
     print("#########################################################################################")
+    evaluate_performance(y_train, y_pred)
     for y in range(2):
         plt.subplot(3, 2, y + offset)
         for x in x_train[y_pred == y]:
