@@ -3,15 +3,15 @@
 Neural network based anomaly detection for vehicle components using oscilloscope recordings.
 
 Example of the time series data to be considered (voltage over time):
-![](img/plot.png)
+<img src="img/plot.png" width="400">
 
 The task comes down to (binary) (univariate) time series classification.
 
 ## Classification and Interpretation of Oscillogram Signals
-<img src="img/TS_classification.png" width="450">
+<img src="img/TS_classification.png" width="400">
 
 ## FCN Architecture
-<img src="img/fcn.png" width="300">
+<img src="img/fcn.png" width="400">
 
 *Note: See ResNet architecture in `img/ResNet.png`*
 
