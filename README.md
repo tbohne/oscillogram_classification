@@ -11,7 +11,7 @@ The task comes down to (binary) (univariate) time series classification.
 <img src="img/TS_classification.png" width="450">
 
 ## FCN Architecture
-<img src="img/FCN.png" width="300">
+<img src="img/fcn.png" width="300">
 
 *Note: See ResNet architecture in `img/ResNet.png`*
 
