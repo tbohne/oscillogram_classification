@@ -29,7 +29,7 @@ def set_up_wandb(wandb_config):
 
 def visualize_n_samples_per_class(x, y):
     """
-    Iteratively visualizes one sample per class until the user enters '+'.
+    Iteratively visualizes one sample per class as long as the user enters '+'.
 
     :param x: sample series
     :param y: corresponding labels
