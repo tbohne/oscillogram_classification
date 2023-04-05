@@ -157,6 +157,14 @@ def read_oscilloscope_recording(rec_file):
 
 
 def preprocess_patches(patches):
+    """
+    Preprocesses the patches, i.e., performs padding and transforms them into a shape expected by `tslearn`.
+
+    :param patches: battery signal sub-ROI patches
+    :return: preprocessed patches
+    """
+    max_ts_length = max([len(patch) for patch in x_train])
+    padded_array = np.zeros((x_train.shape[0], max_ts_length, 1))
     for i, ts in enumerate(patches):
         ts = np.array(ts).reshape(-1, 1)
         n_samples = ts.shape[0]
@@ -177,12 +185,7 @@ if __name__ == '__main__':
 
     create_dataset(args.znorm, args.path)
     x_train, y_train = load_data()
-    max_ts_length = max([len(patch) for patch in x_train])
-    padded_array = np.zeros((x_train.shape[0], max_ts_length, 1))
-
-    print("xTRAIN SHAPE before:", x_train.shape)
     x_train = preprocess_patches(x_train)
-    print("xTRAIN SHAPE after:", x_train.shape)
 
     x_train = TimeSeriesScalerMeanVariance().fit_transform(x_train)
     # we need to reduce the length of the TS (due to runtime)
