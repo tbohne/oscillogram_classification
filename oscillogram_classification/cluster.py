@@ -39,8 +39,8 @@ def plot_results(offset, title, clustering, x_train, y_train, y_pred):
     print("results for", title)
     print("#########################################################################################")
     evaluate_performance(y_train, y_pred)
-    for y in range(2):
-        plt.subplot(3, 2, y + offset)
+    for y in range(NUMBER_OF_CLUSTERS):
+        plt.subplot(3, NUMBER_OF_CLUSTERS, y + offset)
         for x in x_train[y_pred == y]:
             plt.plot(x.ravel(), "k-", alpha=.2)
         plt.plot(clustering.cluster_centers_[y].ravel(), "r-")
@@ -192,7 +192,7 @@ if __name__ == '__main__':
     # TODO: determine feasible size via experiments
     x_train = TimeSeriesResampler(sz=len(x_train) // 4).fit_transform(x_train)
     sz = x_train.shape[1]
-    plt.figure()
+    plt.figure(figsize=(5 * NUMBER_OF_CLUSTERS, 3))
 
     print("Euclidean k-means")
     km = TimeSeriesKMeans(
@@ -216,7 +216,7 @@ if __name__ == '__main__':
         random_state=SEED
     )
     y_pred = dba_km.fit_predict(x_train)
-    plot_results(3, "DBA $k$-means", dba_km, x_train, y_train, y_pred)
+    plot_results(1 + NUMBER_OF_CLUSTERS, "DBA $k$-means", dba_km, x_train, y_train, y_pred)
 
     print("Soft-DTW k-means")
     sdtw_km = TimeSeriesKMeans(
@@ -230,7 +230,7 @@ if __name__ == '__main__':
         random_state=SEED
     )
     y_pred = sdtw_km.fit_predict(x_train)
-    plot_results(5, "Soft-DTW $k$-means", sdtw_km, x_train, y_train, y_pred)
+    plot_results(1 + 2 * NUMBER_OF_CLUSTERS, "Soft-DTW $k$-means", sdtw_km, x_train, y_train, y_pred)
 
     plt.tight_layout()
     plt.show()
