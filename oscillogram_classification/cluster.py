@@ -2,8 +2,13 @@
 # -*- coding: utf-8 -*-
 # @author Tim Bohne
 
+import argparse
+import os
+from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from tslearn.clustering import TimeSeriesKMeans
 from tslearn.preprocessing import TimeSeriesScalerMeanVariance, TimeSeriesResampler
 
@@ -69,10 +74,10 @@ def visualize_n_samples_per_class(x, y):
 
 
 def load_data():
-    data = TrainingData(np.load("data/MILESTONE_DEMO/training_data.npz", allow_pickle=True))
+    data = TrainingData(np.load("data/patch_data.npz", allow_pickle=True))
     visualize_n_samples_per_class(data[:][0], data[:][1])
-    x_train = (data[:][0])[..., np.newaxis]
-    y_train = (data[:][1])[..., np.newaxis]
+    x_train = data[:][0]
+    y_train = data[:][1]
     np.random.seed(SEED)
     idx = np.random.permutation(len(x_train))
     x_train = x_train[idx]
@@ -80,10 +85,106 @@ def load_data():
     return x_train, y_train
 
 
-if __name__ == '__main__':
-    x_train, y_train = load_data()
-    x_train = TimeSeriesScalerMeanVariance().fit_transform(x_train)
+def dir_path(path):
+    """
+    Returns path if it's valid, raises error otherwise.
 
+    :param path: path to be checked
+    :return: feasible path or error
+    """
+    if os.path.isdir(path):
+        return path
+    else:
+        raise argparse.ArgumentTypeError(f"{path} is not a valid path")
+
+
+def create_dataset(z_norm, data_path):
+    """
+    Iterates through input data and generates an accumulated data set (.npz).
+
+    :param z_norm: whether each sample should be z-normalized
+    :param data_path: path to sample data
+    """
+    create_processed_time_series_dataset(data_path, z_norm)
+
+
+def create_processed_time_series_dataset(data_path, z_norm):
+    """
+    Creates a processed time series dataset (.npz file containing all samples).
+
+    :param data_path: path to sample data
+    :param z_norm: whether each sample should be z-normalized
+    """
+    voltage_series = []
+    labels = []
+    for path in Path(data_path).glob('**/*.csv'):
+        label, curr_voltages = read_oscilloscope_recording(path)
+        labels.append(label)
+        if z_norm:
+            curr_voltages = z_normalize_time_series(curr_voltages)
+        voltage_series.append(curr_voltages)
+    np.savez("data/patch_data.npz", np.array(voltage_series, dtype=object), np.array(labels))
+
+
+def z_normalize_time_series(series):
+    """
+    Z-normalize the specified time series - 0 mean / 1 std_dev.
+
+    :param series: time series to be z-normalized
+    :return: normalized time series
+    """
+    return (series - np.mean(series)) / np.std(series)
+
+
+def read_oscilloscope_recording(rec_file):
+    """
+    Reads the oscilloscope recording from the specified file.
+
+    :param rec_file: oscilloscope recording file
+    :return: list of voltage values (time series)
+    """
+    print("reading oscilloscope recording from", rec_file)
+    label = None
+    patches = ["patch0", "patch1", "patch2", "patch3", "patch4"]
+    for patch in patches:
+        if patch in str(rec_file).lower():
+            label = patch[-1]
+            break
+
+    df = pd.read_csv(rec_file, delimiter=';', na_values=['-∞', '∞'])
+    curr_voltages = list(df['Kanal A'].values)
+    return label, curr_voltages
+
+
+def preprocess_patches(patches):
+    for i, ts in enumerate(patches):
+        ts = np.array(ts).reshape(-1, 1)
+        n_samples = ts.shape[0]
+        if n_samples >= max_ts_length:
+            padded_array[i, :, :] = ts[:max_ts_length, :]
+        else:
+            padded_array[i, :n_samples, :] = ts
+    return padded_array
+
+
+if __name__ == '__main__':
+    # input: raw oscilloscope data (one file per patch (sub ROI))
+    # output: preprocessed data - one file containing data of all patches)
+    parser = argparse.ArgumentParser(description='Clustering sub-ROI patches')
+    parser.add_argument('--znorm', action='store_true', help='z-normalize time series')
+    parser.add_argument('--path', type=dir_path, required=True, help='path to the data to be processed')
+    args = parser.parse_args()
+
+    create_dataset(args.znorm, args.path)
+    x_train, y_train = load_data()
+    max_ts_length = max([len(patch) for patch in x_train])
+    padded_array = np.zeros((x_train.shape[0], max_ts_length, 1))
+
+    print("xTRAIN SHAPE before:", x_train.shape)
+    x_train = preprocess_patches(x_train)
+    print("xTRAIN SHAPE after:", x_train.shape)
+
+    x_train = TimeSeriesScalerMeanVariance().fit_transform(x_train)
     # we need to reduce the length of the TS (due to runtime)
     # TODO: determine feasible size via experiments
     x_train = TimeSeriesResampler(sz=len(x_train) // 4).fit_transform(x_train)
