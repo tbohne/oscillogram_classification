@@ -46,60 +46,87 @@ def plot_results(offset, title, clustering, x_train, y_train, y_pred):
             plt.title(title)
 
 
-np.random.seed(SEED)
-data = TrainingData(np.load("data/MILESTONE_DEMO/training_data.npz", allow_pickle=True))
-x_train = (data[:][0])[..., np.newaxis]
-y_train = (data[:][1])[..., np.newaxis]
+def visualize_n_samples_per_class(x, y):
+    """
+    Iteratively visualizes one sample per class as long as the user enters '+'.
 
-idx = np.random.permutation(len(x_train))
-x_train = x_train[idx]
-y_train = y_train[idx]
+    :param x: sample series
+    :param y: corresponding labels
+    """
+    plt.figure()
+    classes = np.unique(y, axis=0)
+    samples_by_class = {c: x[y == c] for c in classes}
 
-x_train = TimeSeriesScalerMeanVariance().fit_transform(x_train)
+    for sample in range(len(samples_by_class[classes[0]])):
+        key = input("Enter '+' to see another sample per class\n")
+        if key != "+":
+            break
+        for c in classes:
+            plt.plot(samples_by_class[c][sample], label="class " + str(c))
+        plt.legend(loc="best")
+        plt.show()
+        plt.close()
 
-# we need to reduce the length of the TS (due to runtime)
-# TODO: determine feasible size via experiments
-x_train = TimeSeriesResampler(sz=len(x_train) // 4).fit_transform(x_train)
-sz = x_train.shape[1]
-plt.figure()
 
-print("Euclidean k-means")
-km = TimeSeriesKMeans(
-    n_clusters=NUMBER_OF_CLUSTERS,
-    n_init=N_INIT,
-    max_iter=MAX_ITER,
-    verbose=False,
-    random_state=SEED
-)
-y_pred = km.fit_predict(x_train)
-plot_results(1, "Euclidean $k$-means", km, x_train, y_train, y_pred)
+def load_data():
+    data = TrainingData(np.load("data/MILESTONE_DEMO/training_data.npz", allow_pickle=True))
+    visualize_n_samples_per_class(data[:][0], data[:][1])
+    x_train = (data[:][0])[..., np.newaxis]
+    y_train = (data[:][1])[..., np.newaxis]
+    np.random.seed(SEED)
+    idx = np.random.permutation(len(x_train))
+    x_train = x_train[idx]
+    y_train = y_train[idx]
+    return x_train, y_train
 
-print("DBA k-means")
-dba_km = TimeSeriesKMeans(
-    n_clusters=NUMBER_OF_CLUSTERS,
-    n_init=N_INIT,
-    max_iter=MAX_ITER,
-    metric="dtw",
-    verbose=False,
-    max_iter_barycenter=MAX_ITER_BARYCENTER,
-    random_state=SEED
-)
-y_pred = dba_km.fit_predict(x_train)
-plot_results(3, "DBA $k$-means", dba_km, x_train, y_train, y_pred)
 
-print("Soft-DTW k-means")
-sdtw_km = TimeSeriesKMeans(
-    n_clusters=NUMBER_OF_CLUSTERS,
-    n_init=N_INIT,
-    max_iter=MAX_ITER,
-    metric="softdtw",
-    metric_params={"gamma": .01},
-    verbose=False,
-    max_iter_barycenter=MAX_ITER_BARYCENTER,
-    random_state=SEED
-)
-y_pred = sdtw_km.fit_predict(x_train)
-plot_results(5, "Soft-DTW $k$-means", sdtw_km, x_train, y_train, y_pred)
+if __name__ == '__main__':
+    x_train, y_train = load_data()
+    x_train = TimeSeriesScalerMeanVariance().fit_transform(x_train)
 
-plt.tight_layout()
-plt.show()
+    # we need to reduce the length of the TS (due to runtime)
+    # TODO: determine feasible size via experiments
+    x_train = TimeSeriesResampler(sz=len(x_train) // 4).fit_transform(x_train)
+    sz = x_train.shape[1]
+    plt.figure()
+
+    print("Euclidean k-means")
+    km = TimeSeriesKMeans(
+        n_clusters=NUMBER_OF_CLUSTERS,
+        n_init=N_INIT,
+        max_iter=MAX_ITER,
+        verbose=False,
+        random_state=SEED
+    )
+    y_pred = km.fit_predict(x_train)
+    plot_results(1, "Euclidean $k$-means", km, x_train, y_train, y_pred)
+
+    print("DBA k-means")
+    dba_km = TimeSeriesKMeans(
+        n_clusters=NUMBER_OF_CLUSTERS,
+        n_init=N_INIT,
+        max_iter=MAX_ITER,
+        metric="dtw",
+        verbose=False,
+        max_iter_barycenter=MAX_ITER_BARYCENTER,
+        random_state=SEED
+    )
+    y_pred = dba_km.fit_predict(x_train)
+    plot_results(3, "DBA $k$-means", dba_km, x_train, y_train, y_pred)
+
+    print("Soft-DTW k-means")
+    sdtw_km = TimeSeriesKMeans(
+        n_clusters=NUMBER_OF_CLUSTERS,
+        n_init=N_INIT,
+        max_iter=MAX_ITER,
+        metric="softdtw",
+        metric_params={"gamma": .01},
+        verbose=False,
+        max_iter_barycenter=MAX_ITER_BARYCENTER,
+        random_state=SEED
+    )
+    y_pred = sdtw_km.fit_predict(x_train)
+    plot_results(5, "Soft-DTW $k$-means", sdtw_km, x_train, y_train, y_pred)
+
+    plt.tight_layout()
+    plt.show()
