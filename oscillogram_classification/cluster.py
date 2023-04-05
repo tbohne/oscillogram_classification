@@ -15,7 +15,7 @@ from tslearn.preprocessing import TimeSeriesScalerMeanVariance, TimeSeriesResamp
 from training_data import TrainingData
 
 SEED = 42
-NUMBER_OF_CLUSTERS = 2  # atm just POS and NEG
+NUMBER_OF_CLUSTERS = 5  # for the battery voltage signal (sub-ROIs)
 N_INIT = 5
 MAX_ITER = 50
 MAX_ITER_BARYCENTER = 50
@@ -25,7 +25,7 @@ def evaluate_performance(y_train, y_pred):
     zero_neg_correct = 0
     assert set(np.unique(y_train)) == set(np.unique(y_pred))
     for i in range(len(y_train)):
-        if y_train[i][0] == y_pred[i]:
+        if y_train[i] == y_pred[i]:
             zero_neg_correct += 1
     print("---- correctly classified samples:")
     acc = (zero_neg_correct / len(y_train))
@@ -148,7 +148,7 @@ def read_oscilloscope_recording(rec_file):
     patches = ["patch0", "patch1", "patch2", "patch3", "patch4"]
     for patch in patches:
         if patch in str(rec_file).lower():
-            label = patch[-1]
+            label = int(patch[-1])
             break
 
     df = pd.read_csv(rec_file, delimiter=';', na_values=['-∞', '∞'])
