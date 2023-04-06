@@ -21,7 +21,7 @@ MAX_ITER = 50
 MAX_ITER_BARYCENTER = 50
 
 
-def evaluate_performance(y_train, y_pred):
+def evaluate_performance_for_binary_clustering(y_train, y_pred):
     zero_neg_correct = 0
     assert set(np.unique(y_train)) == set(np.unique(y_pred))
     for i in range(len(y_train)):
@@ -32,6 +32,20 @@ def evaluate_performance(y_train, y_pred):
     print("if cluster 0 = NEG and cluster 1 = POS, then the accuracy is", acc)
     print("if cluster 0 = POS and cluster 1 = NEG, then the accuracy is", 1 - acc)
     print("...determine by visual comparison...")
+
+
+def evaluate_performance(y_train, y_pred):
+    assert set(np.unique(y_train)) == set(np.unique(y_pred))
+    cluster_dict = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
+    ground_truth_per_cluster = {0: [], 1: [], 2: [], 3: [], 4: []}
+
+    for i in range(len(y_pred)):
+        cluster_dict[y_pred[i]] += 1
+        ground_truth_per_cluster[y_pred[i]].append(y_train[i])
+
+    # ideal would be (6, 6, 6, 6, 6)
+    print("cluster distribution:", cluster_dict.values())
+    print("ground truth per cluster:", ground_truth_per_cluster.values())
 
 
 def plot_results(offset, title, clustering, x_train, y_train, y_pred):
@@ -190,7 +204,7 @@ if __name__ == '__main__':
     x_train = TimeSeriesScalerMeanVariance().fit_transform(x_train)
     # we need to reduce the length of the TS (due to runtime)
     # TODO: determine feasible size via experiments
-    x_train = TimeSeriesResampler(sz=len(x_train) // 4).fit_transform(x_train)
+    x_train = TimeSeriesResampler(sz=len(x_train[0]) // 1000).fit_transform(x_train)
     sz = x_train.shape[1]
     plt.figure(figsize=(5 * NUMBER_OF_CLUSTERS, 3))
 
