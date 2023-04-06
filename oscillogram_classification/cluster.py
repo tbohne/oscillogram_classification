@@ -112,30 +112,34 @@ def dir_path(path):
         raise argparse.ArgumentTypeError(f"{path} is not a valid path")
 
 
-def create_dataset(z_norm, data_path):
+def create_dataset(norm, data_path):
     """
     Iterates through input data and generates an accumulated data set (.npz).
 
-    :param z_norm: whether each sample should be z-normalized
+    :param norm: whether each sample should be normalized
     :param data_path: path to sample data
     """
-    create_processed_time_series_dataset(data_path, z_norm)
+    create_processed_time_series_dataset(data_path, norm)
 
 
-def create_processed_time_series_dataset(data_path, z_norm):
+def create_processed_time_series_dataset(data_path, norm):
     """
     Creates a processed time series dataset (.npz file containing all samples).
 
     :param data_path: path to sample data
-    :param z_norm: whether each sample should be z-normalized
+    :param norm: whether each sample should be normalized
     """
     voltage_series = []
     labels = []
     for path in Path(data_path).glob('**/*.csv'):
         label, curr_voltages = read_oscilloscope_recording(path)
         labels.append(label)
-        if z_norm:
-            curr_voltages = z_normalize_time_series(curr_voltages)
+        if norm:
+            # TODO: experimentally compare different methods -> for now min-max worked best
+            # curr_voltages = z_normalize_time_series(curr_voltages)
+            curr_voltages = min_max_normalize_time_series(curr_voltages)
+            # curr_voltages = decimal_scaling_normalize_time_series(curr_voltages, 5)
+            # curr_voltages = logarithmic_normalize_time_series(curr_voltages, 10)
         voltage_series.append(curr_voltages)
     np.savez("data/patch_data.npz", np.array(voltage_series, dtype=object), np.array(labels))
 
@@ -144,10 +148,44 @@ def z_normalize_time_series(series):
     """
     Z-normalize the specified time series - 0 mean / 1 std_dev.
 
-    :param series: time series to be z-normalized
+    :param series: time series to be normalized
     :return: normalized time series
     """
     return (series - np.mean(series)) / np.std(series)
+
+
+def min_max_normalize_time_series(series):
+    """
+    Min-max-normalize the specified time series -> scale values to range [0, 1].
+
+    :param series: time series to be normalized
+    :return: normalized time series
+    """
+    minimum = np.min(series)
+    maximum = np.max(series)
+    return (series - minimum) / (maximum - minimum)
+
+
+def decimal_scaling_normalize_time_series(series, power):
+    """
+    Decimal-scaling-normalize the specified time series -> largest absolute value < 1.0.
+
+    :param series: time series to be normalized
+    :param power: power used for scaling
+    :return: normalized time series
+    """
+    return np.array(series) / (10 ** power)
+
+
+def logarithmic_normalize_time_series(series, base):
+    """
+    Logarithmic-normalize the specified time series -> reduces impact of extreme values.
+
+    :param series: time series to be normalized
+    :param base: log base to be used
+    :return: normalized time series
+    """
+    return np.log(series) / np.log(base)
 
 
 def read_oscilloscope_recording(rec_file):
@@ -193,11 +231,11 @@ if __name__ == '__main__':
     # input: raw oscilloscope data (one file per patch (sub ROI))
     # output: preprocessed data - one file containing data of all patches)
     parser = argparse.ArgumentParser(description='Clustering sub-ROI patches')
-    parser.add_argument('--znorm', action='store_true', help='z-normalize time series')
+    parser.add_argument('--norm', action='store_true', help='normalize time series')
     parser.add_argument('--path', type=dir_path, required=True, help='path to the data to be processed')
     args = parser.parse_args()
 
-    create_dataset(args.znorm, args.path)
+    create_dataset(args.norm, args.path)
     x_train, y_train = load_data()
     x_train = preprocess_patches(x_train)
 
