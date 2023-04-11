@@ -209,12 +209,12 @@ def read_oscilloscope_recording(rec_file):
     return label, curr_voltages
 
 
-def preprocess_patches(patches):
+def zero_padding(patches):
     """
-    Preprocesses the patches, i.e., performs padding and transforms them into a shape expected by `tslearn`.
+    Applies zero-padding to the provided patches and transforms them to the expected shape.
 
     :param patches: battery signal sub-ROI patches
-    :return: preprocessed patches
+    :return: padded / transformed patches
     """
     max_ts_length = max([len(patch) for patch in patches])
     padded_array = np.zeros((patches.shape[0], max_ts_length, 1))
@@ -222,6 +222,36 @@ def preprocess_patches(patches):
         ts = np.array(ts).reshape(-1, 1)
         n_samples = ts.shape[0]
         padded_array[i, :n_samples, :] = ts
+    return padded_array
+
+
+def avg_padding(patches):
+    """
+    Applies average-padding to the provided patches and transforms them to the expected shape.
+
+    :param patches: battery signal sub-ROI patches
+    :return: padded / transformed patches
+    """
+    patches = patches.tolist()
+    max_ts_length = max([len(patch) for patch in patches])
+    for p in patches:
+        avg_p = np.average(p)
+        while len(p) < max_ts_length:
+            p.append(avg_p)
+    padded_array = np.array(patches)
+    return padded_array.reshape((padded_array.shape[0], max_ts_length, 1))
+
+
+def preprocess_patches(patches):
+    """
+    Preprocesses the patches, i.e., performs padding and transforms them into a shape expected by `tslearn`.
+
+    :param patches: battery signal sub-ROI patches
+    :return: preprocessed patches
+    """
+    padded_array = avg_padding(patches)
+    print(padded_array.shape)
+    print(padded_array[0])
     return padded_array
 
 
