@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from tslearn.clustering import TimeSeriesKMeans
-from tslearn.preprocessing import TimeSeriesScalerMeanVariance, TimeSeriesResampler
+from tslearn.preprocessing import TimeSeriesResampler
 
 from training_data import TrainingData
 
@@ -330,6 +330,7 @@ if __name__ == '__main__':
     )
     y_pred = km.fit_predict(x_train)
     plot_results(1, "Euclidean $k$-means", km, x_train, y_train, y_pred)
+    visualize_n_samples_per_class(x_train, y_pred)
 
     print("DBA k-means")
     dba_km = TimeSeriesKMeans(
@@ -343,6 +344,7 @@ if __name__ == '__main__':
     )
     y_pred = dba_km.fit_predict(x_train)
     plot_results(1 + NUMBER_OF_CLUSTERS, "DBA $k$-means", dba_km, x_train, y_train, y_pred)
+    visualize_n_samples_per_class(x_train, y_pred)
 
     print("Soft-DTW k-means")
     sdtw_km = TimeSeriesKMeans(
@@ -357,6 +359,7 @@ if __name__ == '__main__':
     )
     y_pred = sdtw_km.fit_predict(x_train)
     plot_results(1 + 2 * NUMBER_OF_CLUSTERS, "Soft-DTW $k$-means", sdtw_km, x_train, y_train, y_pred)
+    visualize_n_samples_per_class(x_train, y_pred)
 
     plt.tight_layout()
     plt.show()
