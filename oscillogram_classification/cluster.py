@@ -16,9 +16,9 @@ from training_data import TrainingData
 
 SEED = 42
 NUMBER_OF_CLUSTERS = 5  # for the battery voltage signal (sub-ROIs)
-N_INIT = 5
-MAX_ITER = 50
-MAX_ITER_BARYCENTER = 50
+N_INIT = 50
+MAX_ITER = 500
+MAX_ITER_BARYCENTER = 500
 
 
 def evaluate_performance_for_binary_clustering(y_train, y_pred):
@@ -43,8 +43,9 @@ def evaluate_performance(y_train, y_pred):
         cluster_dict[y_pred[i]] += 1
         ground_truth_per_cluster[y_pred[i]].append(y_train[i])
 
-    # ideal would be (6, 6, 6, 6, 6)
+    # ideal would be (6, 6, 6, 6, 6) - equally distributed
     print("cluster distribution:", cluster_dict.values())
+    # each cluster should contain patches with identical labels, you don't know which one, but it must be identical
     print("ground truth per cluster:", ground_truth_per_cluster.values())
 
 
@@ -136,8 +137,8 @@ def create_processed_time_series_dataset(data_path, norm):
         labels.append(label)
         if norm:
             # TODO: experimentally compare different methods -> for now min-max worked best
-            # curr_voltages = z_normalize_time_series(curr_voltages)
-            curr_voltages = min_max_normalize_time_series(curr_voltages)
+            curr_voltages = z_normalize_time_series(curr_voltages)
+            # curr_voltages = min_max_normalize_time_series(curr_voltages)
             # curr_voltages = decimal_scaling_normalize_time_series(curr_voltages, 5)
             # curr_voltages = logarithmic_normalize_time_series(curr_voltages, 10)
         voltage_series.append(curr_voltages)
@@ -215,8 +216,8 @@ def preprocess_patches(patches):
     :param patches: battery signal sub-ROI patches
     :return: preprocessed patches
     """
-    max_ts_length = max([len(patch) for patch in x_train])
-    padded_array = np.zeros((x_train.shape[0], max_ts_length, 1))
+    max_ts_length = max([len(patch) for patch in patches])
+    padded_array = np.zeros((patches.shape[0], max_ts_length, 1))
     for i, ts in enumerate(patches):
         ts = np.array(ts).reshape(-1, 1)
         n_samples = ts.shape[0]
