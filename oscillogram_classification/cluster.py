@@ -19,6 +19,7 @@ NUMBER_OF_CLUSTERS = 5  # for the battery voltage signal (sub-ROIs)
 N_INIT = 50
 MAX_ITER = 500
 MAX_ITER_BARYCENTER = 500
+RESAMPLING_DIVISOR = 500
 
 
 def evaluate_performance_for_binary_clustering(y_train, y_pred):
@@ -137,9 +138,9 @@ def create_processed_time_series_dataset(data_path, norm):
         labels.append(label)
         if norm:
             # TODO: experimentally compare different methods -> for now min-max worked best
-            curr_voltages = z_normalize_time_series(curr_voltages)
+            # curr_voltages = z_normalize_time_series(curr_voltages)
             # curr_voltages = min_max_normalize_time_series(curr_voltages)
-            # curr_voltages = decimal_scaling_normalize_time_series(curr_voltages, 5)
+            curr_voltages = decimal_scaling_normalize_time_series(curr_voltages, 2)
             # curr_voltages = logarithmic_normalize_time_series(curr_voltages, 10)
         voltage_series.append(curr_voltages)
     np.savez("data/patch_data.npz", np.array(voltage_series, dtype=object), np.array(labels))
@@ -152,7 +153,7 @@ def z_normalize_time_series(series):
     :param series: time series to be normalized
     :return: normalized time series
     """
-    return (series - np.mean(series)) / np.std(series)
+    return ((series - np.mean(series)) / np.std(series)).tolist()
 
 
 def min_max_normalize_time_series(series):
@@ -164,7 +165,7 @@ def min_max_normalize_time_series(series):
     """
     minimum = np.min(series)
     maximum = np.max(series)
-    return (series - minimum) / (maximum - minimum)
+    return ((series - minimum) / (maximum - minimum)).tolist()
 
 
 def decimal_scaling_normalize_time_series(series, power):
@@ -175,7 +176,7 @@ def decimal_scaling_normalize_time_series(series, power):
     :param power: power used for scaling
     :return: normalized time series
     """
-    return np.array(series) / (10 ** power)
+    return (np.array(series) / (10 ** power)).tolist()
 
 
 def logarithmic_normalize_time_series(series, base):
@@ -186,7 +187,7 @@ def logarithmic_normalize_time_series(series, base):
     :param base: log base to be used
     :return: normalized time series
     """
-    return np.log(series) / np.log(base)
+    return (np.log(series) / np.log(base)).tolist()
 
 
 def read_oscilloscope_recording(rec_file):
@@ -242,6 +243,28 @@ def avg_padding(patches):
     return padded_array.reshape((padded_array.shape[0], max_ts_length, 1))
 
 
+def last_val_padding(patches):
+    patches = patches.tolist()
+    max_ts_length = max([len(patch) for patch in patches])
+    for p in patches:
+        while len(p) < max_ts_length:
+            p.append(p[-1])
+    padded_array = np.array(patches)
+    return padded_array.reshape((padded_array.shape[0], max_ts_length, 1))
+
+
+def periodic_padding(patches):
+    patches = patches.tolist()
+    max_ts_length = max([len(patch) for patch in patches])
+    for p in patches:
+        idx = 0
+        while len(p) < max_ts_length:
+            p.append(p[idx])
+            idx += 1
+    padded_array = np.array(patches)
+    return padded_array.reshape((padded_array.shape[0], max_ts_length, 1))
+
+
 def preprocess_patches(patches):
     """
     Preprocesses the patches, i.e., performs padding and transforms them into a shape expected by `tslearn`.
@@ -270,9 +293,12 @@ if __name__ == '__main__':
     # TODO: do we really need this?
     # x_train = TimeSeriesScalerMeanVariance().fit_transform(x_train)
 
-    # we need to reduce the length of the TS (due to runtime)
-    # TODO: determine feasible size via experiments
-    x_train = TimeSeriesResampler(sz=len(x_train[0]) // 100).fit_transform(x_train)
+    print("original TS size:", len(x_train[0]))
+    # resample time series so that they reach the target size (sz - size of output TS)
+    #   -> we need to reduce the length of the TS (due to runtime, memory)
+    x_train = TimeSeriesResampler(sz=len(x_train[0]) // RESAMPLING_DIVISOR).fit_transform(x_train)
+    print("after down sampling:", len(x_train[0]))
+
     sz = x_train.shape[1]
     plt.figure(figsize=(5 * NUMBER_OF_CLUSTERS, 3))
 
