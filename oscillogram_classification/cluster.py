@@ -19,7 +19,8 @@ NUMBER_OF_CLUSTERS = 5  # for the battery voltage signal (sub-ROIs)
 N_INIT = 50
 MAX_ITER = 500
 MAX_ITER_BARYCENTER = 500
-RESAMPLING_DIVISOR = 500
+RESAMPLING_DIVISOR = 100
+INTERPOLATION_TARGET = "MIN"  # other options are 'MAX' and 'AVG'
 
 
 def evaluate_performance_for_binary_clustering(y_train, y_pred):
@@ -267,13 +268,21 @@ def periodic_padding(patches):
 
 def interpolation(patches):
     patches = patches.tolist()
-    max_ts_length = max([len(patch) for patch in patches])
+    if INTERPOLATION_TARGET == "MIN":
+        interpolation_target_len = min([len(patch) for patch in patches])
+    elif INTERPOLATION_TARGET == "MAX":
+        interpolation_target_len = max([len(patch) for patch in patches])
+    elif INTERPOLATION_TARGET == "AVG":
+        interpolation_target_len = int(np.average([len(patch) for patch in patches]))
+    else:
+        interpolation_target_len = min([len(patch) for patch in patches])
+
     for i in range(len(patches)):
         patches_arr = np.array(patches[i])
         patches_arr = patches_arr.reshape((1, len(patches[i]), 1))  # n_ts, sz, d
-        patches[i] = TimeSeriesResampler(sz=max_ts_length).fit_transform(patches_arr).tolist()[0]
+        patches[i] = TimeSeriesResampler(sz=interpolation_target_len).fit_transform(patches_arr).tolist()[0]
     padded_array = np.array(patches)
-    return padded_array.reshape((padded_array.shape[0], max_ts_length, 1))
+    return padded_array.reshape((padded_array.shape[0], interpolation_target_len, 1))
 
 
 def preprocess_patches(patches):
@@ -286,10 +295,8 @@ def preprocess_patches(patches):
     padded_array = interpolation(patches)
     print(padded_array.shape)
     print(padded_array[0])
-
-    # TODO: do we really need this?
+    # TODO: do we really need this? usually way worse..
     # padded_array = TimeSeriesScalerMeanVariance().fit_transform(padded_array)
-
     return padded_array
 
 
