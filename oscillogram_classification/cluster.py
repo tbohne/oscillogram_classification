@@ -221,10 +221,7 @@ def preprocess_patches(patches):
     for i, ts in enumerate(patches):
         ts = np.array(ts).reshape(-1, 1)
         n_samples = ts.shape[0]
-        if n_samples >= max_ts_length:
-            padded_array[i, :, :] = ts[:max_ts_length, :]
-        else:
-            padded_array[i, :n_samples, :] = ts
+        padded_array[i, :n_samples, :] = ts
     return padded_array
 
 
@@ -240,10 +237,12 @@ if __name__ == '__main__':
     x_train, y_train = load_data()
     x_train = preprocess_patches(x_train)
 
-    x_train = TimeSeriesScalerMeanVariance().fit_transform(x_train)
+    # TODO: do we really need this?
+    # x_train = TimeSeriesScalerMeanVariance().fit_transform(x_train)
+
     # we need to reduce the length of the TS (due to runtime)
     # TODO: determine feasible size via experiments
-    x_train = TimeSeriesResampler(sz=len(x_train[0]) // 1000).fit_transform(x_train)
+    x_train = TimeSeriesResampler(sz=len(x_train[0]) // 100).fit_transform(x_train)
     sz = x_train.shape[1]
     plt.figure(figsize=(5 * NUMBER_OF_CLUSTERS, 3))
 
