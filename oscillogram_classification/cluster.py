@@ -60,7 +60,7 @@ def plot_results(offset, title, clustering, x_train, y_train, y_pred):
         for x in x_train[y_pred == y]:
             plt.plot(x.ravel(), "k-", alpha=.2)
         plt.plot(clustering.cluster_centers_[y].ravel(), "r-")
-        plt.xlim(0, sz)
+        plt.xlim(0, x_train.shape[1])
         plt.ylim(-4, 4)
         plt.text(0.55, 0.85, 'Cluster %d' % y, transform=plt.gca().transAxes)
         if y == 0:
@@ -265,6 +265,17 @@ def periodic_padding(patches):
     return padded_array.reshape((padded_array.shape[0], max_ts_length, 1))
 
 
+def interpolation(patches):
+    patches = patches.tolist()
+    max_ts_length = max([len(patch) for patch in patches])
+    for i in range(len(patches)):
+        patches_arr = np.array(patches[i])
+        patches_arr = patches_arr.reshape((1, len(patches[i]), 1))  # n_ts, sz, d
+        patches[i] = TimeSeriesResampler(sz=max_ts_length).fit_transform(patches_arr).tolist()[0]
+    padded_array = np.array(patches)
+    return padded_array.reshape((padded_array.shape[0], max_ts_length, 1))
+
+
 def preprocess_patches(patches):
     """
     Preprocesses the patches, i.e., performs padding and transforms them into a shape expected by `tslearn`.
@@ -272,9 +283,13 @@ def preprocess_patches(patches):
     :param patches: battery signal sub-ROI patches
     :return: preprocessed patches
     """
-    padded_array = avg_padding(patches)
+    padded_array = interpolation(patches)
     print(padded_array.shape)
     print(padded_array[0])
+
+    # TODO: do we really need this?
+    # padded_array = TimeSeriesScalerMeanVariance().fit_transform(padded_array)
+
     return padded_array
 
 
@@ -290,16 +305,12 @@ if __name__ == '__main__':
     x_train, y_train = load_data()
     x_train = preprocess_patches(x_train)
 
-    # TODO: do we really need this?
-    # x_train = TimeSeriesScalerMeanVariance().fit_transform(x_train)
-
     print("original TS size:", len(x_train[0]))
-    # resample time series so that they reach the target size (sz - size of output TS)
-    #   -> we need to reduce the length of the TS (due to runtime, memory)
+    # # resample time series so that they reach the target size (sz - size of output TS)
+    # #   -> we need to reduce the length of the TS (due to runtime, memory)
     x_train = TimeSeriesResampler(sz=len(x_train[0]) // RESAMPLING_DIVISOR).fit_transform(x_train)
     print("after down sampling:", len(x_train[0]))
 
-    sz = x_train.shape[1]
     plt.figure(figsize=(5 * NUMBER_OF_CLUSTERS, 3))
 
     print("Euclidean k-means")
@@ -307,7 +318,7 @@ if __name__ == '__main__':
         n_clusters=NUMBER_OF_CLUSTERS,
         n_init=N_INIT,
         max_iter=MAX_ITER,
-        verbose=False,
+        verbose=True,
         random_state=SEED
     )
     y_pred = km.fit_predict(x_train)
