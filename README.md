@@ -124,6 +124,29 @@ $ python oscillogram_classification/cam.py [--znorm] [--diff_format] [--overlay]
 $ python oscillogram_classification/run_sweep.py --train_path TRAIN_DATA.npz --val_path VAL_DATA.npz --test_path TEST_DATA.npz
 ```
 
+## Clustering and Sub-ROI Patch Classification
+
+As an alternative to the above classification of entire ROIs (Regions of Interest), we implemented another approach based on the determination of sub-regions, i.e., patches that make up the ROIs. An [ROI detection algorithm](https://github.com/AW40/signal_builder) provides the input for the clustering of the cropped sub-ROIs. The ROIs are divided into the following five categories for the battery signals:
+
+![](img/categories.png)
+
+The five categories are practically motivated, based on semantically meaningful regions that an expert would look at when searching for anomalies. Afterwards, the patches are clustered and for each patch type, i.e. cluster, a model is trained that classifies samples of the corresponding patch type. The following example shows the result of such a clustering, where each cluster is annotated (red) with the represented patch type from the above battery signal:
+
+![](img/annotated_clus_res.png)
+
+In this example, DBA k-means was able to correctly cluster 29/30 patches. The one misclassified patch actually shares many characteristics with the cluster to which it was assigned.
+
+Results of DBA k-means:
+```
+cluster distribution: [7, 6, 6, 6, 5]
+ground truth per cluster: [[1, 3, 1, 1, 1, 1, 1], [4, 4, 4, 4, 4, 4], [2, 2, 2, 2, 2, 2], [5, 5, 5, 5, 5, 5], [3, 3, 3, 3, 3]])
+```
+
+Clustering usage (with .csv patches):
+```
+$ python oscillogram_classification/cluster.py --path PATH_TO_PATCHES
+```
+
 ## Positive (1) and Negative (0) Sample for each Component
 
 ### Battery (Engine Starting Process)
