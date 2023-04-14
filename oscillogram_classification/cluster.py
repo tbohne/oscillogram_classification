@@ -51,19 +51,19 @@ def evaluate_performance(y_train, y_pred):
     print("ground truth per cluster:", ground_truth_per_cluster.values())
 
 
-def plot_results(offset, title, clustering, x_train, y_train, y_pred):
+def plot_results(offset, title, clustering, x_train, y_train, y_pred, fig):
     print("#########################################################################################")
     print("results for", title)
     print("#########################################################################################")
     evaluate_performance(y_train, y_pred)
     for y in range(NUMBER_OF_CLUSTERS):
-        plt.subplot(3, NUMBER_OF_CLUSTERS, y + offset)
+        ax = fig.add_subplot(3, NUMBER_OF_CLUSTERS, y + offset)
         for x in x_train[y_pred == y]:
-            plt.plot(x.ravel(), "k-", alpha=.2)
-        plt.plot(clustering.cluster_centers_[y].ravel(), "r-")
-        plt.xlim(0, x_train.shape[1])
-        plt.ylim(6, 15)
-        plt.text(0.55, 0.85, 'Cluster %d' % y, transform=plt.gca().transAxes)
+            ax.plot(x.ravel(), "k-", alpha=.2)
+        ax.plot(clustering.cluster_centers_[y].ravel(), "r-")
+        ax.set_xlim(0, x_train.shape[1])
+        ax.set_ylim(6, 15)
+        ax.text(0.55, 0.85, 'Cluster %d' % y, transform=fig.gca().transAxes)
         if y == 0:
             plt.title(title)
 
@@ -75,7 +75,6 @@ def visualize_n_samples_per_class(x, y):
     :param x: sample series
     :param y: corresponding labels
     """
-    plt.figure()
     classes = np.unique(y, axis=0)
     samples_by_class = {c: x[y == c] for c in classes}
 
@@ -83,11 +82,13 @@ def visualize_n_samples_per_class(x, y):
         key = input("Enter '+' to see another sample per class\n")
         if key != "+":
             break
+        fig1 = plt.figure()
+        # create a single subplot that takes up the entire figure
+        ax = fig1.add_subplot(1, 1, 1)
         for c in classes:
-            plt.plot(samples_by_class[c][sample], label="class " + str(c))
-        plt.legend(loc="best")
-        plt.show()
-    plt.close()
+            ax.plot(samples_by_class[c][sample], label="class " + str(c))
+        ax.legend(loc="best")
+        fig1.show()
 
 
 def load_data():
@@ -318,7 +319,7 @@ if __name__ == '__main__':
     x_train = TimeSeriesResampler(sz=len(x_train[0]) // RESAMPLING_DIVISOR).fit_transform(x_train)
     print("after down sampling:", len(x_train[0]))
 
-    plt.figure(figsize=(5 * NUMBER_OF_CLUSTERS, 3))
+    fig2 = plt.figure(figsize=(5 * NUMBER_OF_CLUSTERS, 3))
 
     print("Euclidean k-means")
     km = TimeSeriesKMeans(
@@ -329,8 +330,8 @@ if __name__ == '__main__':
         random_state=SEED
     )
     y_pred = km.fit_predict(x_train)
-    plot_results(1, "Euclidean $k$-means", km, x_train, y_train, y_pred)
     visualize_n_samples_per_class(x_train, y_pred)
+    plot_results(1, "Euclidean $k$-means", km, x_train, y_train, y_pred, fig2)
 
     print("DBA k-means")
     dba_km = TimeSeriesKMeans(
@@ -343,7 +344,7 @@ if __name__ == '__main__':
         random_state=SEED
     )
     y_pred = dba_km.fit_predict(x_train)
-    plot_results(1 + NUMBER_OF_CLUSTERS, "DBA $k$-means", dba_km, x_train, y_train, y_pred)
+    plot_results(1 + NUMBER_OF_CLUSTERS, "DBA $k$-means", dba_km, x_train, y_train, y_pred, fig2)
     visualize_n_samples_per_class(x_train, y_pred)
 
     print("Soft-DTW k-means")
@@ -358,8 +359,8 @@ if __name__ == '__main__':
         random_state=SEED
     )
     y_pred = sdtw_km.fit_predict(x_train)
-    plot_results(1 + 2 * NUMBER_OF_CLUSTERS, "Soft-DTW $k$-means", sdtw_km, x_train, y_train, y_pred)
+    plot_results(1 + 2 * NUMBER_OF_CLUSTERS, "Soft-DTW $k$-means", sdtw_km, x_train, y_train, y_pred, fig2)
     visualize_n_samples_per_class(x_train, y_pred)
 
-    plt.tight_layout()
+    fig2.tight_layout()
     plt.show()
