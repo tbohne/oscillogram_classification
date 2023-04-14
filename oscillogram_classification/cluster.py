@@ -62,7 +62,7 @@ def plot_results(offset, title, clustering, x_train, y_train, y_pred):
             plt.plot(x.ravel(), "k-", alpha=.2)
         plt.plot(clustering.cluster_centers_[y].ravel(), "r-")
         plt.xlim(0, x_train.shape[1])
-        plt.ylim(-4, 4)
+        plt.ylim(6, 15)
         plt.text(0.55, 0.85, 'Cluster %d' % y, transform=plt.gca().transAxes)
         if y == 0:
             plt.title(title)
@@ -87,7 +87,7 @@ def visualize_n_samples_per_class(x, y):
             plt.plot(samples_by_class[c][sample], label="class " + str(c))
         plt.legend(loc="best")
         plt.show()
-        plt.close()
+    plt.close()
 
 
 def load_data():
@@ -353,7 +353,7 @@ if __name__ == '__main__':
         max_iter=MAX_ITER,
         metric="softdtw",
         metric_params={"gamma": .01},
-        verbose=False,
+        verbose=True,
         max_iter_barycenter=MAX_ITER_BARYCENTER,
         random_state=SEED
     )
