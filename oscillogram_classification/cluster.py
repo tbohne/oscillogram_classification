@@ -23,27 +23,43 @@ RESAMPLING_DIVISOR = 100
 INTERPOLATION_TARGET = "MIN"  # other options are 'MAX' and 'AVG'
 
 
-def evaluate_performance_for_binary_clustering(y_train, y_pred):
+def evaluate_performance_for_binary_clustering(ground_truth: np.ndarray, predictions: np.ndarray) -> None:
+    """
+    Evaluates the performance of binary clustering, i.e., compares the ground truth labels to the predictions.
+
+    :param ground_truth: ground truth labels
+    :param predictions: predicted labels (clusters)
+    """
     zero_neg_correct = 0
-    assert set(np.unique(y_train)) == set(np.unique(y_pred))
-    for i in range(len(y_train)):
-        if y_train[i] == y_pred[i]:
+    assert set(np.unique(ground_truth)) == set(np.unique(predictions))
+    for i in range(len(ground_truth)):
+        if ground_truth[i] == predictions[i]:
             zero_neg_correct += 1
     print("---- correctly classified samples:")
-    acc = (zero_neg_correct / len(y_train))
+    acc = (zero_neg_correct / len(ground_truth))
     print("if cluster 0 = NEG and cluster 1 = POS, then the accuracy is", acc)
     print("if cluster 0 = POS and cluster 1 = NEG, then the accuracy is", 1 - acc)
     print("...determine by visual comparison...")
 
 
-def evaluate_performance(y_train, y_pred):
-    assert set(np.unique(y_train)) == set(np.unique(y_pred))
+def evaluate_performance(ground_truth: np.ndarray, predictions: np.ndarray) -> None:
+    """
+    Evaluates the clustering performance for battery signals. An ROI detection algorithm provides the input for the
+    clustering of the cropped sub-ROIs. The ROIs are divided into five categories for the battery signals. The five
+    categories (clusters) are practically motivated, based on semantically meaningful regions that an expert would look
+    at when searching for anomalies.
+
+    :param ground_truth: ground truth labels
+    :param predictions: predicted labels (clusters)
+    """
+    assert set(np.unique(ground_truth)) == set(np.unique(predictions))
+    # we have 5 clusters, i.e., 5 sub-ROIs
     cluster_dict = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
     ground_truth_per_cluster = {0: [], 1: [], 2: [], 3: [], 4: []}
 
-    for i in range(len(y_pred)):
-        cluster_dict[y_pred[i]] += 1
-        ground_truth_per_cluster[y_pred[i]].append(y_train[i])
+    for i in range(len(predictions)):
+        cluster_dict[predictions[i]] += 1
+        ground_truth_per_cluster[predictions[i]].append(ground_truth[i])
 
     # ideal would be (6, 6, 6, 6, 6) - equally distributed
     print("cluster distribution:", cluster_dict.values())
@@ -51,24 +67,36 @@ def evaluate_performance(y_train, y_pred):
     print("ground truth per cluster:", ground_truth_per_cluster.values())
 
 
-def plot_results(offset, title, clustering, x_train, y_train, y_pred, fig):
+def plot_results(offset: int, title: str, clustering: TimeSeriesKMeans, train_x: np.ndarray, train_y: np.ndarray,
+                 pred_y: np.ndarray, fig: plt.Figure) -> None:
+    """
+    Plots the results of the clustering procedure.
+
+    :param offset: y-offset for the data to be displayed
+    :param title: plot title
+    :param clustering: clustering results
+    :param train_x: patches that were clustered
+    :param train_y: ground truth of clustered patches
+    :param pred_y: predictions (cluster assignments)
+    :param fig: figure to add plot to
+    """
     print("#########################################################################################")
     print("results for", title)
     print("#########################################################################################")
-    evaluate_performance(y_train, y_pred)
+    evaluate_performance(train_y, pred_y)
     for y in range(NUMBER_OF_CLUSTERS):
         ax = fig.add_subplot(3, NUMBER_OF_CLUSTERS, y + offset)
-        for x in x_train[y_pred == y]:
+        for x in train_x[pred_y == y]:
             ax.plot(x.ravel(), "k-", alpha=.2)
         ax.plot(clustering.cluster_centers_[y].ravel(), "r-")
-        ax.set_xlim(0, x_train.shape[1])
+        ax.set_xlim(0, train_x.shape[1])
         ax.set_ylim(6, 15)
         ax.text(0.55, 0.85, 'Cluster %d' % y, transform=fig.gca().transAxes)
         if y == 0:
             plt.title(title)
 
 
-def visualize_n_samples_per_class(x, y):
+def visualize_n_samples_per_class(x: np.ndarray, y: np.ndarray) -> None:
     """
     Iteratively visualizes one sample per class as long as the user enters '+'.
 
@@ -82,9 +110,9 @@ def visualize_n_samples_per_class(x, y):
         key = input("Enter '+' to see another sample per class\n")
         if key != "+":
             break
-        fig1 = plt.figure()
+        sample_fig = plt.figure()
         # create a single subplot that takes up the entire figure
-        ax = fig1.add_subplot(1, 1, 1)
+        ax = sample_fig.add_subplot(1, 1, 1)
         for c in classes:
             if len(samples_by_class[c]) <= sample:
                 print("no more complete sample distribution..")
@@ -92,22 +120,27 @@ def visualize_n_samples_per_class(x, y):
                 return
             ax.plot(samples_by_class[c][sample], label="class " + str(c))
         ax.legend(loc="best")
-        fig1.show()
+        sample_fig.show()
 
 
-def load_data():
+def load_data() ->  (np.ndarray, np.ndarray):
+    """
+    Loads the data to be clustered.
+
+    :return: (patches to be clustered, ground truth labels)
+    """
     data = TrainingData(np.load("data/patch_data.npz", allow_pickle=True))
     visualize_n_samples_per_class(data[:][0], data[:][1])
-    x_train = data[:][0]
-    y_train = data[:][1]
+    train_x = data[:][0]
+    train_y = data[:][1]
     np.random.seed(SEED)
-    idx = np.random.permutation(len(x_train))
-    x_train = x_train[idx]
-    y_train = y_train[idx]
-    return x_train, y_train
+    idx = np.random.permutation(len(train_x))
+    train_x = train_x[idx]
+    train_y = train_y[idx]
+    return train_x, train_y
 
 
-def dir_path(path):
+def dir_path(path: str) -> str:
     """
     Returns path if it's valid, raises error otherwise.
 
@@ -120,7 +153,7 @@ def dir_path(path):
         raise argparse.ArgumentTypeError(f"{path} is not a valid path")
 
 
-def create_dataset(norm, data_path):
+def create_dataset(norm: bool, data_path: str) -> None:
     """
     Iterates through input data and generates an accumulated data set (.npz).
 
@@ -130,7 +163,7 @@ def create_dataset(norm, data_path):
     create_processed_time_series_dataset(data_path, norm)
 
 
-def create_processed_time_series_dataset(data_path, norm):
+def create_processed_time_series_dataset(data_path: str, norm: bool) -> None:
     """
     Creates a processed time series dataset (.npz file containing all samples).
 
@@ -143,7 +176,7 @@ def create_processed_time_series_dataset(data_path, norm):
         label, curr_voltages = read_oscilloscope_recording(path)
         labels.append(label)
         if norm:
-            # TODO: experimentally compare different methods -> for now min-max worked best
+            # TODO: experimentally compare different methods -> for now, decimal worked best
             # curr_voltages = z_normalize_time_series(curr_voltages)
             # curr_voltages = min_max_normalize_time_series(curr_voltages)
             curr_voltages = decimal_scaling_normalize_time_series(curr_voltages, 2)
@@ -152,7 +185,7 @@ def create_processed_time_series_dataset(data_path, norm):
     np.savez("data/patch_data.npz", np.array(voltage_series, dtype=object), np.array(labels))
 
 
-def z_normalize_time_series(series):
+def z_normalize_time_series(series: list) -> list:
     """
     Z-normalize the specified time series - 0 mean / 1 std_dev.
 
@@ -162,7 +195,7 @@ def z_normalize_time_series(series):
     return ((series - np.mean(series)) / np.std(series)).tolist()
 
 
-def min_max_normalize_time_series(series):
+def min_max_normalize_time_series(series: list) -> list:
     """
     Min-max-normalize the specified time series -> scale values to range [0, 1].
 
@@ -174,7 +207,7 @@ def min_max_normalize_time_series(series):
     return ((series - minimum) / (maximum - minimum)).tolist()
 
 
-def decimal_scaling_normalize_time_series(series, power):
+def decimal_scaling_normalize_time_series(series: list, power: int) -> list:
     """
     Decimal-scaling-normalize the specified time series -> largest absolute value < 1.0.
 
@@ -185,7 +218,7 @@ def decimal_scaling_normalize_time_series(series, power):
     return (np.array(series) / (10 ** power)).tolist()
 
 
-def logarithmic_normalize_time_series(series, base):
+def logarithmic_normalize_time_series(series: list, base: int) -> list:
     """
     Logarithmic-normalize the specified time series -> reduces impact of extreme values.
 
@@ -196,12 +229,12 @@ def logarithmic_normalize_time_series(series, base):
     return (np.log(series) / np.log(base)).tolist()
 
 
-def read_oscilloscope_recording(rec_file):
+def read_oscilloscope_recording(rec_file: Path) -> (int, list):
     """
     Reads the oscilloscope recording from the specified file.
 
     :param rec_file: oscilloscope recording file
-    :return: list of voltage values (time series)
+    :return: (ground truth label, list of voltage values (time series))
     """
     print("reading oscilloscope recording from", rec_file)
     label = None
@@ -216,7 +249,7 @@ def read_oscilloscope_recording(rec_file):
     return label, curr_voltages
 
 
-def zero_padding(patches):
+def zero_padding(patches: np.ndarray) -> np.ndarray:
     """
     Applies zero-padding to the provided patches and transforms them to the expected shape.
 
@@ -232,7 +265,7 @@ def zero_padding(patches):
     return padded_array
 
 
-def avg_padding(patches):
+def avg_padding(patches: np.ndarray) -> np.ndarray:
     """
     Applies average-padding to the provided patches and transforms them to the expected shape.
 
@@ -249,7 +282,13 @@ def avg_padding(patches):
     return padded_array.reshape((padded_array.shape[0], max_ts_length, 1))
 
 
-def last_val_padding(patches):
+def last_val_padding(patches: np.ndarray) -> np.ndarray:
+    """
+    Applies last-value-padding to the provided patches and transforms them to the expected shape.
+
+    :param patches: battery signal sub-ROI patches
+    :return: padded / transformed patches
+    """
     patches = patches.tolist()
     max_ts_length = max([len(patch) for patch in patches])
     for p in patches:
@@ -259,7 +298,13 @@ def last_val_padding(patches):
     return padded_array.reshape((padded_array.shape[0], max_ts_length, 1))
 
 
-def periodic_padding(patches):
+def periodic_padding(patches: np.ndarray) -> np.ndarray:
+    """
+    Applies periodic-padding to the provided patches and transforms them to the expected shape.
+
+    :param patches: battery signal sub-ROI patches
+    :return: padded / transformed patches
+    """
     patches = patches.tolist()
     max_ts_length = max([len(patch) for patch in patches])
     for p in patches:
@@ -271,7 +316,13 @@ def periodic_padding(patches):
     return padded_array.reshape((padded_array.shape[0], max_ts_length, 1))
 
 
-def interpolation(patches):
+def interpolation(patches: np.ndarray) -> np.ndarray:
+    """
+    Resamples the provided patches and transforms them to the expected shape.
+
+    :param patches: battery signal sub-ROI patches
+    :return: padded  / transformed patches
+    """
     patches = patches.tolist()
     if INTERPOLATION_TARGET == "MIN":
         interpolation_target_len = min([len(patch) for patch in patches])
@@ -290,7 +341,7 @@ def interpolation(patches):
     return padded_array.reshape((padded_array.shape[0], interpolation_target_len, 1))
 
 
-def preprocess_patches(patches):
+def preprocess_patches(patches: np.ndarray) -> np.ndarray:
     """
     Preprocesses the patches, i.e., performs padding and transforms them into a shape expected by `tslearn`.
 
