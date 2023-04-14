@@ -86,6 +86,10 @@ def visualize_n_samples_per_class(x, y):
         # create a single subplot that takes up the entire figure
         ax = fig1.add_subplot(1, 1, 1)
         for c in classes:
+            if len(samples_by_class[c]) <= sample:
+                print("no more complete sample distribution..")
+                plt.close()
+                return
             ax.plot(samples_by_class[c][sample], label="class " + str(c))
         ax.legend(loc="best")
         fig1.show()
