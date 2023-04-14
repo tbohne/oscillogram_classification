@@ -123,7 +123,7 @@ def visualize_n_samples_per_class(x: np.ndarray, y: np.ndarray) -> None:
         sample_fig.show()
 
 
-def load_data() ->  (np.ndarray, np.ndarray):
+def load_data() -> (np.ndarray, np.ndarray):
     """
     Loads the data to be clustered.
 
