@@ -34,7 +34,7 @@ def compute_distances(sample: list, clustering_model: TimeSeriesKMeans) -> list:
         return [dtw(sample, cluster_centroid) for cluster_centroid in clustering_model.cluster_centers_]
 
 
-def set_up_predefined_clusters(predictions, ground_truth):
+def set_up_predefined_clusters(predictions: list, ground_truth: list) -> dict:
     """
     Sets up the predefined clusters.
 
@@ -52,7 +52,7 @@ def set_up_predefined_clusters(predictions, ground_truth):
     return ground_truth_per_cluster
 
 
-def load_data():
+def load_data() -> (np.ndarray, np.ndarray):
     """
     Loads the test samples.
 
