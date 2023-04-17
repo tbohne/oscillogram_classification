@@ -18,7 +18,6 @@ MODEL = "trained_models/dba_km.pkl"
 DATA = "data/patch_data.npz"
 METRIC = "DTW"
 SEED = 42
-TEST_SAMPLE_CNT = 5
 
 
 def compute_distances(sample: np.ndarray, clustering_model: TimeSeriesKMeans) -> list:
@@ -37,26 +36,6 @@ def compute_distances(sample: np.ndarray, clustering_model: TimeSeriesKMeans) ->
     else:
         # default option is DTW
         return [dtw(sample, cluster_centroid) for cluster_centroid in clustering_model.cluster_centers_]
-
-
-def set_up_predefined_clusters(predictions: list, ground_truth: list) -> dict:
-    """
-    Sets up the predefined clusters.
-
-    :param predictions: predictions of the predefined clustering model for the 'training data'
-    :param ground_truth: ground truth labels for the new samples to be classified
-    :return: ground truth values for each cluster
-    """
-    # we have 5 clusters, i.e., 5 sub-ROIs
-    cluster_dict = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
-    ground_truth_per_cluster = {0: [], 1: [], 2: [], 3: [], 4: []}
-
-    for i in range(len(predictions)):
-        cluster_dict[predictions[i]] += 1
-        if len(ground_truth) > i:
-            ground_truth_per_cluster[predictions[i]].append(ground_truth[i])
-    print("cluster distribution:", cluster_dict)
-    return ground_truth_per_cluster
 
 
 def load_data() -> (np.ndarray, np.ndarray):
@@ -147,34 +126,29 @@ if __name__ == '__main__':
     create_processed_time_series_dataset(args.samples)
 
     # load saved clustering model from file
-    model, y_pred = joblib.load(MODEL)
+    model, y_pred, ground_truth = joblib.load(MODEL)
     test_x, test_y = load_data()
-    predefined_clusters = set_up_predefined_clusters(y_pred, test_y)
 
-    print("PRE:", predefined_clusters)
-
-    for i in range(TEST_SAMPLE_CNT):
+    for i in range(len(test_x)):
         test_sample = test_x[i]
         print("test sample excerpt:", test_sample[:15])
         best_matching_cluster = determine_best_matching_cluster_for_sample(test_sample, model)
-        print("best matching cluster:", best_matching_cluster)
+        print("best matching cluster for new sample:", best_matching_cluster,
+              "(", ground_truth[best_matching_cluster], ")")
+        best_cluster = ground_truth[best_matching_cluster]
 
         # ground truth provided?
-        if len(test_y) > i:
+        if len(test_y) > 0:
             test_sample_ground_truth = test_y[i]
             print("ground truth:", test_sample_ground_truth)
-
-            print("best matching cluster for new sample:", best_matching_cluster,
-                  "(", predefined_clusters[best_matching_cluster], ")")
-            best_cluster = predefined_clusters[best_matching_cluster]
 
             # if the ground truth matches the most prominent label in the cluster, it's a success
             d = {i: best_cluster.count(i) for i in np.unique(best_cluster)}
             most_prominent_entry = max(d, key=d.get)
 
             if test_sample_ground_truth == most_prominent_entry:
-                print("SUCCESS: ground truth (", test_sample_ground_truth, ") matches most prominent entry in cluster (",
-                      most_prominent_entry, ")")
+                print("SUCCESS: ground truth (", test_sample_ground_truth,
+                      ") matches most prominent entry in cluster (", most_prominent_entry, ")")
             else:
                 print("FAILURE: ground truth (", test_sample_ground_truth,
                       ") does not match most prominent entry in cluster (", most_prominent_entry, ")")
