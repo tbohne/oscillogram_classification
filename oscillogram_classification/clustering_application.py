@@ -9,14 +9,14 @@ from tslearn.metrics import dtw, soft_dtw
 
 from training_data import TrainingData
 
-MODEL = "dba_km.pkl"
+MODEL = "trained_models/dba_km.pkl"
 DATA = "data/patch_data.npz"
 METRIC = "DTW"
 SEED = 42
 TEST_SAMPLE_CNT = 5
 
 
-def compute_distances(sample: list, clustering_model: TimeSeriesKMeans) -> list:
+def compute_distances(sample: np.ndarray, clustering_model: TimeSeriesKMeans) -> list:
     """
     Computes the distance between the provided sample and each cluster of the specified model using the configured
     metric.
@@ -66,6 +66,19 @@ def load_data() -> (np.ndarray, np.ndarray):
     return x_train[idx], y_train[idx]
 
 
+def determine_best_matching_cluster_for_sample(sample: np.ndarray, clustering_model: TimeSeriesKMeans) -> int:
+    """
+    Determines the best matching cluster (smallest distance to centroid) for the specified sample.
+
+    :param sample: sample to determine cluster for
+    :param clustering_model: 'trained' clustering model
+    :return: index of best-matching sample
+    """
+    distances = compute_distances(sample, clustering_model)
+    # select the best-matching cluster for the new sample
+    return int(np.argmin(distances))
+
+
 if __name__ == '__main__':
     # load saved clustering model from file
     model, y_pred = joblib.load(MODEL)
@@ -78,10 +91,8 @@ if __name__ == '__main__':
         print("test sample excerpt:", test_sample[:15])
         print("ground truth:", test_sample_ground_truth)
 
-        distances = compute_distances(test_sample, model)
+        best_matching_cluster = determine_best_matching_cluster_for_sample(test_sample, model)
 
-        # select the best-matching cluster for the new sample
-        best_matching_cluster = int(np.argmin(distances))
         print("best matching cluster for new sample:", best_matching_cluster,
               "(", predefined_clusters[best_matching_cluster], ")")
         best_cluster = predefined_clusters[best_matching_cluster]

@@ -386,7 +386,7 @@ if __name__ == '__main__':
         random_state=SEED
     )
     y_pred = euclidean_km.fit_predict(x_train)
-    joblib.dump((euclidean_km, y_pred), 'euclidean_km.pkl')  # save model to file
+    joblib.dump((euclidean_km, y_pred), 'trained_models/euclidean_km.pkl')  # save model to file
     visualize_n_samples_per_class(x_train, y_pred)
     plot_results(1, "Euclidean $k$-means", euclidean_km, x_train, y_train, y_pred, fig2)
 
@@ -401,7 +401,7 @@ if __name__ == '__main__':
         random_state=SEED
     )
     y_pred = dba_km.fit_predict(x_train)
-    joblib.dump((dba_km, y_pred), 'dba_km.pkl')  # save model to file
+    joblib.dump((dba_km, y_pred), 'trained_models/dba_km.pkl')  # save model to file
     plot_results(1 + NUMBER_OF_CLUSTERS, "DBA $k$-means", dba_km, x_train, y_train, y_pred, fig2)
     visualize_n_samples_per_class(x_train, y_pred)
 
@@ -417,7 +417,7 @@ if __name__ == '__main__':
         random_state=SEED
     )
     y_pred = sdtw_km.fit_predict(x_train)
-    joblib.dump((sdtw_km, y_pred), 'sdtw_km.pkl')  # save model to file
+    joblib.dump((sdtw_km, y_pred), 'trained_models/sdtw_km.pkl')  # save model to file
     plot_results(1 + 2 * NUMBER_OF_CLUSTERS, "Soft-DTW $k$-means", sdtw_km, x_train, y_train, y_pred, fig2)
     visualize_n_samples_per_class(x_train, y_pred)
 
