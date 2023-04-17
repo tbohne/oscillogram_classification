@@ -2,8 +2,13 @@
 # -*- coding: utf-8 -*-
 # @author Tim Bohne
 
+import argparse
+import os
+from pathlib import Path
+
 import joblib
 import numpy as np
+import pandas as pd
 from tslearn.clustering import TimeSeriesKMeans
 from tslearn.metrics import dtw, soft_dtw
 
@@ -39,7 +44,7 @@ def set_up_predefined_clusters(predictions: list, ground_truth: list) -> dict:
     Sets up the predefined clusters.
 
     :param predictions: predictions of the predefined clustering model for the 'training data'
-    :param ground_truth: ground truth labels for the 'training data'
+    :param ground_truth: ground truth labels for the new samples to be classified
     :return: ground truth values for each cluster
     """
     # we have 5 clusters, i.e., 5 sub-ROIs
@@ -48,7 +53,9 @@ def set_up_predefined_clusters(predictions: list, ground_truth: list) -> dict:
 
     for i in range(len(predictions)):
         cluster_dict[predictions[i]] += 1
-        ground_truth_per_cluster[predictions[i]].append(ground_truth[i])
+        if len(ground_truth) > i:
+            ground_truth_per_cluster[predictions[i]].append(ground_truth[i])
+    print("cluster distribution:", cluster_dict)
     return ground_truth_per_cluster
 
 
@@ -59,11 +66,11 @@ def load_data() -> (np.ndarray, np.ndarray):
     :return: test samples
     """
     data = TrainingData(np.load(DATA, allow_pickle=True))
-    x_train = data[:][0]
-    y_train = data[:][1]
+    x_test = data[:][0]
+    y_test = data[:][1]
     np.random.seed(SEED)
-    idx = np.random.permutation(len(x_train))
-    return x_train[idx], y_train[idx]
+    idx = np.random.permutation(len(x_test))
+    return x_test[idx], y_test[idx] if len(y_test) > 0 else []
 
 
 def determine_best_matching_cluster_for_sample(sample: np.ndarray, clustering_model: TimeSeriesKMeans) -> int:
@@ -79,32 +86,96 @@ def determine_best_matching_cluster_for_sample(sample: np.ndarray, clustering_mo
     return int(np.argmin(distances))
 
 
+def dir_path(path: str) -> str:
+    """
+    Returns path if it's valid, raises error otherwise.
+
+    :param path: path to be checked
+    :return: feasible path or error
+    """
+    if os.path.isfile(path) or os.path.isdir(path):
+        return path
+    else:
+        raise argparse.ArgumentTypeError(f"{path} is not a valid path")
+
+
+def read_oscilloscope_recording(rec_file: Path) -> (int, list):
+    """
+    Reads the oscilloscope recording from the specified file.
+
+    :param rec_file: oscilloscope recording file
+    :return: list of voltage values (time series)
+    """
+    print("reading oscilloscope recording from", rec_file)
+    label = None
+    patches = ["patch0", "patch1", "patch2", "patch3", "patch4"]
+    for patch in patches:
+        if patch in str(rec_file).lower():
+            label = int(patch[-1])
+            break
+    df = pd.read_csv(rec_file, delimiter=';', na_values=['-∞', '∞'])
+    curr_voltages = list(df['Kanal A'].values)
+    return label, curr_voltages
+
+
+def create_processed_time_series_dataset(data_path: str) -> None:
+    """
+    Creates a processed time series dataset (.npz file containing all samples).
+
+    :param data_path: path to sample data
+    """
+    voltage_series = []
+    labels = []
+
+    if os.path.isfile(data_path):
+        label, curr_voltages = read_oscilloscope_recording(Path(data_path))
+        labels.append(label)
+        voltage_series.append(curr_voltages)
+
+    for path in Path(data_path).glob('**/*.csv'):
+        label, curr_voltages = read_oscilloscope_recording(path)
+        labels.append(label)
+        voltage_series.append(curr_voltages)
+
+    np.savez(DATA, np.array(voltage_series, dtype=object), np.array(labels))
+
+
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Assign new samples to predetermined clusters')
+    parser.add_argument('--samples', type=dir_path, required=True, help='path to the samples to be assigned')
+    args = parser.parse_args()
+    create_processed_time_series_dataset(args.samples)
+
     # load saved clustering model from file
     model, y_pred = joblib.load(MODEL)
-    train_x, train_y = load_data()
-    predefined_clusters = set_up_predefined_clusters(y_pred, train_y)
+    test_x, test_y = load_data()
+    predefined_clusters = set_up_predefined_clusters(y_pred, test_y)
+
+    print("PRE:", predefined_clusters)
 
     for i in range(TEST_SAMPLE_CNT):
-        test_sample = train_x[i * 3]
-        test_sample_ground_truth = train_y[i * 3]
+        test_sample = test_x[i]
         print("test sample excerpt:", test_sample[:15])
-        print("ground truth:", test_sample_ground_truth)
-
         best_matching_cluster = determine_best_matching_cluster_for_sample(test_sample, model)
+        print("best matching cluster:", best_matching_cluster)
 
-        print("best matching cluster for new sample:", best_matching_cluster,
-              "(", predefined_clusters[best_matching_cluster], ")")
-        best_cluster = predefined_clusters[best_matching_cluster]
+        # ground truth provided?
+        if len(test_y) > i:
+            test_sample_ground_truth = test_y[i]
+            print("ground truth:", test_sample_ground_truth)
 
-        # if the ground truth matches the most prominent label in the cluster, it's a success
-        d = {i: best_cluster.count(i) for i in np.unique(best_cluster)}
-        most_prominent_entry = max(d, key=d.get)
+            print("best matching cluster for new sample:", best_matching_cluster,
+                  "(", predefined_clusters[best_matching_cluster], ")")
+            best_cluster = predefined_clusters[best_matching_cluster]
 
-        if test_sample_ground_truth == most_prominent_entry:
-            print("SUCCESS: ground truth (", test_sample_ground_truth, ") matches most prominent entry in cluster (",
-                  most_prominent_entry, ")")
-        else:
-            print("FAILURE: ground truth (", test_sample_ground_truth,
-                  ") does not match most prominent entry in cluster (", most_prominent_entry, ")")
-        print("-------------------------------------------------------------------------")
+            # if the ground truth matches the most prominent label in the cluster, it's a success
+            d = {i: best_cluster.count(i) for i in np.unique(best_cluster)}
+            most_prominent_entry = max(d, key=d.get)
+
+            if test_sample_ground_truth == most_prominent_entry:
+                print("SUCCESS: ground truth (", test_sample_ground_truth, ") matches most prominent entry in cluster (",
+                      most_prominent_entry, ")")
+            else:
+                print("FAILURE: ground truth (", test_sample_ground_truth,
+                      ") does not match most prominent entry in cluster (", most_prominent_entry, ")")
+            print("-------------------------------------------------------------------------")
