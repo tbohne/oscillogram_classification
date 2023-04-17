@@ -7,3 +7,6 @@ tsfresh
 tslearn
 scikit-learn
 tf-keras-vis
+setuptools
+joblib
+dask
