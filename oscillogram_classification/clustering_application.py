@@ -83,7 +83,7 @@ def read_oscilloscope_recording(rec_file: Path) -> (int, list):
     Reads the oscilloscope recording from the specified file.
 
     :param rec_file: oscilloscope recording file
-    :return: list of voltage values (time series)
+    :return: (label, list of voltage values (time series))
     """
     print("reading oscilloscope recording from", rec_file)
     label = None
