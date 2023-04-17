@@ -6,6 +6,7 @@ import argparse
 import os
 from pathlib import Path
 
+import joblib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -377,16 +378,17 @@ if __name__ == '__main__':
     fig2 = plt.figure(figsize=(5 * NUMBER_OF_CLUSTERS, 3))
 
     print("Euclidean k-means")
-    km = TimeSeriesKMeans(
+    euclidean_km = TimeSeriesKMeans(
         n_clusters=NUMBER_OF_CLUSTERS,
         n_init=N_INIT,
         max_iter=MAX_ITER,
         verbose=True,
         random_state=SEED
     )
-    y_pred = km.fit_predict(x_train)
+    y_pred = euclidean_km.fit_predict(x_train)
+    joblib.dump((euclidean_km, y_pred), 'euclidean_km.pkl')  # save model to file
     visualize_n_samples_per_class(x_train, y_pred)
-    plot_results(1, "Euclidean $k$-means", km, x_train, y_train, y_pred, fig2)
+    plot_results(1, "Euclidean $k$-means", euclidean_km, x_train, y_train, y_pred, fig2)
 
     print("DBA k-means")
     dba_km = TimeSeriesKMeans(
@@ -399,6 +401,7 @@ if __name__ == '__main__':
         random_state=SEED
     )
     y_pred = dba_km.fit_predict(x_train)
+    joblib.dump((dba_km, y_pred), 'dba_km.pkl')  # save model to file
     plot_results(1 + NUMBER_OF_CLUSTERS, "DBA $k$-means", dba_km, x_train, y_train, y_pred, fig2)
     visualize_n_samples_per_class(x_train, y_pred)
 
@@ -414,6 +417,7 @@ if __name__ == '__main__':
         random_state=SEED
     )
     y_pred = sdtw_km.fit_predict(x_train)
+    joblib.dump((sdtw_km, y_pred), 'sdtw_km.pkl')  # save model to file
     plot_results(1 + 2 * NUMBER_OF_CLUSTERS, "Soft-DTW $k$-means", sdtw_km, x_train, y_train, y_pred, fig2)
     visualize_n_samples_per_class(x_train, y_pred)
 
