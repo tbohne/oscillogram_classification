@@ -138,7 +138,7 @@ if __name__ == '__main__':
         best_cluster = ground_truth[best_matching_cluster]
 
         # ground truth provided?
-        if len(test_y) > 0:
+        if test_y[i] is not None:
             test_sample_ground_truth = test_y[i]
             print("ground truth:", test_sample_ground_truth)
 
