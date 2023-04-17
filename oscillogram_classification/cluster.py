@@ -43,7 +43,7 @@ def evaluate_performance_for_binary_clustering(ground_truth: np.ndarray, predict
     print("...determine by visual comparison...")
 
 
-def evaluate_performance(ground_truth: np.ndarray, predictions: np.ndarray) -> None:
+def evaluate_performance(ground_truth: np.ndarray, predictions: np.ndarray) -> dict:
     """
     Evaluates the clustering performance for battery signals. An ROI detection algorithm provides the input for the
     clustering of the cropped sub-ROIs. The ROIs are divided into five categories for the battery signals. The five
@@ -52,6 +52,7 @@ def evaluate_performance(ground_truth: np.ndarray, predictions: np.ndarray) -> N
 
     :param ground_truth: ground truth labels
     :param predictions: predicted labels (clusters)
+    :return: ground truth dictionary
     """
     assert set(np.unique(ground_truth)) == set(np.unique(predictions))
     # we have 5 clusters, i.e., 5 sub-ROIs
@@ -66,10 +67,11 @@ def evaluate_performance(ground_truth: np.ndarray, predictions: np.ndarray) -> N
     print("cluster distribution:", cluster_dict.values())
     # each cluster should contain patches with identical labels, you don't know which one, but it must be identical
     print("ground truth per cluster:", ground_truth_per_cluster.values())
+    return ground_truth_per_cluster
 
 
 def plot_results(offset: int, title: str, clustering: TimeSeriesKMeans, train_x: np.ndarray, train_y: np.ndarray,
-                 pred_y: np.ndarray, fig: plt.Figure) -> None:
+                 pred_y: np.ndarray, fig: plt.Figure) -> dict:
     """
     Plots the results of the clustering procedure.
 
@@ -80,11 +82,12 @@ def plot_results(offset: int, title: str, clustering: TimeSeriesKMeans, train_x:
     :param train_y: ground truth of clustered patches
     :param pred_y: predictions (cluster assignments)
     :param fig: figure to add plot to
+    :return: ground truth dictionary
     """
     print("#########################################################################################")
     print("results for", title)
     print("#########################################################################################")
-    evaluate_performance(train_y, pred_y)
+    ground_truth_dict = evaluate_performance(train_y, pred_y)
     for y in range(NUMBER_OF_CLUSTERS):
         ax = fig.add_subplot(3, NUMBER_OF_CLUSTERS, y + offset)
         for x in train_x[pred_y == y]:
@@ -95,6 +98,7 @@ def plot_results(offset: int, title: str, clustering: TimeSeriesKMeans, train_x:
         ax.text(0.55, 0.85, 'Cluster %d' % y, transform=fig.gca().transAxes)
         if y == 0:
             plt.title(title)
+    return ground_truth_dict
 
 
 def visualize_n_samples_per_class(x: np.ndarray, y: np.ndarray) -> None:
@@ -386,9 +390,9 @@ if __name__ == '__main__':
         random_state=SEED
     )
     y_pred = euclidean_km.fit_predict(x_train)
-    joblib.dump((euclidean_km, y_pred), 'trained_models/euclidean_km.pkl')  # save model to file
     visualize_n_samples_per_class(x_train, y_pred)
-    plot_results(1, "Euclidean $k$-means", euclidean_km, x_train, y_train, y_pred, fig2)
+    ground_truth = plot_results(1, "Euclidean $k$-means", euclidean_km, x_train, y_train, y_pred, fig2)
+    joblib.dump((euclidean_km, y_pred, ground_truth), 'trained_models/euclidean_km.pkl')  # save model to file
 
     print("DBA k-means")
     dba_km = TimeSeriesKMeans(
@@ -401,9 +405,9 @@ if __name__ == '__main__':
         random_state=SEED
     )
     y_pred = dba_km.fit_predict(x_train)
-    joblib.dump((dba_km, y_pred), 'trained_models/dba_km.pkl')  # save model to file
-    plot_results(1 + NUMBER_OF_CLUSTERS, "DBA $k$-means", dba_km, x_train, y_train, y_pred, fig2)
     visualize_n_samples_per_class(x_train, y_pred)
+    ground_truth = plot_results(1 + NUMBER_OF_CLUSTERS, "DBA $k$-means", dba_km, x_train, y_train, y_pred, fig2)
+    joblib.dump((dba_km, y_pred, ground_truth), 'trained_models/dba_km.pkl')  # save model to file
 
     print("Soft-DTW k-means")
     sdtw_km = TimeSeriesKMeans(
@@ -417,9 +421,10 @@ if __name__ == '__main__':
         random_state=SEED
     )
     y_pred = sdtw_km.fit_predict(x_train)
-    joblib.dump((sdtw_km, y_pred), 'trained_models/sdtw_km.pkl')  # save model to file
-    plot_results(1 + 2 * NUMBER_OF_CLUSTERS, "Soft-DTW $k$-means", sdtw_km, x_train, y_train, y_pred, fig2)
     visualize_n_samples_per_class(x_train, y_pred)
+    ground_truth = plot_results(1 + 2 * NUMBER_OF_CLUSTERS, "Soft-DTW $k$-means", sdtw_km, x_train, y_train, y_pred,
+                                fig2)
+    joblib.dump((sdtw_km, y_pred, ground_truth), 'trained_models/sdtw_km.pkl')  # save model to file
 
     fig2.tight_layout()
     plt.show()
