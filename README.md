@@ -147,6 +147,29 @@ Clustering usage (with .csv patches):
 $ python oscillogram_classification/cluster.py --path PATH_TO_PATCHES
 ```
 
+## Using Predetermined Clusters for Comparison with Newly Recorded Samples
+
+The idea is to compute the distance between the new time series sample and each of the predetermined cluster centroids. After computing the distances, the cluster with the smallest distance (configurable metric) is selected as the best match for the new sample.
+
+Classify single recording with ground truth label (type: `patch0`):
+```
+$ python oscillogram_classification/clustering_application.py --samples SAMPLE_patch0.csv
+```
+Classify set of recordings with ground truth labels (dir of `patch0` type .csv files):
+```
+$ python oscillogram_classification/clustering_application.py --samples /patch0/
+```
+Sample output:
+```
+-------------------------------------------------------------------------
+test sample excerpt: [10.129, 10.137, 10.137, 10.153, 10.161, 10.153, 10.153]
+best matching cluster for new sample: 0 ( [0, 2, 0, 0, 0, 0, 0] )
+ground truth: 0
+SUCCESS: ground truth ( 0 ) matches most prominent entry in cluster ( 0 )
+-------------------------------------------------------------------------
+```
+The options without ground truth labels work equivalently, just without the patch type in the file / dir name.
+
 ## Positive (1) and Negative (0) Sample for each Component
 
 ### Battery (Engine Starting Process)
