@@ -13,9 +13,11 @@ from tslearn.clustering import TimeSeriesKMeans
 from tslearn.metrics import dtw, soft_dtw
 
 from training_data import TrainingData
+from cluster import create_processed_time_series_dataset
 
 MODEL = "trained_models/dba_km.pkl"
 DATA = "data/patch_data.npz"
+MEASUREMENT_IDS = "data/patch_measurement_ids.csv"
 METRIC = "DTW"
 SEED = 42
 
@@ -45,11 +47,12 @@ def load_data() -> (np.ndarray, np.ndarray):
     :return: test samples
     """
     data = TrainingData(np.load(DATA, allow_pickle=True))
+    measurement_ids = np.loadtxt(MEASUREMENT_IDS,delimiter=',',dtype=str)
     x_test = data[:][0]
     y_test = data[:][1]
     np.random.seed(SEED)
     idx = np.random.permutation(len(x_test))
-    return x_test[idx], y_test[idx] if len(y_test) > 0 else []
+    return x_test[idx], y_test[idx], measurement_ids[idx] if len(y_test) > 0 else []
 
 
 def determine_best_matching_cluster_for_sample(sample: np.ndarray, clustering_model: TimeSeriesKMeans) -> int:
@@ -97,28 +100,6 @@ def read_oscilloscope_recording(rec_file: Path) -> (int, list):
     return label, curr_voltages
 
 
-def create_processed_time_series_dataset(data_path: str) -> None:
-    """
-    Creates a processed time series dataset (.npz file containing all samples).
-
-    :param data_path: path to sample data
-    """
-    voltage_series = []
-    labels = []
-
-    if os.path.isfile(data_path):
-        label, curr_voltages = read_oscilloscope_recording(Path(data_path))
-        labels.append(label)
-        voltage_series.append(curr_voltages)
-
-    for path in Path(data_path).glob('**/*.csv'):
-        label, curr_voltages = read_oscilloscope_recording(path)
-        labels.append(label)
-        voltage_series.append(curr_voltages)
-
-    np.savez(DATA, np.array(voltage_series, dtype=object), np.array(labels))
-
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Assign new samples to predetermined clusters')
     parser.add_argument('--samples', type=dir_path, required=True, help='path to the samples to be assigned')
@@ -127,7 +108,9 @@ if __name__ == '__main__':
 
     # load saved clustering model from file
     model, y_pred, ground_truth = joblib.load(MODEL)
-    test_x, test_y = load_data()
+    test_x, test_y, measurement_ids = load_data()
+
+    classification_per_measurement_id = {}
 
     for i in range(len(test_x)):
         test_sample = test_x[i]
@@ -153,3 +136,16 @@ if __name__ == '__main__':
                 print("FAILURE: ground truth (", test_sample_ground_truth,
                       ") does not match most prominent entry in cluster (", most_prominent_entry, ")")
             print("-------------------------------------------------------------------------")
+
+            if measurement_ids[i] in classification_per_measurement_id:
+                classification_per_measurement_id[measurement_ids[i]][0].append(most_prominent_entry)
+                classification_per_measurement_id[measurement_ids[i]][1].append(test_sample_ground_truth)
+
+            else:
+                classification_per_measurement_id[measurement_ids[i]] = [
+                    [most_prominent_entry], [test_sample_ground_truth]]
+
+    for key, value in classification_per_measurement_id.items():
+        print("measurement ", key)
+        print("Prediction: ", value[0])
+        print("Ground Truth: ", value[1])
