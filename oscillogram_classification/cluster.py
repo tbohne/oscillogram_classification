@@ -16,7 +16,7 @@ from tslearn.preprocessing import TimeSeriesResampler
 from training_data import TrainingData
 
 SEED = 42
-NUMBER_OF_CLUSTERS = 5  # for the battery voltage signal (sub-ROIs)
+NUMBER_OF_CLUSTERS = 8  # for the battery voltage signal (sub-ROIs)
 N_INIT = 50
 MAX_ITER = 500
 MAX_ITER_BARYCENTER = 500
@@ -55,18 +55,21 @@ def evaluate_performance(ground_truth: np.ndarray, predictions: np.ndarray) -> d
     :return: ground truth dictionary
     """
     assert set(np.unique(ground_truth)) == set(np.unique(predictions))
-    # we have 5 clusters, i.e., 5 sub-ROIs
-    cluster_dict = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0}
-    ground_truth_per_cluster = {0: [], 1: [], 2: [], 3: [], 4: []}
+    # we have $k$ clusters, i.e., $k$ sub-ROIs
+    cluster_dict = {i: 0 for i in range(NUMBER_OF_CLUSTERS)}
+    ground_truth_per_cluster = {i: [] for i in range(NUMBER_OF_CLUSTERS)}
 
     for i in range(len(predictions)):
         cluster_dict[predictions[i]] += 1
         ground_truth_per_cluster[predictions[i]].append(ground_truth[i])
 
-    # ideal would be (6, 6, 6, 6, 6) - equally distributed
-    print("cluster distribution:", cluster_dict.values())
+    # ideal would be (n, n, n, n, n) - equally distributed
+    print("cluster distribution:", list(cluster_dict.values()))
+
     # each cluster should contain patches with identical labels, you don't know which one, but it must be identical
-    print("ground truth per cluster:", ground_truth_per_cluster.values())
+    print("ground truth per cluster:")
+    for val in ground_truth_per_cluster.values():
+        print("\t-", val, "\n")
     return ground_truth_per_cluster
 
 
@@ -243,7 +246,8 @@ def read_oscilloscope_recording(rec_file: Path) -> (int, list):
     """
     print("reading oscilloscope recording from", rec_file)
     label = None
-    patches = ["patch0", "patch1", "patch2", "patch3", "patch4"]
+    patches = ["patch" + str(i) for i in range(NUMBER_OF_CLUSTERS)]
+
     for patch in patches:
         if patch in str(rec_file).lower():
             label = int(patch[-1])
@@ -354,8 +358,6 @@ def preprocess_patches(patches: np.ndarray) -> np.ndarray:
     :return: preprocessed patches
     """
     padded_array = interpolation(patches)
-    print(padded_array.shape)
-    print(padded_array[0])
     # TODO: do we really need this? usually way worse..
     # padded_array = TimeSeriesScalerMeanVariance().fit_transform(padded_array)
     return padded_array
