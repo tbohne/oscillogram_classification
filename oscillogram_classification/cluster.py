@@ -16,7 +16,7 @@ from tslearn.preprocessing import TimeSeriesResampler
 from training_data import TrainingData
 
 SEED = 42
-NUMBER_OF_CLUSTERS = 8  # for the battery voltage signal (sub-ROIs)
+NUMBER_OF_CLUSTERS = 5  # for the battery voltage signal (sub-ROIs)
 N_INIT = 50
 MAX_ITER = 500
 MAX_ITER_BARYCENTER = 500
@@ -190,6 +190,7 @@ def create_processed_time_series_dataset(data_path: str, norm: bool) -> None:
             curr_voltages = decimal_scaling_normalize_time_series(curr_voltages, 2)
             # curr_voltages = logarithmic_normalize_time_series(curr_voltages, 10)
         voltage_series.append(curr_voltages)
+
     np.savez("data/patch_data.npz", np.array(voltage_series, dtype=object), np.array(labels))
 
 
@@ -200,7 +201,11 @@ def z_normalize_time_series(series: list) -> list:
     :param series: time series to be normalized
     :return: normalized time series
     """
-    return ((series - np.mean(series)) / np.std(series)).tolist()
+    std_dev = np.std(series)
+    if std_dev == 0.0:
+        std_dev = 0.0000001  # value not important, just prevent division by zero
+        # (x - mean) is 0 anyway when the standard deviation is 0 -> 0 in the end
+    return ((series - np.mean(series)) / std_dev).tolist()
 
 
 def min_max_normalize_time_series(series: list) -> list:
@@ -212,7 +217,10 @@ def min_max_normalize_time_series(series: list) -> list:
     """
     minimum = np.min(series)
     maximum = np.max(series)
-    return ((series - minimum) / (maximum - minimum)).tolist()
+    if (maximum - minimum) != 0.0:
+        return ((series - minimum) / (maximum - minimum)).tolist()
+    # TODO: apply reasonable normalization for division by 0 case
+    return series
 
 
 def decimal_scaling_normalize_time_series(series: list, power: int) -> list:
@@ -373,6 +381,7 @@ if __name__ == '__main__':
 
     create_dataset(args.norm, args.path)
     x_train, y_train = load_data()
+    # bring all patches to the same length
     x_train = preprocess_patches(x_train)
 
     print("original TS size:", len(x_train[0]))
