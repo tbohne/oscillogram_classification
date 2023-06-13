@@ -22,6 +22,7 @@ MAX_ITER = 500
 MAX_ITER_BARYCENTER = 500
 RESAMPLING_DIVISOR = 100
 INTERPOLATION_TARGET = "MIN"  # other options are 'MAX' and 'AVG'
+SMALL_VAL = 0.0000001
 
 
 def evaluate_performance_for_binary_clustering(ground_truth: np.ndarray, predictions: np.ndarray) -> None:
@@ -54,7 +55,8 @@ def evaluate_performance(ground_truth: np.ndarray, predictions: np.ndarray) -> d
     :param predictions: predicted labels (clusters)
     :return: ground truth dictionary
     """
-    assert set(np.unique(ground_truth)) == set(np.unique(predictions))
+    # TODO: not necessarily a good assumption: there can be more than one cluster per patch type
+    # assert set(np.unique(ground_truth)) == set(np.unique(predictions))
     # we have $k$ clusters, i.e., $k$ sub-ROIs
     cluster_dict = {i: 0 for i in range(NUMBER_OF_CLUSTERS)}
     ground_truth_per_cluster = {i: [] for i in range(NUMBER_OF_CLUSTERS)}
@@ -203,7 +205,7 @@ def z_normalize_time_series(series: list) -> list:
     """
     std_dev = np.std(series)
     if std_dev == 0.0:
-        std_dev = 0.0000001  # value not important, just prevent division by zero
+        std_dev = SMALL_VAL  # value not important, just prevent division by zero
         # (x - mean) is 0 anyway when the standard deviation is 0 -> 0 in the end
     return ((series - np.mean(series)) / std_dev).tolist()
 
@@ -217,10 +219,12 @@ def min_max_normalize_time_series(series: list) -> list:
     """
     minimum = np.min(series)
     maximum = np.max(series)
-    if (maximum - minimum) != 0.0:
-        return ((series - minimum) / (maximum - minimum)).tolist()
-    # TODO: apply reasonable normalization for division by 0 case
-    return series
+    denominator = maximum - minimum
+    if denominator == 0.0:
+        denominator = SMALL_VAL
+        # if (max-min) is 0, they are equal, which means that all values are the same,
+        # but then the numerator is 0 anyway
+    return ((series - minimum) / denominator).tolist()
 
 
 def decimal_scaling_normalize_time_series(series: list, power: int) -> list:
