@@ -17,11 +17,13 @@ from training_data import TrainingData
 
 SEED = 42
 NUMBER_OF_CLUSTERS = 7  # for the battery voltage signal (sub-ROIs)
+N_LABEL = 5 # number of integers that appear as labels in the file names of the patches
 N_INIT = 50
 MAX_ITER = 500
 MAX_ITER_BARYCENTER = 500
 RESAMPLING_DIVISOR = 10
 INTERPOLATION_TARGET = "MIN"  # other options are 'MAX' and 'AVG'
+SMALL_VAL = 0.0000001
 
 
 def evaluate_performance_for_binary_clustering(ground_truth: np.ndarray, predictions: np.ndarray) -> None:
@@ -54,22 +56,24 @@ def evaluate_performance(ground_truth: np.ndarray, predictions: np.ndarray) -> d
     :param predictions: predicted labels (clusters)
     :return: ground truth dictionary
     """
-    assert set(np.unique(ground_truth)) == set(np.unique(predictions))
-    cluster_dict = {}
 
-    ground_truth_per_cluster = {}
-
-    for i in range(NUMBER_OF_CLUSTERS):
-        cluster_dict[i] = 0
-        ground_truth_per_cluster[i] = []
+    # TODO: not necessarily a good assumption: there can be more than one cluster per patch type
+    # assert set(np.unique(ground_truth)) == set(np.unique(predictions))
+    # we have $k$ clusters, i.e., $k$ sub-ROIs
+    cluster_dict = {i: 0 for i in range(NUMBER_OF_CLUSTERS)}
+    ground_truth_per_cluster = {i: [] for i in range(NUMBER_OF_CLUSTERS)}
 
     for i in range(len(predictions)):
         cluster_dict[predictions[i]] += 1
         ground_truth_per_cluster[predictions[i]].append(ground_truth[i])
 
-    print("cluster distribution:", cluster_dict.values())
+    # ideal would be (n, n, n, n, n) - equally distributed
+    print("cluster distribution:", list(cluster_dict.values()))
+
     # each cluster should contain patches with identical labels, you don't know which one, but it must be identical
-    print("ground truth per cluster:", ground_truth_per_cluster.values())
+    print("ground truth per cluster:")
+    for val in ground_truth_per_cluster.values():
+        print("\t-", val, "\n")
     return ground_truth_per_cluster
 
 
@@ -229,6 +233,7 @@ def create_processed_time_series_dataset(data_path: str, norm: bool = False) -> 
         measurement_id = str(path).split(os.path.sep)[-1].split("_")[0]
         measurement_ids.append(measurement_id + "_negative") if "negative" in str(path) else measurement_ids.append(
             measurement_id + "_positive")
+
     np.savez("data/patch_data.npz", np.array(voltage_series, dtype=object), np.array(labels))
     np.savetxt("data/patch_measurement_ids.csv", measurement_ids, delimiter=',', fmt='%s')
 
@@ -240,7 +245,11 @@ def z_normalize_time_series(series: list) -> list:
     :param series: time series to be normalized
     :return: normalized time series
     """
-    return ((series - np.mean(series)) / np.std(series)).tolist()
+    std_dev = np.std(series)
+    if std_dev == 0.0:
+        std_dev = SMALL_VAL  # value not important, just prevent division by zero
+        # (x - mean) is 0 anyway when the standard deviation is 0 -> 0 in the end
+    return ((series - np.mean(series)) / std_dev).tolist()
 
 
 def min_max_normalize_time_series(series: list) -> list:
@@ -252,7 +261,12 @@ def min_max_normalize_time_series(series: list) -> list:
     """
     minimum = np.min(series)
     maximum = np.max(series)
-    return ((series - minimum) / (maximum - minimum)).tolist()
+    denominator = maximum - minimum
+    if denominator == 0.0:
+        denominator = SMALL_VAL
+        # if (max-min) is 0, they are equal, which means that all values are the same,
+        # but then the numerator is 0 anyway
+    return ((series - minimum) / denominator).tolist()
 
 
 def decimal_scaling_normalize_time_series(series: list, power: int) -> list:
@@ -286,7 +300,8 @@ def read_oscilloscope_recording(rec_file: Path) -> (int, list):
     """
     print("reading oscilloscope recording from", rec_file)
     label = None
-    patches = ["patch0", "patch1", "patch2", "patch3", "patch4"]
+    patches = ["patch" + str(i) for i in range(N_LABEL)]
+
     for patch in patches:
         if patch in str(rec_file).lower():
             label = int(patch[-1])
@@ -401,8 +416,6 @@ def preprocess_patches(patches: np.ndarray) -> np.ndarray:
     :return: preprocessed patches
     """
     padded_array = interpolation(patches)
-    print(padded_array.shape)
-    print(padded_array[0])
     # TODO: do we really need this? usually way worse..
     # padded_array = TimeSeriesScalerMeanVariance().fit_transform(padded_array)
     return padded_array
@@ -418,6 +431,7 @@ if __name__ == '__main__':
 
     create_dataset(args.norm, args.path)
     x_train, y_train = load_data()
+    # bring all patches to the same length
     x_train = preprocess_patches(x_train)
 
     print("original TS size:", len(x_train[0]))
