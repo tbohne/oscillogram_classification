@@ -189,17 +189,16 @@ def clean_incorrect_patches(paths: list) -> list:
         path = str(path_object)
         measurement_id = path.split(os.path.sep)[-1].split("_")[0]
         if "negative" in path:
-            if not any(measurement_id + "_patch3" in str(other_path) and "negative" in str(other_path) for other_path in
-                       paths) and any(
-                    measurement_id + "_patch2" in str(other_path) and "negative" in str(other_path) for other_path in
-                    paths):
+            if not any(measurement_id + "_patch3" in str(other_path) and
+                       "negative" in str(other_path) for other_path in
+                       paths) and any(measurement_id + "_patch2" in str(other_path) and
+                                      "negative" in str(other_path) for other_path in paths):
                 cleaned_paths.append(path_object)
         else:
-            if not any(
-                    measurement_id + "_patch5" in str(other_path) and not "negative" in str(other_path) for other_path
-                    in paths) and any(
-                    measurement_id + "_patch4" in str(other_path) and not "negative" in str(other_path) for other_path
-                    in paths):
+            if not any(measurement_id + "_patch5" in str(other_path) and
+                       "negative" not in str(other_path) for other_path in paths) and \
+                    any(measurement_id + "_patch4" in str(other_path) and
+                        "negative" not in str(other_path) for other_path in paths):
                 cleaned_paths.append(path_object)
     return cleaned_paths
 
