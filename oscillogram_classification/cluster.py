@@ -17,7 +17,7 @@ from training_data import TrainingData
 
 SEED = 42
 NUMBER_OF_CLUSTERS = 7  # for the battery voltage signal (sub-ROIs)
-N_LABEL = 5 # number of integers that appear as labels in the file names of the patches
+N_LABEL = 5  # number of integers that appear as labels in the file names of the patches
 N_INIT = 50
 MAX_ITER = 500
 MAX_ITER_BARYCENTER = 500
@@ -191,15 +191,15 @@ def clean_incorrect_patches(paths: list) -> list:
         if "negative" in path:
             if not any(measurement_id + "_patch3" in str(other_path) and "negative" in str(other_path) for other_path in
                        paths) and any(
-                    measurement_id + "_patch2" in str(other_path) and "negative" in str(other_path) for other_path in
-                    paths):
+                measurement_id + "_patch2" in str(other_path) and "negative" in str(other_path) for other_path in
+                paths):
                 cleaned_paths.append(path_object)
         else:
             if not any(
                     measurement_id + "_patch5" in str(other_path) and not "negative" in str(other_path) for other_path
                     in paths) and any(
-                    measurement_id + "_patch4" in str(other_path) and not "negative" in str(other_path) for other_path
-                    in paths):
+                measurement_id + "_patch4" in str(other_path) and not "negative" in str(other_path) for other_path
+                in paths):
                 cleaned_paths.append(path_object)
     return cleaned_paths
 
