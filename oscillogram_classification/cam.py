@@ -3,12 +3,13 @@
 # @author Tim Bohne
 
 import argparse
+import io
 import os
 
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-from oscillogram_classification import preprocess
+from PIL import Image
 from tensorflow import keras
 from tf_keras_vis.gradcam import Gradcam
 from tf_keras_vis.gradcam_plus_plus import GradcamPlusPlus
@@ -17,6 +18,8 @@ from tf_keras_vis.saliency import Saliency
 from tf_keras_vis.scorecam import Scorecam
 from tf_keras_vis.utils.model_modifiers import ReplaceToLinear
 from tf_keras_vis.utils.scores import CategoricalScore, BinaryScore
+
+from oscillogram_classification import preprocess
 
 METHODS = ["gradcam", "hirescam", "tf-keras-gradcam", "tf-keras-gradcam++", "tf-keras-scorecam",
            "tf-keras-smoothgrad", "tf-keras-layercam", "all"]
@@ -245,6 +248,44 @@ def generate_hirescam(input_array, trained_model, pred_idx=None):
     cam = cam.sum(axis=1)
     cam = normalize_heatmap(cam)
     return cam.numpy()
+
+
+def gen_heatmaps_as_overlay(cams, voltage_vals, title):
+    """
+    Generates the class activation maps (heatmaps) - time series as overlay.
+
+    :param cams: dictionary containing the class activation maps to be visualized (+ method names)
+    :param voltage_vals: voltage values to be visualized
+    :param title: window title, e.g., recorded vehicle component and classification result
+    """
+    plt.rcParams["figure.figsize"] = len(cams) * 10, 3
+    fig, axes = plt.subplots(nrows=1, ncols=len(cams), sharex=True, sharey=True)
+
+    fig.canvas.set_window_title(title)
+    # bounding box in data coordinates that the image will fill (left, right, bottom, top)
+    extent = [0, cams[list(cams.keys())[0]].shape[0], np.floor(np.min(voltage_vals)), np.ceil(np.max(voltage_vals))]
+    data_points = np.array([i for i in range(len(voltage_vals))])
+
+    if len(cams) == 1:
+        axes = [axes]
+
+    for i in range(len(cams)):
+        axes[i].set_xlim(extent[0], extent[1])
+        axes[i].title.set_text(list(cams.keys())[i])
+        # heatmap
+        axes[i].imshow(cams[list(cams.keys())[i]][np.newaxis, :], cmap="plasma", aspect="auto", alpha=.75,
+                       extent=extent)
+        # data
+        axes[i].plot(data_points, voltage_vals, '#000000')
+
+    plt.tight_layout()
+
+    # create bytes object and save matplotlib fig into it
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+    # create PIL image object
+    return Image.open(buf)
 
 
 def plot_heatmaps_as_overlay(cams, voltage_vals, title):
