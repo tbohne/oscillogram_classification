@@ -17,7 +17,7 @@ from training_data import TrainingData
 
 SEED = 42
 NUMBER_OF_CLUSTERS = 7  # for the battery voltage signal (sub-ROIs)
-N_LABEL = 5 # number of integers that appear as labels in the file names of the patches
+N_LABEL = 5  # number of integers that appear as labels in the file names of the patches
 N_INIT = 50
 MAX_ITER = 500
 MAX_ITER_BARYCENTER = 500
