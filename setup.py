@@ -22,7 +22,7 @@ setup(
         'anomaly-detection',
         'xai'
     ],
-    python_requires='>=3.7',
+    python_requires='>=3.7, <3.11',
     install_requires=required,
     packages=find_packages(),
     include_package_data=True,

@@ -6,6 +6,6 @@ wandb==0.9.7
 tsfresh==0.20.1
 tslearn==0.5.3.2
 scikit-learn==1.1.2
-tf-keras-vis==0.8.1
+tf-keras-vis==0.8.5
 joblib==1.2.0
 dask==2023.5.0
