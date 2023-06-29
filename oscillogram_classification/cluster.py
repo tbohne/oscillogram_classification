@@ -181,7 +181,8 @@ def clean_incorrect_patches(paths: list) -> list:
 
     5 patches are expected for positive measurements and 3 for negative ones.
 
-    :param paths: list of paths to all patches. If negative patches are included, their path should contain the word "negative".
+    :param paths: list of paths to all patches; If negative patches are included, their path should contain the word
+    "negative"
     :return: list of paths to all patches of time series that have the expected number of patches
     """
     cleaned_paths = []
@@ -189,16 +190,16 @@ def clean_incorrect_patches(paths: list) -> list:
         path = str(path_object)
         measurement_id = path.split(os.path.sep)[-1].split("_")[0]
         if "negative" in path:
-            if not any(measurement_id + "_patch3" in str(other_path) and
-                       "negative" in str(other_path) for other_path in
-                       paths) and any(measurement_id + "_patch2" in str(other_path) and
-                                      "negative" in str(other_path) for other_path in paths):
+            if not any(measurement_id + "_patch3" in str(other_path)
+                       and "negative" in str(other_path) for other_path in paths) \
+                    and any(measurement_id + "_patch2" in str(other_path)
+                            and "negative" in str(other_path) for other_path in paths):
                 cleaned_paths.append(path_object)
         else:
-            if not any(measurement_id + "_patch5" in str(other_path) and
-                       "negative" not in str(other_path) for other_path in paths) and \
-                    any(measurement_id + "_patch4" in str(other_path) and
-                        "negative" not in str(other_path) for other_path in paths):
+            if not any(measurement_id + "_patch5" in str(other_path)
+                       and "negative" not in str(other_path) for other_path in paths) \
+                    and any(measurement_id + "_patch4" in str(other_path)
+                            and "negative" not in str(other_path) for other_path in paths):
                 cleaned_paths.append(path_object)
     return cleaned_paths
 
@@ -215,7 +216,7 @@ def create_processed_time_series_dataset(data_path: str, norm: bool = False) -> 
     measurement_ids = []
 
     if os.path.isfile(data_path):
-        paths = list(Path(data_path))
+        paths = [Path(data_path)]
     else:
         paths = list(Path(data_path).glob('**/*.csv'))
         paths = clean_incorrect_patches(paths)

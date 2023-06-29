@@ -47,7 +47,7 @@ def load_data() -> (np.ndarray, np.ndarray):
     :return: test samples
     """
     data = TrainingData(np.load(DATA, allow_pickle=True))
-    measurement_ids = np.loadtxt(MEASUREMENT_IDS,delimiter=',',dtype=str)
+    measurement_ids = np.loadtxt(MEASUREMENT_IDS, delimiter=',', dtype=str)
     x_test = data[:][0]
     y_test = data[:][1]
     np.random.seed(SEED)
@@ -140,12 +140,12 @@ if __name__ == '__main__':
             if measurement_ids[i] in classification_per_measurement_id:
                 classification_per_measurement_id[measurement_ids[i]][0].append(most_prominent_entry)
                 classification_per_measurement_id[measurement_ids[i]][1].append(test_sample_ground_truth)
-
             else:
                 classification_per_measurement_id[measurement_ids[i]] = [
-                    [most_prominent_entry], [test_sample_ground_truth]]
+                    [most_prominent_entry], [test_sample_ground_truth]
+                ]
 
     for key, value in classification_per_measurement_id.items():
-        print("measurement ", key)
-        print("Prediction: ", value[0])
-        print("Ground Truth: ", value[1])
+        print("measurement:", key)
+        print("prediction:", value[0])
+        print("ground truth:", value[1])
