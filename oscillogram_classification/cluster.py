@@ -16,11 +16,12 @@ from tslearn.preprocessing import TimeSeriesResampler
 from training_data import TrainingData
 
 SEED = 42
-NUMBER_OF_CLUSTERS = 5  # for the battery voltage signal (sub-ROIs)
+NUMBER_OF_CLUSTERS = 7  # for the battery voltage signal (sub-ROIs)
+N_LABEL = 5  # number of integers that appear as labels in the file names of the patches
 N_INIT = 50
 MAX_ITER = 500
 MAX_ITER_BARYCENTER = 500
-RESAMPLING_DIVISOR = 100
+RESAMPLING_DIVISOR = 10
 INTERPOLATION_TARGET = "MIN"  # other options are 'MAX' and 'AVG'
 SMALL_VAL = 0.0000001
 
@@ -55,6 +56,7 @@ def evaluate_performance(ground_truth: np.ndarray, predictions: np.ndarray) -> d
     :param predictions: predicted labels (clusters)
     :return: ground truth dictionary
     """
+
     # TODO: not necessarily a good assumption: there can be more than one cluster per patch type
     # assert set(np.unique(ground_truth)) == set(np.unique(predictions))
     # we have $k$ clusters, i.e., $k$ sub-ROIs
@@ -173,7 +175,36 @@ def create_dataset(norm: bool, data_path: str) -> None:
     create_processed_time_series_dataset(data_path, norm)
 
 
-def create_processed_time_series_dataset(data_path: str, norm: bool) -> None:
+def clean_incorrect_patches(paths: list) -> list:
+    """
+    Removes time series that were not split into the expected number of patches (either too many or too little).
+
+    5 patches are expected for positive measurements and 3 for negative ones.
+
+    :param paths: list of paths to all patches; If negative patches are included, their path should contain the word
+    "negative"
+    :return: list of paths to all patches of time series that have the expected number of patches
+    """
+    cleaned_paths = []
+    for path_object in paths:
+        path = str(path_object)
+        measurement_id = path.split(os.path.sep)[-1].split("_")[0]
+        if "negative" in path:
+            if not any(measurement_id + "_patch3" in str(other_path)
+                       and "negative" in str(other_path) for other_path in paths) \
+                    and any(measurement_id + "_patch2" in str(other_path)
+                            and "negative" in str(other_path) for other_path in paths):
+                cleaned_paths.append(path_object)
+        else:
+            if not any(measurement_id + "_patch5" in str(other_path)
+                       and "negative" not in str(other_path) for other_path in paths) \
+                    and any(measurement_id + "_patch4" in str(other_path)
+                            and "negative" not in str(other_path) for other_path in paths):
+                cleaned_paths.append(path_object)
+    return cleaned_paths
+
+
+def create_processed_time_series_dataset(data_path: str, norm: bool = False) -> None:
     """
     Creates a processed time series dataset (.npz file containing all samples).
 
@@ -182,7 +213,14 @@ def create_processed_time_series_dataset(data_path: str, norm: bool) -> None:
     """
     voltage_series = []
     labels = []
-    for path in Path(data_path).glob('**/*.csv'):
+    measurement_ids = []
+
+    if os.path.isfile(data_path):
+        paths = [Path(data_path)]
+    else:
+        paths = list(Path(data_path).glob('**/*.csv'))
+        paths = clean_incorrect_patches(paths)
+    for path in paths:
         label, curr_voltages = read_oscilloscope_recording(path)
         labels.append(label)
         if norm:
@@ -192,8 +230,12 @@ def create_processed_time_series_dataset(data_path: str, norm: bool) -> None:
             curr_voltages = decimal_scaling_normalize_time_series(curr_voltages, 2)
             # curr_voltages = logarithmic_normalize_time_series(curr_voltages, 10)
         voltage_series.append(curr_voltages)
+        measurement_id = str(path).split(os.path.sep)[-1].split("_")[0]
+        measurement_ids.append(measurement_id + "_negative") if "negative" in str(path) else measurement_ids.append(
+            measurement_id + "_positive")
 
     np.savez("data/patch_data.npz", np.array(voltage_series, dtype=object), np.array(labels))
+    np.savetxt("data/patch_measurement_ids.csv", measurement_ids, delimiter=',', fmt='%s')
 
 
 def z_normalize_time_series(series: list) -> list:
@@ -258,11 +300,15 @@ def read_oscilloscope_recording(rec_file: Path) -> (int, list):
     """
     print("reading oscilloscope recording from", rec_file)
     label = None
-    patches = ["patch" + str(i) for i in range(NUMBER_OF_CLUSTERS)]
+    patches = ["patch" + str(i) for i in range(N_LABEL)]
 
     for patch in patches:
         if patch in str(rec_file).lower():
             label = int(patch[-1])
+            # create 7 label classes: patch types 1-4 occurring in positive measurements, patch types 5-6 occurring in
+            # negative measurements, and patch type 0 that appears in both positive and negative measurements
+            if "negative" in str(rec_file).lower() and label != 0:
+                label += len(patches) - 1
             break
 
     df = pd.read_csv(rec_file, delimiter=';', na_values=['-∞', '∞'])
