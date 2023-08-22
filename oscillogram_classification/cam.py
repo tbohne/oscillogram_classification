@@ -317,6 +317,7 @@ def plot_heatmaps_as_overlay(cams, voltage_vals, title):
         axes[i].plot(data_points, voltage_vals, '#000000')
 
     plt.tight_layout()
+    plt.savefig("visualization.svg", format="svg", bbox_inches='tight')
     plt.show()
 
 
@@ -429,13 +430,13 @@ if __name__ == '__main__':
         # not needed as it returns exactly the same heatmap as tf-keras-gradcam
         # heatmaps["gradcam"] = generate_gradcam(np.array([net_input]), model)
         heatmaps["tf-keras-gradcam"] = tf_keras_gradcam(np.array([net_input]), model, prediction)
-        heatmaps["tf-keras-gradcam++"] = tf_keras_gradcam_plus_plus(np.array([net_input]), model, prediction)
         # TODO: deactivated for now (can't yet deal with one-neuron output binary classification)
-        # heatmaps["hirescam"] = generate_hirescam(np.array([net_input]), model)
+        heatmaps["hirescam"] = generate_hirescam(np.array([net_input]), model)
+        heatmaps["tf-keras-gradcam++"] = tf_keras_gradcam_plus_plus(np.array([net_input]), model, prediction)
         heatmaps["tf-keras-scorecam"] = tf_keras_scorecam(np.array([net_input]), model, prediction)
-        heatmaps["tf-keras-layercam"] = tf_keras_layercam(np.array([net_input]), model, prediction)
         # TODO: should be checked later on (no reasonable heatmaps)
-        # heatmaps["tf-keras-smoothgrad"] = tf_keras_smooth_grad(np.array([net_input]), model, prediction)
+        heatmaps["tf-keras-smoothgrad"] = tf_keras_smooth_grad(np.array([net_input]), model, prediction)
+        heatmaps["tf-keras-layercam"] = tf_keras_layercam(np.array([net_input]), model, prediction)
     else:
         print("specified unknown CAM method:", args.method)
 
