@@ -69,7 +69,7 @@ Currently supported models: `FCN`, `ResNet`, `RandomForest`, `MLP`, `DecisionTre
 
 ## Usage
 
-**Preprocessing**
+### Preprocessing
 ```
 $ python oscillogram_classification/preprocess.py [--znorm] [--diff_format] [--feature_extraction] [--feature_list] --path /DATA --type {training | validation | test}
 ```
@@ -92,19 +92,19 @@ $ python oscillogram_classification/preprocess.py --path /VALIDATION_DATA --feat
 ```
 This in turn leads to a set of files corresponding to the different feature vectors. In the described scenario, the file to be used for training would be `validation_manually_filtered_feature_vectors.npz`. The generation of the test dataset works analogously.
 
-**Training**
+### Training
 ```
 $ python oscillogram_classification/train.py --train_path TRAIN_DATA.npz --val_path VAL_DATA.npz --test_path TEST_DATA.npz
 ```
 *Note: Before training, a consistency check is performed, which is particularly relevant for training on feature vectors. It is checked whether each of the datasets (train, test, validation) contains exactly the same features in the same order.*
 
-**Class Activation / Saliency Map Generation**
+### Class Activation / Saliency Map Generation
 ```
 $ python oscillogram_classification/cam.py [--znorm] [--diff_format] [--overlay] --method {gradcam | hirescam | tf-keras-gradcam | tf-keras-gradcam++ | tf-keras-scorecam | tf-keras-layercam | tf-keras-smoothgrad | all} --sample_path SAMPLE.csv --model_path MODEL.h5
 ```
 *Note: Using `all` as method results in a side-by-side plot of all methods.*
 
-### Grad-CAM Example
+### HiResCAM Example
 ![](img/hirescam.svg)
 
 ### All Heatmap Generation Methods Side-by-Side
