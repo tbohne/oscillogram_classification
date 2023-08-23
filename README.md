@@ -166,7 +166,7 @@ The options without ground truth labels work equivalently, just without the patc
 ## Positive (1) and Negative (0) Sample for each Component
 
 ### Normalized Battery Voltage (Engine Starting Process)
-<img src="img/battery.svg">
+![](img/battery.svg)
 
 ## Training and Validation Accuracy of Selected Models
 
