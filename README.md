@@ -9,7 +9,7 @@ Example of the time series data to be considered (voltage over time - $z$-normal
 The task comes down to binary univariate time series classification.
 
 ## FCN Architecture
-<img src="img/fcn.svg" width="420">
+<img src="img/fcn.png" width="420">
 
 *Note: See ResNet architecture in `img/ResNet.png`*
 
