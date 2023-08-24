@@ -4,25 +4,19 @@ Neural network based anomaly detection for vehicle components using oscilloscope
 
 Example of the time series data to be considered (voltage over time - $z$-normalized):
 
-![](img/battery.svg)
+<img src="img/battery.svg" width="500">
 
 The task comes down to binary univariate time series classification.
 
 ## FCN Architecture
-<img src="img/fcn.png" width="420">
+<img src="img/fcn.svg" width="500">
 
 *Note: See ResNet architecture in `img/ResNet.png`*
 
 ## Dependencies
 
-- [**matplotlib**](https://matplotlib.org/): library for creating visualizations
-- [**numpy**](https://numpy.org/): scientific computing with Python
-- [**tensorflow**](https://pypi.org/project/tensorflow/): open source machine learning framework
-- [**pandas**](https://pandas.pydata.org/): data analysis and manipulation tool
-- [**wandb**](https://pypi.org/project/wandb/): *Weights and Biases* - hyperparameter optimization, i.e., model tuning
-- [**tsfresh**](https://github.com/blue-yonder/tsfresh): automatic extraction of relevant features from time series
-- [**sklearn**](https://scikit-learn.org/stable/): simple and efficient tools for predictive data analysis
-- [**tf_keras_vis**](https://github.com/keisen/tf-keras-vis): neural network visualization toolkit for `tf.keras`
+- for Python requirements, cf. `requirements.txt`
+- [**Apache Jena Fuseki**](https://jena.apache.org/documentation/fuseki2/): SPARQL server hosting / maintaining the knowledge graph
 
 ## Installation
 ```
@@ -170,5 +164,9 @@ The options without ground truth labels work equivalently, just without the patc
 ![](img/battery.svg)
 
 ## Training and Validation Accuracy of Selected Models
+
+TBD.
+
+## Paper Reference
 
 TBD.
