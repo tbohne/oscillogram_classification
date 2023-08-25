@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @author Tim Bohne
+
 sweep_config = {
     "batch_size": {
         "values": [2, 16]

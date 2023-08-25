@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @author Tim Bohne
+
 hyperparameter_config = {
     "batch_size": 4,
     "learning_rate": 0.001,
