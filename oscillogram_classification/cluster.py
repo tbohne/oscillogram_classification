@@ -213,12 +213,16 @@ def create_processed_time_series_dataset(data_path: str, norm: bool = False) -> 
     for path in paths:
         label, curr_voltages = read_oscilloscope_recording(path)
         labels.append(label)
-        if norm:
-            # TODO: experimentally compare different methods -> for now, decimal worked best
-            # curr_voltages = preprocess.z_normalize_time_series(curr_voltages)
-            # curr_voltages = preprocess.min_max_normalize_time_series(curr_voltages)
-            curr_voltages = preprocess.decimal_scaling_normalize_time_series(curr_voltages, 2)
-            # curr_voltages = preprocess.logarithmic_normalize_time_series(curr_voltages, 10)
+        if norm != "none":
+            if norm == "z_norm":
+                curr_voltages = preprocess.z_normalize_time_series(curr_voltages)
+            elif norm == "min_max_norm":
+                curr_voltages = preprocess.min_max_normalize_time_series(curr_voltages)
+            elif norm == "dec_norm":
+                curr_voltages = preprocess.decimal_scaling_normalize_time_series(curr_voltages, 2)
+            elif norm == "log_norm":
+                curr_voltages = preprocess.logarithmic_normalize_time_series(curr_voltages, 10)
+
         voltage_series.append(curr_voltages)
         measurement_id = str(path).split(os.path.sep)[-1].split("_")[0]
         measurement_ids.append(measurement_id + "_negative") if "negative" in str(path) \
@@ -415,7 +419,8 @@ if __name__ == '__main__':
     # input: raw oscilloscope data (one file per patch (sub ROI))
     # output: preprocessed data - one file containing data of all patches)
     parser = argparse.ArgumentParser(description='Clustering sub-ROI patches')
-    parser.add_argument('--norm', action='store_true', help='normalize time series')
+    parser.add_argument('--norm', action='store', type=str, required=True,
+                        help='normalization method: %s' % cluster_config.cluster_config["normalization_methods"])
     parser.add_argument('--path', type=dir_path, required=True, help='path to the data to be processed')
     args = parser.parse_args()
 

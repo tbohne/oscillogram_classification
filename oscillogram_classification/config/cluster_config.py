@@ -11,5 +11,6 @@ cluster_config = {
     "max_iter_barycenter": 500,
     "resampling_divisor": 10,
     "interpolation_target": "MIN",  # other options are 'MAX' and 'AVG'
-    "small_val": 0.0000001
+    "small_val": 0.0000001,
+    "normalization_methods": ["none", "z_norm", "min_max_norm", "dec_norm", "log_norm"]
 }
