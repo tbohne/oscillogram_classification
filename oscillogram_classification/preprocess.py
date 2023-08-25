@@ -17,6 +17,8 @@ from tsfresh.convenience.bindings import dask_feature_extraction_on_chunk
 from tsfresh.feature_extraction.settings import ComprehensiveFCParameters, EfficientFCParameters
 from tsfresh.utilities.dataframe_functions import impute
 
+from config import cluster_config
+
 
 def read_oscilloscope_recording(rec_file):
     """
@@ -68,14 +70,57 @@ def equalize_sample_sizes(voltage_series):
             voltage_series[i] = voltage_series[i][: len(voltage_series[i]) - remove]
 
 
-def z_normalize_time_series(series):
+def z_normalize_time_series(series: list) -> list:
     """
     Z-normalize the specified time series - 0 mean / 1 std_dev.
 
-    :param series: time series to be z-normalized
+    :param series: time series to be normalized
     :return: normalized time series
     """
-    return (series - np.mean(series)) / np.std(series)
+    std_dev = np.std(series)
+    if std_dev == 0.0:
+        std_dev = cluster_config.cluster_config["small_val"]  # value not important, just prevent division by zero
+        # (x - mean) is 0 anyway when the standard deviation is 0 -> 0 in the end
+    return ((series - np.mean(series)) / std_dev).tolist()
+
+
+def min_max_normalize_time_series(series: list) -> list:
+    """
+    Min-max-normalize the specified time series -> scale values to range [0, 1].
+
+    :param series: time series to be normalized
+    :return: normalized time series
+    """
+    minimum = np.min(series)
+    maximum = np.max(series)
+    denominator = maximum - minimum
+    if denominator == 0.0:
+        denominator = cluster_config.cluster_config["small_val"]
+        # if (max-min) is 0, they are equal, which means that all values are the same,
+        # but then the numerator is 0 anyway
+    return ((series - minimum) / denominator).tolist()
+
+
+def decimal_scaling_normalize_time_series(series: list, power: int) -> list:
+    """
+    Decimal-scaling-normalize the specified time series -> largest absolute value < 1.0.
+
+    :param series: time series to be normalized
+    :param power: power used for scaling
+    :return: normalized time series
+    """
+    return (np.array(series) / (10 ** power)).tolist()
+
+
+def logarithmic_normalize_time_series(series: list, base: int) -> list:
+    """
+    Logarithmic-normalize the specified time series -> reduces impact of extreme values.
+
+    :param series: time series to be normalized
+    :param base: log base to be used
+    :return: normalized time series
+    """
+    return (np.log(series) / np.log(base)).tolist()
 
 
 def dask_feature_extraction_for_large_input_data(dataframe, partitions, on_chunk=True, simple_return=True):

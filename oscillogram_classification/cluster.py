@@ -14,6 +14,7 @@ from tslearn.clustering import TimeSeriesKMeans
 from tslearn.preprocessing import TimeSeriesResampler
 
 from config import cluster_config
+from oscillogram_classification import preprocess
 from training_data import TrainingData
 
 
@@ -47,7 +48,6 @@ def evaluate_performance(ground_truth: np.ndarray, predictions: np.ndarray) -> d
     :param predictions: predicted labels (clusters)
     :return: ground truth dictionary
     """
-
     # TODO: not necessarily a good assumption: there can be more than one cluster per patch type
     # assert set(np.unique(ground_truth)) == set(np.unique(predictions))
     # we have $k$ clusters, i.e., $k$ sub-ROIs
@@ -93,7 +93,7 @@ def plot_results(offset: int, title: str, clustering: TimeSeriesKMeans, train_x:
         ax.plot(clustering.cluster_centers_[y].ravel(), "r-")
         ax.set_xlim(0, train_x.shape[1])
         ax.set_ylim(6, 15)
-        ax.text(0.55, 0.85, 'Cluster %d' % y, transform=fig.gca().transAxes)
+        ax.text(0.55, 0.85, "Cluster %d" % y, transform=fig.gca().transAxes)
         if y == 0:
             plt.title(title)
     return ground_truth_dict
@@ -172,8 +172,7 @@ def clean_incorrect_patches(paths: list) -> list:
 
     5 patches are expected for positive measurements and 3 for negative ones.
 
-    :param paths: list of paths to all patches; If negative patches are included, their path should contain the word
-    "negative"
+    :param paths: list of paths to all patches; negative patch paths should contain the word "negative"
     :return: list of paths to all patches of time series that have the expected number of patches
     """
     cleaned_paths = []
@@ -216,70 +215,17 @@ def create_processed_time_series_dataset(data_path: str, norm: bool = False) -> 
         labels.append(label)
         if norm:
             # TODO: experimentally compare different methods -> for now, decimal worked best
-            # curr_voltages = z_normalize_time_series(curr_voltages)
-            # curr_voltages = min_max_normalize_time_series(curr_voltages)
-            curr_voltages = decimal_scaling_normalize_time_series(curr_voltages, 2)
-            # curr_voltages = logarithmic_normalize_time_series(curr_voltages, 10)
+            # curr_voltages = preprocess.z_normalize_time_series(curr_voltages)
+            # curr_voltages = preprocess.min_max_normalize_time_series(curr_voltages)
+            curr_voltages = preprocess.decimal_scaling_normalize_time_series(curr_voltages, 2)
+            # curr_voltages = preprocess.logarithmic_normalize_time_series(curr_voltages, 10)
         voltage_series.append(curr_voltages)
         measurement_id = str(path).split(os.path.sep)[-1].split("_")[0]
-        measurement_ids.append(measurement_id + "_negative") if "negative" in str(path) else measurement_ids.append(
-            measurement_id + "_positive")
+        measurement_ids.append(measurement_id + "_negative") if "negative" in str(path) \
+            else measurement_ids.append(measurement_id + "_positive")
 
     np.savez("data/patch_data.npz", np.array(voltage_series, dtype=object), np.array(labels))
     np.savetxt("data/patch_measurement_ids.csv", measurement_ids, delimiter=',', fmt='%s')
-
-
-def z_normalize_time_series(series: list) -> list:
-    """
-    Z-normalize the specified time series - 0 mean / 1 std_dev.
-
-    :param series: time series to be normalized
-    :return: normalized time series
-    """
-    std_dev = np.std(series)
-    if std_dev == 0.0:
-        std_dev = cluster_config.cluster_config["small_val"]  # value not important, just prevent division by zero
-        # (x - mean) is 0 anyway when the standard deviation is 0 -> 0 in the end
-    return ((series - np.mean(series)) / std_dev).tolist()
-
-
-def min_max_normalize_time_series(series: list) -> list:
-    """
-    Min-max-normalize the specified time series -> scale values to range [0, 1].
-
-    :param series: time series to be normalized
-    :return: normalized time series
-    """
-    minimum = np.min(series)
-    maximum = np.max(series)
-    denominator = maximum - minimum
-    if denominator == 0.0:
-        denominator = cluster_config.cluster_config["small_val"]
-        # if (max-min) is 0, they are equal, which means that all values are the same,
-        # but then the numerator is 0 anyway
-    return ((series - minimum) / denominator).tolist()
-
-
-def decimal_scaling_normalize_time_series(series: list, power: int) -> list:
-    """
-    Decimal-scaling-normalize the specified time series -> largest absolute value < 1.0.
-
-    :param series: time series to be normalized
-    :param power: power used for scaling
-    :return: normalized time series
-    """
-    return (np.array(series) / (10 ** power)).tolist()
-
-
-def logarithmic_normalize_time_series(series: list, base: int) -> list:
-    """
-    Logarithmic-normalize the specified time series -> reduces impact of extreme values.
-
-    :param series: time series to be normalized
-    :param base: log base to be used
-    :return: normalized time series
-    """
-    return (np.log(series) / np.log(base)).tolist()
 
 
 def read_oscilloscope_recording(rec_file: Path) -> (int, list):
