@@ -1,9 +1,11 @@
 import argparse
+
+from tslearn.neighbors import KNeighborsTimeSeriesClassifier
+from tslearn.preprocessing import TimeSeriesResampler
+
 from cluster import create_dataset, load_data, preprocess_patches, dir_path
 from clustering_application import load_data as load_data_measurements
-
-from tslearn.preprocessing import TimeSeriesResampler
-from tslearn.neighbors import KNeighborsTimeSeriesClassifier
+from oscillogram_classification import preprocess
 
 RESAMPLING_DIVISOR = 1
 N_NEIGHBORS = 5
@@ -17,11 +19,11 @@ if __name__ == '__main__':
 
     create_dataset(args.norm, args.train_path)
     x_train, y_train = load_data()
-    x_train = preprocess_patches(x_train)
+    x_train = preprocess.interpolation(x_train)
 
     create_dataset(args.norm, args.test_path)
     x_test, y_test, measurement_ids = load_data_measurements()
-    x_test = preprocess_patches(x_test)
+    x_test = preprocess.interpolation(x_test)
 
     print("original TS size:", len(x_train[0]))
     # # resample time series so that they reach the target size (sz - size of output TS)

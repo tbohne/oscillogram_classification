@@ -273,44 +273,6 @@ def zero_padding(patches: np.ndarray) -> np.ndarray:
     return padded_array
 
 
-def interpolation(patches: np.ndarray) -> np.ndarray:
-    """
-    Resamples the provided patches and transforms them to the expected shape.
-
-    :param patches: battery signal sub-ROI patches
-    :return: padded  / transformed patches
-    """
-    patches = patches.tolist()
-    if cluster_config.cluster_config["interpolation_target"] == "MIN":
-        interpolation_target_len = min([len(patch) for patch in patches])
-    elif cluster_config.cluster_config["interpolation_target"] == "MAX":
-        interpolation_target_len = max([len(patch) for patch in patches])
-    elif cluster_config.cluster_config["interpolation_target"] == "AVG":
-        interpolation_target_len = int(np.average([len(patch) for patch in patches]))
-    else:
-        interpolation_target_len = min([len(patch) for patch in patches])
-
-    for i in range(len(patches)):
-        patches_arr = np.array(patches[i])
-        patches_arr = patches_arr.reshape((1, len(patches[i]), 1))  # n_ts, sz, d
-        patches[i] = TimeSeriesResampler(sz=interpolation_target_len).fit_transform(patches_arr).tolist()[0]
-    padded_array = np.array(patches)
-    return padded_array.reshape((padded_array.shape[0], interpolation_target_len, 1))
-
-
-def preprocess_patches(patches: np.ndarray) -> np.ndarray:
-    """
-    Preprocesses the patches, i.e., performs padding and transforms them into a shape expected by `tslearn`.
-
-    :param patches: battery signal sub-ROI patches
-    :return: preprocessed patches
-    """
-    padded_array = interpolation(patches)
-    # TODO: do we really need this? usually way worse..
-    # padded_array = TimeSeriesScalerMeanVariance().fit_transform(padded_array)
-    return padded_array
-
-
 def perform_euclidean_k_means_clustering(x_train, y_train, fig):
     print("Euclidean k-means")
     euclidean_km = TimeSeriesKMeans(
@@ -376,7 +338,7 @@ if __name__ == '__main__':
     create_dataset(args.norm, args.path)
     x_train, y_train = load_data()
     # bring all patches to the same length
-    x_train = preprocess_patches(x_train)
+    x_train = preprocess.interpolation(x_train)
 
     print("original TS size:", len(x_train[0]))
     # # resample time series so that they reach the target size (sz - size of output TS)

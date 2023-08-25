@@ -16,6 +16,7 @@ from tsfresh import select_features
 from tsfresh.convenience.bindings import dask_feature_extraction_on_chunk
 from tsfresh.feature_extraction.settings import ComprehensiveFCParameters, EfficientFCParameters
 from tsfresh.utilities.dataframe_functions import impute
+from tslearn.preprocessing import TimeSeriesResampler
 
 from config import cluster_config
 
@@ -172,6 +173,31 @@ def periodic_padding(patches: np.ndarray) -> np.ndarray:
             idx += 1
     padded_array = np.array(patches)
     return padded_array.reshape((padded_array.shape[0], max_ts_length, 1))
+
+
+def interpolation(patches: np.ndarray) -> np.ndarray:
+    """
+    Resamples the provided patches and transforms them to the expected shape.
+
+    :param patches: battery signal sub-ROI patches
+    :return: padded  / transformed patches
+    """
+    patches = patches.tolist()
+    if cluster_config.cluster_config["interpolation_target"] == "MIN":
+        interpolation_target_len = min([len(patch) for patch in patches])
+    elif cluster_config.cluster_config["interpolation_target"] == "MAX":
+        interpolation_target_len = max([len(patch) for patch in patches])
+    elif cluster_config.cluster_config["interpolation_target"] == "AVG":
+        interpolation_target_len = int(np.average([len(patch) for patch in patches]))
+    else:
+        interpolation_target_len = min([len(patch) for patch in patches])
+
+    for i in range(len(patches)):
+        patches_arr = np.array(patches[i])
+        patches_arr = patches_arr.reshape((1, len(patches[i]), 1))  # n_ts, sz, d
+        patches[i] = TimeSeriesResampler(sz=interpolation_target_len).fit_transform(patches_arr).tolist()[0]
+    padded_array = np.array(patches)
+    return padded_array.reshape((padded_array.shape[0], interpolation_target_len, 1))
 
 
 def dask_feature_extraction_for_large_input_data(dataframe, partitions, on_chunk=True, simple_return=True):
