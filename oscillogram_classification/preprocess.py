@@ -123,6 +123,57 @@ def logarithmic_normalize_time_series(series: list, base: int) -> list:
     return (np.log(series) / np.log(base)).tolist()
 
 
+def avg_padding(patches: np.ndarray) -> np.ndarray:
+    """
+    Applies average-padding to the provided patches and transforms them to the expected shape.
+
+    :param patches: battery signal sub-ROI patches
+    :return: padded / transformed patches
+    """
+    patches = patches.tolist()
+    max_ts_length = max([len(patch) for patch in patches])
+    for p in patches:
+        avg_p = np.average(p)
+        while len(p) < max_ts_length:
+            p.append(avg_p)
+    padded_array = np.array(patches)
+    return padded_array.reshape((padded_array.shape[0], max_ts_length, 1))
+
+
+def last_val_padding(patches: np.ndarray) -> np.ndarray:
+    """
+    Applies last-value-padding to the provided patches and transforms them to the expected shape.
+
+    :param patches: battery signal sub-ROI patches
+    :return: padded / transformed patches
+    """
+    patches = patches.tolist()
+    max_ts_length = max([len(patch) for patch in patches])
+    for p in patches:
+        while len(p) < max_ts_length:
+            p.append(p[-1])
+    padded_array = np.array(patches)
+    return padded_array.reshape((padded_array.shape[0], max_ts_length, 1))
+
+
+def periodic_padding(patches: np.ndarray) -> np.ndarray:
+    """
+    Applies periodic-padding to the provided patches and transforms them to the expected shape.
+
+    :param patches: battery signal sub-ROI patches
+    :return: padded / transformed patches
+    """
+    patches = patches.tolist()
+    max_ts_length = max([len(patch) for patch in patches])
+    for p in patches:
+        idx = 0
+        while len(p) < max_ts_length:
+            p.append(p[idx])
+            idx += 1
+    padded_array = np.array(patches)
+    return padded_array.reshape((padded_array.shape[0], max_ts_length, 1))
+
+
 def dask_feature_extraction_for_large_input_data(dataframe, partitions, on_chunk=True, simple_return=True):
     """
     Performs feature extraction / selection with tsfresh using Dask dataframes.

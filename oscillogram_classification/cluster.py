@@ -247,13 +247,13 @@ def read_oscilloscope_recording(rec_file: Path) -> (int, list):
         if patch in str(rec_file).lower():
             label = int(patch[-1])
             # create 7 label classes: patch types 1-4 occurring in positive measurements, patch types 5-6 occurring in
-            # negative measurements, and patch type 0 that appears in both positive and negative measurements
+            # negative measurements, and patch type 0 appearing in both positive and negative measurements
             if "negative" in str(rec_file).lower() and label != 0:
                 label += len(patches) - 1
             break
 
     df = pd.read_csv(rec_file, delimiter=';', na_values=['-∞', '∞'])
-    curr_voltages = list(df['Kanal A'].values)
+    curr_voltages = df['Kanal A'].to_list()
     return label, curr_voltages
 
 
@@ -271,57 +271,6 @@ def zero_padding(patches: np.ndarray) -> np.ndarray:
         n_samples = ts.shape[0]
         padded_array[i, :n_samples, :] = ts
     return padded_array
-
-
-def avg_padding(patches: np.ndarray) -> np.ndarray:
-    """
-    Applies average-padding to the provided patches and transforms them to the expected shape.
-
-    :param patches: battery signal sub-ROI patches
-    :return: padded / transformed patches
-    """
-    patches = patches.tolist()
-    max_ts_length = max([len(patch) for patch in patches])
-    for p in patches:
-        avg_p = np.average(p)
-        while len(p) < max_ts_length:
-            p.append(avg_p)
-    padded_array = np.array(patches)
-    return padded_array.reshape((padded_array.shape[0], max_ts_length, 1))
-
-
-def last_val_padding(patches: np.ndarray) -> np.ndarray:
-    """
-    Applies last-value-padding to the provided patches and transforms them to the expected shape.
-
-    :param patches: battery signal sub-ROI patches
-    :return: padded / transformed patches
-    """
-    patches = patches.tolist()
-    max_ts_length = max([len(patch) for patch in patches])
-    for p in patches:
-        while len(p) < max_ts_length:
-            p.append(p[-1])
-    padded_array = np.array(patches)
-    return padded_array.reshape((padded_array.shape[0], max_ts_length, 1))
-
-
-def periodic_padding(patches: np.ndarray) -> np.ndarray:
-    """
-    Applies periodic-padding to the provided patches and transforms them to the expected shape.
-
-    :param patches: battery signal sub-ROI patches
-    :return: padded / transformed patches
-    """
-    patches = patches.tolist()
-    max_ts_length = max([len(patch) for patch in patches])
-    for p in patches:
-        idx = 0
-        while len(p) < max_ts_length:
-            p.append(p[idx])
-            idx += 1
-    padded_array = np.array(patches)
-    return padded_array.reshape((padded_array.shape[0], max_ts_length, 1))
 
 
 def interpolation(patches: np.ndarray) -> np.ndarray:
