@@ -13,17 +13,8 @@ import pandas as pd
 from tslearn.clustering import TimeSeriesKMeans
 from tslearn.preprocessing import TimeSeriesResampler
 
+from config import cluster_config
 from training_data import TrainingData
-
-SEED = 42
-NUMBER_OF_CLUSTERS = 7  # for the battery voltage signal (sub-ROIs)
-N_LABEL = 5  # number of integers that appear as labels in the file names of the patches
-N_INIT = 50
-MAX_ITER = 500
-MAX_ITER_BARYCENTER = 500
-RESAMPLING_DIVISOR = 10
-INTERPOLATION_TARGET = "MIN"  # other options are 'MAX' and 'AVG'
-SMALL_VAL = 0.0000001
 
 
 def evaluate_performance_for_binary_clustering(ground_truth: np.ndarray, predictions: np.ndarray) -> None:
@@ -60,8 +51,8 @@ def evaluate_performance(ground_truth: np.ndarray, predictions: np.ndarray) -> d
     # TODO: not necessarily a good assumption: there can be more than one cluster per patch type
     # assert set(np.unique(ground_truth)) == set(np.unique(predictions))
     # we have $k$ clusters, i.e., $k$ sub-ROIs
-    cluster_dict = {i: 0 for i in range(NUMBER_OF_CLUSTERS)}
-    ground_truth_per_cluster = {i: [] for i in range(NUMBER_OF_CLUSTERS)}
+    cluster_dict = {i: 0 for i in range(cluster_config.cluster_config["number_of_clusters"])}
+    ground_truth_per_cluster = {i: [] for i in range(cluster_config.cluster_config["number_of_clusters"])}
 
     for i in range(len(predictions)):
         cluster_dict[predictions[i]] += 1
@@ -95,8 +86,8 @@ def plot_results(offset: int, title: str, clustering: TimeSeriesKMeans, train_x:
     print("results for", title)
     print("#########################################################################################")
     ground_truth_dict = evaluate_performance(train_y, pred_y)
-    for y in range(NUMBER_OF_CLUSTERS):
-        ax = fig.add_subplot(3, NUMBER_OF_CLUSTERS, y + offset)
+    for y in range(cluster_config.cluster_config["number_of_clusters"]):
+        ax = fig.add_subplot(3, cluster_config.cluster_config["number_of_clusters"], y + offset)
         for x in train_x[pred_y == y]:
             ax.plot(x.ravel(), "k-", alpha=.2)
         ax.plot(clustering.cluster_centers_[y].ravel(), "r-")
@@ -145,7 +136,7 @@ def load_data() -> (np.ndarray, np.ndarray):
     visualize_n_samples_per_class(data[:][0], data[:][1])
     train_x = data[:][0]
     train_y = data[:][1]
-    np.random.seed(SEED)
+    np.random.seed(cluster_config.cluster_config["seed"])
     idx = np.random.permutation(len(train_x))
     train_x = train_x[idx]
     train_y = train_y[idx]
@@ -247,7 +238,7 @@ def z_normalize_time_series(series: list) -> list:
     """
     std_dev = np.std(series)
     if std_dev == 0.0:
-        std_dev = SMALL_VAL  # value not important, just prevent division by zero
+        std_dev = cluster_config.cluster_config["small_val"]  # value not important, just prevent division by zero
         # (x - mean) is 0 anyway when the standard deviation is 0 -> 0 in the end
     return ((series - np.mean(series)) / std_dev).tolist()
 
@@ -263,7 +254,7 @@ def min_max_normalize_time_series(series: list) -> list:
     maximum = np.max(series)
     denominator = maximum - minimum
     if denominator == 0.0:
-        denominator = SMALL_VAL
+        denominator = cluster_config.cluster_config["small_val"]
         # if (max-min) is 0, they are equal, which means that all values are the same,
         # but then the numerator is 0 anyway
     return ((series - minimum) / denominator).tolist()
@@ -300,7 +291,7 @@ def read_oscilloscope_recording(rec_file: Path) -> (int, list):
     """
     print("reading oscilloscope recording from", rec_file)
     label = None
-    patches = ["patch" + str(i) for i in range(N_LABEL)]
+    patches = ["patch" + str(i) for i in range(cluster_config.cluster_config["n_label"])]
 
     for patch in patches:
         if patch in str(rec_file).lower():
@@ -391,11 +382,11 @@ def interpolation(patches: np.ndarray) -> np.ndarray:
     :return: padded  / transformed patches
     """
     patches = patches.tolist()
-    if INTERPOLATION_TARGET == "MIN":
+    if cluster_config.cluster_config["interpolation_target"] == "MIN":
         interpolation_target_len = min([len(patch) for patch in patches])
-    elif INTERPOLATION_TARGET == "MAX":
+    elif cluster_config.cluster_config["interpolation_target"] == "MAX":
         interpolation_target_len = max([len(patch) for patch in patches])
-    elif INTERPOLATION_TARGET == "AVG":
+    elif cluster_config.cluster_config["interpolation_target"] == "AVG":
         interpolation_target_len = int(np.average([len(patch) for patch in patches]))
     else:
         interpolation_target_len = min([len(patch) for patch in patches])
@@ -437,18 +428,19 @@ if __name__ == '__main__':
     print("original TS size:", len(x_train[0]))
     # # resample time series so that they reach the target size (sz - size of output TS)
     # #   -> we need to reduce the length of the TS (due to runtime, memory)
-    x_train = TimeSeriesResampler(sz=len(x_train[0]) // RESAMPLING_DIVISOR).fit_transform(x_train)
+    x_train = TimeSeriesResampler(
+        sz=len(x_train[0]) // cluster_config.cluster_config["resampling_divisor"]).fit_transform(x_train)
     print("after down sampling:", len(x_train[0]))
 
-    fig2 = plt.figure(figsize=(5 * NUMBER_OF_CLUSTERS, 3))
+    fig2 = plt.figure(figsize=(5 * cluster_config.cluster_config["number_of_clusters"], 3))
 
     print("Euclidean k-means")
     euclidean_km = TimeSeriesKMeans(
-        n_clusters=NUMBER_OF_CLUSTERS,
-        n_init=N_INIT,
-        max_iter=MAX_ITER,
+        n_clusters=cluster_config.cluster_config["number_of_clusters"],
+        n_init=cluster_config.cluster_config["n_init"],
+        max_iter=cluster_config.cluster_config["max_iter"],
         verbose=True,
-        random_state=SEED
+        random_state=cluster_config.cluster_config["seed"]
     )
     y_pred = euclidean_km.fit_predict(x_train)
     visualize_n_samples_per_class(x_train, y_pred)
@@ -457,33 +449,35 @@ if __name__ == '__main__':
 
     print("DBA k-means")
     dba_km = TimeSeriesKMeans(
-        n_clusters=NUMBER_OF_CLUSTERS,
-        n_init=N_INIT,
-        max_iter=MAX_ITER,
+        n_clusters=cluster_config.cluster_config["number_of_clusters"],
+        n_init=cluster_config.cluster_config["n_init"],
+        max_iter=cluster_config.cluster_config["max_iter"],
         metric="dtw",
         verbose=False,
-        max_iter_barycenter=MAX_ITER_BARYCENTER,
-        random_state=SEED
+        max_iter_barycenter=cluster_config.cluster_config["max_iter_barycenter"],
+        random_state=cluster_config.cluster_config["seed"]
     )
     y_pred = dba_km.fit_predict(x_train)
     visualize_n_samples_per_class(x_train, y_pred)
-    ground_truth = plot_results(1 + NUMBER_OF_CLUSTERS, "DBA $k$-means", dba_km, x_train, y_train, y_pred, fig2)
+    ground_truth = plot_results(1 + cluster_config.cluster_config["number_of_clusters"], "DBA $k$-means", dba_km,
+                                x_train, y_train, y_pred, fig2)
     joblib.dump((dba_km, y_pred, ground_truth), 'trained_models/dba_km.pkl')  # save model to file
 
     print("Soft-DTW k-means")
     sdtw_km = TimeSeriesKMeans(
-        n_clusters=NUMBER_OF_CLUSTERS,
-        n_init=N_INIT,
-        max_iter=MAX_ITER,
+        n_clusters=cluster_config.cluster_config["number_of_clusters"],
+        n_init=cluster_config.cluster_config["n_init"],
+        max_iter=cluster_config.cluster_config["max_iter"],
         metric="softdtw",
         metric_params={"gamma": .01},
         verbose=True,
-        max_iter_barycenter=MAX_ITER_BARYCENTER,
-        random_state=SEED
+        max_iter_barycenter=cluster_config.cluster_config["max_iter_barycenter"],
+        random_state=cluster_config.cluster_config["seed"]
     )
     y_pred = sdtw_km.fit_predict(x_train)
     visualize_n_samples_per_class(x_train, y_pred)
-    ground_truth = plot_results(1 + 2 * NUMBER_OF_CLUSTERS, "Soft-DTW $k$-means", sdtw_km, x_train, y_train, y_pred,
+    ground_truth = plot_results(1 + 2 * cluster_config.cluster_config["number_of_clusters"], "Soft-DTW $k$-means",
+                                sdtw_km, x_train, y_train, y_pred,
                                 fig2)
     joblib.dump((sdtw_km, y_pred, ground_truth), 'trained_models/sdtw_km.pkl')  # save model to file
 
