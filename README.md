@@ -95,7 +95,7 @@ $ python oscillogram_classification/train.py --train_path TRAIN_DATA.npz --val_p
 
 ### Class Activation / Saliency Map Generation
 ```
-$ python oscillogram_classification/cam.py [--znorm] [--diff_format] [--overlay] --method {gradcam | hirescam | tf-keras-gradcam | tf-keras-gradcam++ | tf-keras-scorecam | tf-keras-layercam | tf-keras-smoothgrad | all} --sample_path SAMPLE.csv --model_path MODEL.h5
+$ python oscillogram_classification/cam.py [--znorm] [--overlay] --method {gradcam | hirescam | tf-keras-gradcam | tf-keras-gradcam++ | tf-keras-scorecam | tf-keras-layercam | tf-keras-smoothgrad | all} --sample_path SAMPLE.csv --model_path MODEL.h5
 ```
 *Note: Using `all` as method results in a side-by-side plot of all methods.*
 
