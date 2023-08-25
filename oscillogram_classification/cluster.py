@@ -412,6 +412,59 @@ def preprocess_patches(patches: np.ndarray) -> np.ndarray:
     return padded_array
 
 
+def perform_euclidean_k_means_clustering(x_train, y_train, fig):
+    print("Euclidean k-means")
+    euclidean_km = TimeSeriesKMeans(
+        n_clusters=cluster_config.cluster_config["number_of_clusters"],
+        n_init=cluster_config.cluster_config["n_init"],
+        max_iter=cluster_config.cluster_config["max_iter"],
+        verbose=True,
+        random_state=cluster_config.cluster_config["seed"]
+    )
+    y_pred = euclidean_km.fit_predict(x_train)
+    visualize_n_samples_per_class(x_train, y_pred)
+    ground_truth = plot_results(1, "Euclidean $k$-means", euclidean_km, x_train, y_train, y_pred, fig)
+    joblib.dump((euclidean_km, y_pred, ground_truth), 'trained_models/euclidean_km.pkl')  # save model
+
+
+def perform_dba_k_means_clustering(x_train, y_train, fig):
+    print("DBA k-means")
+    dba_km = TimeSeriesKMeans(
+        n_clusters=cluster_config.cluster_config["number_of_clusters"],
+        n_init=cluster_config.cluster_config["n_init"],
+        max_iter=cluster_config.cluster_config["max_iter"],
+        metric="dtw",
+        verbose=False,
+        max_iter_barycenter=cluster_config.cluster_config["max_iter_barycenter"],
+        random_state=cluster_config.cluster_config["seed"]
+    )
+    y_pred = dba_km.fit_predict(x_train)
+    visualize_n_samples_per_class(x_train, y_pred)
+    ground_truth = plot_results(1 + cluster_config.cluster_config["number_of_clusters"], "DBA $k$-means", dba_km,
+                                x_train, y_train, y_pred, fig)
+    joblib.dump((dba_km, y_pred, ground_truth), 'trained_models/dba_km.pkl')  # save model to file
+
+
+def perform_soft_dtw_k_means_clustering(x_train, y_train, fig):
+    print("Soft-DTW k-means")
+    sdtw_km = TimeSeriesKMeans(
+        n_clusters=cluster_config.cluster_config["number_of_clusters"],
+        n_init=cluster_config.cluster_config["n_init"],
+        max_iter=cluster_config.cluster_config["max_iter"],
+        metric="softdtw",
+        metric_params={"gamma": .01},
+        verbose=True,
+        max_iter_barycenter=cluster_config.cluster_config["max_iter_barycenter"],
+        random_state=cluster_config.cluster_config["seed"]
+    )
+    y_pred = sdtw_km.fit_predict(x_train)
+    visualize_n_samples_per_class(x_train, y_pred)
+    ground_truth = plot_results(1 + 2 * cluster_config.cluster_config["number_of_clusters"], "Soft-DTW $k$-means",
+                                sdtw_km, x_train, y_train, y_pred,
+                                fig)
+    joblib.dump((sdtw_km, y_pred, ground_truth), 'trained_models/sdtw_km.pkl')  # save model to file
+
+
 if __name__ == '__main__':
     # input: raw oscilloscope data (one file per patch (sub ROI))
     # output: preprocessed data - one file containing data of all patches)
@@ -434,52 +487,11 @@ if __name__ == '__main__':
 
     fig2 = plt.figure(figsize=(5 * cluster_config.cluster_config["number_of_clusters"], 3))
 
-    print("Euclidean k-means")
-    euclidean_km = TimeSeriesKMeans(
-        n_clusters=cluster_config.cluster_config["number_of_clusters"],
-        n_init=cluster_config.cluster_config["n_init"],
-        max_iter=cluster_config.cluster_config["max_iter"],
-        verbose=True,
-        random_state=cluster_config.cluster_config["seed"]
-    )
-    y_pred = euclidean_km.fit_predict(x_train)
-    visualize_n_samples_per_class(x_train, y_pred)
-    ground_truth = plot_results(1, "Euclidean $k$-means", euclidean_km, x_train, y_train, y_pred, fig2)
-    joblib.dump((euclidean_km, y_pred, ground_truth), 'trained_models/euclidean_km.pkl')  # save model to file
+    perform_euclidean_k_means_clustering(x_train, y_train, fig2)
 
-    print("DBA k-means")
-    dba_km = TimeSeriesKMeans(
-        n_clusters=cluster_config.cluster_config["number_of_clusters"],
-        n_init=cluster_config.cluster_config["n_init"],
-        max_iter=cluster_config.cluster_config["max_iter"],
-        metric="dtw",
-        verbose=False,
-        max_iter_barycenter=cluster_config.cluster_config["max_iter_barycenter"],
-        random_state=cluster_config.cluster_config["seed"]
-    )
-    y_pred = dba_km.fit_predict(x_train)
-    visualize_n_samples_per_class(x_train, y_pred)
-    ground_truth = plot_results(1 + cluster_config.cluster_config["number_of_clusters"], "DBA $k$-means", dba_km,
-                                x_train, y_train, y_pred, fig2)
-    joblib.dump((dba_km, y_pred, ground_truth), 'trained_models/dba_km.pkl')  # save model to file
+    perform_dba_k_means_clustering(x_train, y_train, fig2)
 
-    print("Soft-DTW k-means")
-    sdtw_km = TimeSeriesKMeans(
-        n_clusters=cluster_config.cluster_config["number_of_clusters"],
-        n_init=cluster_config.cluster_config["n_init"],
-        max_iter=cluster_config.cluster_config["max_iter"],
-        metric="softdtw",
-        metric_params={"gamma": .01},
-        verbose=True,
-        max_iter_barycenter=cluster_config.cluster_config["max_iter_barycenter"],
-        random_state=cluster_config.cluster_config["seed"]
-    )
-    y_pred = sdtw_km.fit_predict(x_train)
-    visualize_n_samples_per_class(x_train, y_pred)
-    ground_truth = plot_results(1 + 2 * cluster_config.cluster_config["number_of_clusters"], "Soft-DTW $k$-means",
-                                sdtw_km, x_train, y_train, y_pred,
-                                fig2)
-    joblib.dump((sdtw_km, y_pred, ground_truth), 'trained_models/sdtw_km.pkl')  # save model to file
+    perform_soft_dtw_k_means_clustering(x_train, y_train, fig2)
 
     fig2.tight_layout()
     plt.show()
