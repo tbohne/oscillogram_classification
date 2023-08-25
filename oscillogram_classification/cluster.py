@@ -10,6 +10,7 @@ import joblib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.figure import Figure
 from tslearn.clustering import TimeSeriesKMeans
 from tslearn.preprocessing import TimeSeriesResampler
 
@@ -198,6 +199,9 @@ def create_processed_time_series_dataset(data_path: str, norm: bool = False) -> 
     """
     Creates a processed time series dataset (.npz file containing all samples).
 
+    -> input: raw oscilloscope data - one file per patch (sub ROI)
+    -> output: preprocessed data - one file containing data of all patches
+
     :param data_path: path to sample data
     :param norm: whether each sample should be normalized
     """
@@ -257,7 +261,14 @@ def read_oscilloscope_recording(rec_file: Path) -> (int, list):
     return label, curr_voltages
 
 
-def perform_euclidean_k_means_clustering(x_train, y_train, fig):
+def perform_euclidean_k_means_clustering(x_train: np.ndarray, y_train: np.ndarray, fig: Figure) -> None:
+    """
+    Performs Euclidean k-means clustering with the provided time series patches.
+
+    :param x_train: time series patches
+    :param y_train: labels
+    :param fig: matplotlib figure to be extended
+    """
     print("Euclidean k-means")
     euclidean_km = TimeSeriesKMeans(
         n_clusters=cluster_config.cluster_config["number_of_clusters"],
@@ -272,7 +283,14 @@ def perform_euclidean_k_means_clustering(x_train, y_train, fig):
     joblib.dump((euclidean_km, y_pred, ground_truth), 'trained_models/euclidean_km.pkl')  # save model
 
 
-def perform_dba_k_means_clustering(x_train, y_train, fig):
+def perform_dba_k_means_clustering(x_train: np.ndarray, y_train: np.ndarray, fig: Figure) -> None:
+    """
+    Performs DBA k-means clustering with the provided time series patches.
+
+    :param x_train: time series patches
+    :param y_train: labels
+    :param fig: matplotlib figure to be extended
+    """
     print("DBA k-means")
     dba_km = TimeSeriesKMeans(
         n_clusters=cluster_config.cluster_config["number_of_clusters"],
@@ -290,7 +308,14 @@ def perform_dba_k_means_clustering(x_train, y_train, fig):
     joblib.dump((dba_km, y_pred, ground_truth), 'trained_models/dba_km.pkl')  # save model to file
 
 
-def perform_soft_dtw_k_means_clustering(x_train, y_train, fig):
+def perform_soft_dtw_k_means_clustering(x_train: np.ndarray, y_train: np.ndarray, fig: Figure) -> None:
+    """
+    Performs Soft-DTW k-means clustering with the provided time series patches.
+
+    :param x_train: time series patches
+    :param y_train: labels
+    :param fig: matplotlib figure to be extended
+    """
     print("Soft-DTW k-means")
     sdtw_km = TimeSeriesKMeans(
         n_clusters=cluster_config.cluster_config["number_of_clusters"],
@@ -305,14 +330,11 @@ def perform_soft_dtw_k_means_clustering(x_train, y_train, fig):
     y_pred = sdtw_km.fit_predict(x_train)
     visualize_n_samples_per_class(x_train, y_pred)
     ground_truth = plot_results(1 + 2 * cluster_config.cluster_config["number_of_clusters"], "Soft-DTW $k$-means",
-                                sdtw_km, x_train, y_train, y_pred,
-                                fig)
+                                sdtw_km, x_train, y_train, y_pred, fig)
     joblib.dump((sdtw_km, y_pred, ground_truth), 'trained_models/sdtw_km.pkl')  # save model to file
 
 
 if __name__ == '__main__':
-    # input: raw oscilloscope data (one file per patch (sub ROI))
-    # output: preprocessed data - one file containing data of all patches)
     parser = argparse.ArgumentParser(description='Clustering sub-ROI patches')
     parser.add_argument('--norm', action='store', type=str, required=True,
                         help='normalization method: %s' % cluster_config.cluster_config["normalization_methods"])
@@ -320,24 +342,21 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     create_dataset(args.norm, args.path)
-    x_train, y_train = load_data()
+    train_x, train_y = load_data()
     # bring all patches to the same length
-    x_train = preprocess.interpolation(x_train)
+    train_x = preprocess.interpolation(train_x)
 
-    print("original TS size:", len(x_train[0]))
-    # # resample time series so that they reach the target size (sz - size of output TS)
-    # #   -> we need to reduce the length of the TS (due to runtime, memory)
-    x_train = TimeSeriesResampler(
-        sz=len(x_train[0]) // cluster_config.cluster_config["resampling_divisor"]).fit_transform(x_train)
-    print("after down sampling:", len(x_train[0]))
+    print("original TS size:", len(train_x[0]))
+    # resample time series so that they reach the target size (sz - size of output TS)
+    #   -> we need to reduce the length of the TS (due to runtime, memory)
+    train_x = TimeSeriesResampler(
+        sz=len(train_x[0]) // cluster_config.cluster_config["resampling_divisor"]).fit_transform(train_x)
+    print("after down sampling:", len(train_x[0]))
 
-    fig2 = plt.figure(figsize=(5 * cluster_config.cluster_config["number_of_clusters"], 3))
+    cluster_fig = plt.figure(figsize=(5 * cluster_config.cluster_config["number_of_clusters"], 3))
+    perform_euclidean_k_means_clustering(train_x, train_y, cluster_fig)
+    perform_dba_k_means_clustering(train_x, train_y, cluster_fig)
+    perform_soft_dtw_k_means_clustering(train_x, train_y, cluster_fig)
 
-    perform_euclidean_k_means_clustering(x_train, y_train, fig2)
-
-    perform_dba_k_means_clustering(x_train, y_train, fig2)
-
-    perform_soft_dtw_k_means_clustering(x_train, y_train, fig2)
-
-    fig2.tight_layout()
+    cluster_fig.tight_layout()
     plt.show()
