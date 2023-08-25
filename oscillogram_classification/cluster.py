@@ -69,7 +69,7 @@ def evaluate_performance(ground_truth: np.ndarray, predictions: np.ndarray) -> d
     return ground_truth_per_cluster
 
 
-def plot_results(offset: int, title: str, clustering: TimeSeriesKMeans, train_x: np.ndarray, train_y: np.ndarray,
+def plot_results(offset: int, title: str, clustering: TimeSeriesKMeans, x_train: np.ndarray, y_train: np.ndarray,
                  pred_y: np.ndarray, fig: plt.Figure) -> dict:
     """
     Plots the results of the clustering procedure.
@@ -77,8 +77,8 @@ def plot_results(offset: int, title: str, clustering: TimeSeriesKMeans, train_x:
     :param offset: y-offset for the data to be displayed
     :param title: plot title
     :param clustering: clustering results
-    :param train_x: patches that were clustered
-    :param train_y: ground truth of clustered patches
+    :param x_train: patches that were clustered
+    :param y_train: ground truth of clustered patches
     :param pred_y: predictions (cluster assignments)
     :param fig: figure to add plot to
     :return: ground truth dictionary
@@ -86,10 +86,10 @@ def plot_results(offset: int, title: str, clustering: TimeSeriesKMeans, train_x:
     print("#########################################################################################")
     print("results for", title)
     print("#########################################################################################")
-    ground_truth_dict = evaluate_performance(train_y, pred_y)
+    ground_truth_dict = evaluate_performance(y_train, pred_y)
     for y in range(cluster_config.cluster_config["number_of_clusters"]):
         ax = fig.add_subplot(3, cluster_config.cluster_config["number_of_clusters"], y + offset)
-        for x in train_x[pred_y == y]:
+        for x in x_train[pred_y == y]:
             ax.plot(x.ravel(), "k-", alpha=.2)
         ax.plot(clustering.cluster_centers_[y].ravel(), "r-")
         ax.set_xlim(0, train_x.shape[1])
@@ -135,13 +135,13 @@ def load_data() -> (np.ndarray, np.ndarray):
     """
     data = TrainingData(np.load("data/patch_data.npz", allow_pickle=True))
     visualize_n_samples_per_class(data[:][0], data[:][1])
-    train_x = data[:][0]
-    train_y = data[:][1]
+    x_train = data[:][0]
+    y_train = data[:][1]
     np.random.seed(cluster_config.cluster_config["seed"])
-    idx = np.random.permutation(len(train_x))
-    train_x = train_x[idx]
-    train_y = train_y[idx]
-    return train_x, train_y
+    idx = np.random.permutation(len(x_train))
+    x_train = x_train[idx]
+    y_train = y_train[idx]
+    return x_train, y_train
 
 
 def dir_path(path: str) -> str:
