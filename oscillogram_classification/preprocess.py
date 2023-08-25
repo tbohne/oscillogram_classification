@@ -175,6 +175,22 @@ def periodic_padding(patches: np.ndarray) -> np.ndarray:
     return padded_array.reshape((padded_array.shape[0], max_ts_length, 1))
 
 
+def zero_padding(patches: np.ndarray) -> np.ndarray:
+    """
+    Applies zero-padding to the provided patches and transforms them to the expected shape.
+
+    :param patches: battery signal sub-ROI patches
+    :return: padded / transformed patches
+    """
+    max_ts_length = max([len(patch) for patch in patches])
+    padded_array = np.zeros((patches.shape[0], max_ts_length, 1))
+    for i, ts in enumerate(patches):
+        ts = np.array(ts).reshape(-1, 1)
+        n_samples = ts.shape[0]
+        padded_array[i, :n_samples, :] = ts
+    return padded_array
+
+
 def interpolation(patches: np.ndarray) -> np.ndarray:
     """
     Resamples the provided patches and transforms them to the expected shape.
