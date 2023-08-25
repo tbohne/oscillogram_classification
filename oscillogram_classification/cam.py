@@ -5,6 +5,7 @@
 import argparse
 import io
 import os
+from typing import Union, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,11 +22,11 @@ from tf_keras_vis.utils.scores import CategoricalScore, BinaryScore
 
 from oscillogram_classification import preprocess
 
-METHODS = ["gradcam", "hirescam", "tf-keras-gradcam", "tf-keras-gradcam++", "tf-keras-scorecam",
-           "tf-keras-smoothgrad", "tf-keras-layercam", "all"]
+METHODS = ["gradcam", "hirescam", "tf-keras-gradcam", "tf-keras-gradcam++", "tf-keras-scorecam", "tf-keras-smoothgrad",
+           "tf-keras-layercam", "all"]
 
 
-def retrieve_last_conv_layer(trained_model):
+def retrieve_last_conv_layer(trained_model: keras.models.Model) -> str:
     """
     Retrieves the name of the last convolutional layer in the CNN.
 
@@ -37,7 +38,8 @@ def retrieve_last_conv_layer(trained_model):
             return layer.name
 
 
-def compute_gradients_and_last_conv_layer_output(input_array, trained_model, pred_idx):
+def compute_gradients_and_last_conv_layer_output(input_array: np.ndarray, trained_model: keras.models.Model,
+                                                 pred_idx: Union[int, None]) -> Tuple[tf.Tensor, tf.Tensor]:
     """
     Computes the gradients of the predicted class for the input series with respect to the activations of the last conv
     layer and returns them together with the output of the last conv layer.
@@ -55,14 +57,12 @@ def compute_gradients_and_last_conv_layer_output(input_array, trained_model, pre
         [trained_model.inputs],
         [trained_model.get_layer(retrieve_last_conv_layer(trained_model)).output, trained_model.output]
     )
-
     # gradient tape -> API to inspect gradients in tensorflow
     with tf.GradientTape() as tape:
         # compute gradient of the predicted class for the input series with respect to the
         # activations of the last conv layer
         last_conv_layer_output, predictions = grad_model(input_array)
         # no index specified -> use the one with the highest "probability" (the best guess)
-
         if pred_idx is None:
             pred_idx = tf.argmax(predictions[0])
         pred_value = predictions[:, pred_idx]
@@ -73,7 +73,7 @@ def compute_gradients_and_last_conv_layer_output(input_array, trained_model, pre
     return grads, last_conv_layer_output[0]
 
 
-def normalize_heatmap(cam):
+def normalize_heatmap(cam: tf.Tensor) -> tf.Tensor:
     """
     Normalizes the heatmap for visualization purposes.
 
@@ -85,10 +85,11 @@ def normalize_heatmap(cam):
     return cam
 
 
-def generate_gradcam(input_array, trained_model, pred_idx=None):
+def generate_gradcam(input_array: np.ndarray, trained_model: keras.models.Model,
+                     pred_idx: Union[int, None] = None) -> np.ndarray:
     """
     Generates the Grad-CAM (Gradient-weighted Class Activation Map) for the specified input, trained model
-    and optionally prediction. It is essentially used to get a sense of what regions of the input the CNN is looking
+    and optional prediction. It is essentially used to get a sense of what regions of the input the CNN is looking
     at in order to make a prediction.
 
     :param input_array: input to understand prediction for
@@ -102,14 +103,11 @@ def generate_gradcam(input_array, trained_model, pred_idx=None):
     # -> average of gradient values as weights
     pooled_grads = tf.reduce_mean(grads, axis=(0, 1))
 
-    # print("conv out:", last_conv_layer_output.shape)
-    # print("pooled grads:", pooled_grads[:, tf.newaxis].shape)
-
     # now a channel could have a high gradient but still a low activation (we want to consider both)
     # thus:
     # multiply each channel in the feature map by how important it is w.r.t. the top
-    # predicted class, then sum all the channels to obtain the heatmap class activation
-    # [new axis necessary so that the dimensions fit for matrix multiplication]
+    # predicted class, then sum up all the channels to obtain the heatmap
+    # (new axis necessary so that the dimensions fit for matrix multiplication)
     cam = last_conv_layer_output @ pooled_grads[:, tf.newaxis]
 
     # get back to time series shape (1D) -> remove dimension of size 1
@@ -118,9 +116,9 @@ def generate_gradcam(input_array, trained_model, pred_idx=None):
     return cam.numpy()
 
 
-def tf_keras_gradcam(input_array, trained_model, pred):
+def tf_keras_gradcam(input_array: np.ndarray, trained_model: keras.models.Model, pred: np.ndarray) -> np.ndarray:
     """
-    Generates Grad-CAM heatmap using the tf-keras-vis library.
+    Generates the Grad-CAM heatmap using the tf-keras-vis library.
 
     :param input_array: input to understand prediction for
     :param trained_model: trained model that produces the prediction to be understood
@@ -128,21 +126,18 @@ def tf_keras_gradcam(input_array, trained_model, pred):
     :return: class activation map (heatmap) that highlights the most relevant parts for the classification
     """
     num_classes = len(pred[0])
-
     gradcam = Gradcam(trained_model, model_modifier=ReplaceToLinear(), clone=True)
-    if num_classes > 1:
-        score = CategoricalScore([np.argmax(pred)])
-    else:
-        score = BinaryScore(pred[0][0] > 0.5)
+    score = CategoricalScore([np.argmax(pred)]) if num_classes > 1 else BinaryScore(pred[0][0] > 0.5)
     cam = gradcam(score, input_array, penultimate_layer=-1)
     cam = tf.squeeze(cam)
     cam = normalize_heatmap(cam)
     return cam.numpy()
 
 
-def tf_keras_gradcam_plus_plus(input_array, trained_model, pred):
+def tf_keras_gradcam_plus_plus(input_array: np.ndarray, trained_model: keras.models.Model,
+                               pred: np.ndarray) -> np.ndarray:
     """
-    Generates Grad-CAM++ heatmap using the tf-keras-vis library.
+    Generates the Grad-CAM++ heatmap using the tf-keras-vis library.
 
     :param input_array: input to understand prediction for
     :param trained_model: trained model that produces the prediction to be understood
@@ -150,21 +145,17 @@ def tf_keras_gradcam_plus_plus(input_array, trained_model, pred):
     :return: class activation map (heatmap) that highlights the most relevant parts for the classification
     """
     num_classes = len(pred[0])
-
     gradcam = GradcamPlusPlus(trained_model, model_modifier=ReplaceToLinear(), clone=True)
-    if num_classes > 1:
-        score = CategoricalScore([np.argmax(pred)])
-    else:
-        score = BinaryScore(pred[0][0] > 0.5)
+    score = CategoricalScore([np.argmax(pred)]) if num_classes > 1 else BinaryScore(pred[0][0] > 0.5)
     cam = gradcam(score, input_array, penultimate_layer=-1)
     cam = tf.squeeze(cam)
     cam = normalize_heatmap(cam)
     return cam.numpy()
 
 
-def tf_keras_scorecam(input_array, trained_model, pred):
+def tf_keras_scorecam(input_array: np.ndarray, trained_model: keras.models.Model, pred: np.ndarray) -> np.ndarray:
     """
-    Generates ScoreCAM heatmap using the tf-keras-vis library.
+    Generates the ScoreCAM heatmap using the tf-keras-vis library.
 
     :param input_array: input to understand prediction for
     :param trained_model: trained model that produces the prediction to be understood
@@ -172,22 +163,17 @@ def tf_keras_scorecam(input_array, trained_model, pred):
     :return: class activation map (heatmap) that highlights the most relevant parts for the classification
     """
     num_classes = len(pred[0])
-
     scorecam = Scorecam(trained_model, model_modifier=ReplaceToLinear())
-    if num_classes > 1:
-        # idx of the class to be considered
-        score = CategoricalScore([np.argmax(pred)])
-    else:
-        score = BinaryScore(pred[0][0] > 0.5)
+    score = CategoricalScore([np.argmax(pred)]) if num_classes > 1 else BinaryScore(pred[0][0] > 0.5)
     cam = scorecam(score, input_array, penultimate_layer=-1)
     cam = tf.squeeze(cam)
     cam = normalize_heatmap(cam)
     return cam.numpy()
 
 
-def tf_keras_layercam(input_array, trained_model, pred):
+def tf_keras_layercam(input_array: np.ndarray, trained_model: keras.models.Model, pred: np.ndarray) -> np.ndarray:
     """
-    Generates LayerCAM heatmap using the tf-keras-vis library.
+    Generates the LayerCAM heatmap using the tf-keras-vis library.
 
     :param input_array: input to understand prediction for
     :param trained_model: trained model that produces the prediction to be understood
@@ -195,21 +181,17 @@ def tf_keras_layercam(input_array, trained_model, pred):
     :return: class activation map (heatmap) that highlights the most relevant parts for the classification
     """
     num_classes = len(pred[0])
-
     layercam = Layercam(trained_model)
-    if num_classes > 1:
-        score = CategoricalScore([np.argmax(pred)])
-    else:
-        score = BinaryScore(pred[0][0] > 0.5)
+    score = CategoricalScore([np.argmax(pred)]) if num_classes > 1 else BinaryScore(pred[0][0] > 0.5)
     cam = layercam(score, input_array, penultimate_layer=-1)
     cam = tf.squeeze(cam)
     cam = normalize_heatmap(cam)
     return cam.numpy()
 
 
-def tf_keras_smooth_grad(input_array, trained_model, pred):
+def tf_keras_smooth_grad(input_array: np.ndarray, trained_model: keras.models.Model, pred: np.ndarray) -> np.ndarray:
     """
-    Generates SmoothGrad saliency map using the tf-keras-vis library.
+    Generates the SmoothGrad saliency map using the tf-keras-vis library.
 
     :param input_array: input to understand prediction for
     :param trained_model: trained model that produces the prediction to be understood
@@ -217,22 +199,18 @@ def tf_keras_smooth_grad(input_array, trained_model, pred):
     :return: saliency map that highlights the most relevant parts for the classification
     """
     num_classes = len(pred[0])
-
     saliency = Saliency(trained_model, model_modifier=ReplaceToLinear(), clone=True)
-
-    if num_classes > 1:
-        score = CategoricalScore([np.argmax(pred)])
-    else:
-        score = BinaryScore(pred[0][0] > 0.5)
+    score = CategoricalScore([np.argmax(pred)]) if num_classes > 1 else BinaryScore(pred[0][0] > 0.5)
     saliency_map = saliency(score, input_array, smooth_samples=20, smooth_noise=0.20)
     cam = tf.squeeze(saliency_map)
     cam = normalize_heatmap(cam)
     return cam.numpy()
 
 
-def generate_hirescam(input_array, trained_model, pred_idx=None):
+def generate_hirescam(input_array: np.ndarray, trained_model: keras.models.Model,
+                      pred_idx: Union[int, None] = None) -> np.ndarray:
     """
-    Generates the HiResCAM for the specified input, trained model and optionally prediction. It is essentially used to
+    Generates the HiResCAM for the specified input, trained model and optional prediction. It is essentially used to
     get a sense of what regions of the input the CNN is looking at in order to make a prediction.
 
     :param input_array: input to understand prediction for
@@ -250,9 +228,9 @@ def generate_hirescam(input_array, trained_model, pred_idx=None):
     return cam.numpy()
 
 
-def gen_heatmaps_as_overlay(cams, voltage_vals, title):
+def gen_heatmaps_overlay_side_by_side(cams: dict, voltage_vals: np.ndarray, title: str) -> None:
     """
-    Generates the class activation maps (heatmaps) - time series as overlay.
+    Generates the class activation map (heatmap) side-by-side plot - time series as overlay.
 
     :param cams: dictionary containing the class activation maps to be visualized (+ method names)
     :param voltage_vals: voltage values to be visualized
@@ -260,7 +238,6 @@ def gen_heatmaps_as_overlay(cams, voltage_vals, title):
     """
     plt.rcParams["figure.figsize"] = len(cams) * 10, 3
     fig, axes = plt.subplots(nrows=1, ncols=len(cams), sharex=True, sharey=True)
-
     fig.canvas.set_window_title(title)
     # bounding box in data coordinates that the image will fill (left, right, bottom, top)
     extent = [0, cams[list(cams.keys())[0]].shape[0], np.floor(np.min(voltage_vals)), np.ceil(np.max(voltage_vals))]
@@ -273,13 +250,24 @@ def gen_heatmaps_as_overlay(cams, voltage_vals, title):
         axes[i].set_xlim(extent[0], extent[1])
         axes[i].title.set_text(list(cams.keys())[i])
         # heatmap
-        axes[i].imshow(cams[list(cams.keys())[i]][np.newaxis, :], cmap="plasma", aspect="auto", alpha=.75,
-                       extent=extent)
+        axes[i].imshow(
+            cams[list(cams.keys())[i]][np.newaxis, :], cmap="plasma", aspect="auto", alpha=.75, extent=extent
+        )
         # data
         axes[i].plot(data_points, voltage_vals, '#000000')
-
     plt.tight_layout()
 
+
+def gen_heatmaps_as_overlay(cams: dict, voltage_vals: np.ndarray, title: str) -> Image:
+    """
+    Generates the class activation map (heatmap) side-by-side plot - time series as overlay - and returns it as image.
+
+    :param cams: dictionary containing the class activation maps to be visualized (+ method names)
+    :param voltage_vals: voltage values to be visualized
+    :param title: window title, e.g., recorded vehicle component and classification result
+    :return heatmap side-by-side plot as image
+    """
+    gen_heatmaps_overlay_side_by_side(cams, voltage_vals, title)
     # create bytes object and save matplotlib fig into it
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
@@ -288,40 +276,20 @@ def gen_heatmaps_as_overlay(cams, voltage_vals, title):
     return Image.open(buf)
 
 
-def plot_heatmaps_as_overlay(cams, voltage_vals, title):
+def plot_heatmaps_as_overlay(cams: dict, voltage_vals: np.ndarray, title: str) -> None:
     """
-    Visualizes the class activation maps (heatmaps) - time series as overlay.
+    Visualizes the class activation map (heatmap) side-by-side plot - time series as overlay.
 
     :param cams: dictionary containing the class activation maps to be visualized (+ method names)
     :param voltage_vals: voltage values to be visualized
     :param title: window title, e.g., recorded vehicle component and classification result
     """
-    plt.rcParams["figure.figsize"] = len(cams) * 10, 3
-    fig, axes = plt.subplots(nrows=1, ncols=len(cams), sharex=True, sharey=True)
-
-    fig.canvas.set_window_title(title)
-    # bounding box in data coordinates that the image will fill (left, right, bottom, top)
-    extent = [0, cams[list(cams.keys())[0]].shape[0], np.floor(np.min(voltage_vals)), np.ceil(np.max(voltage_vals))]
-    data_points = np.array([i for i in range(len(voltage_vals))])
-
-    if len(cams) == 1:
-        axes = [axes]
-
-    for i in range(len(cams)):
-        axes[i].set_xlim(extent[0], extent[1])
-        axes[i].title.set_text(list(cams.keys())[i])
-        # heatmap
-        axes[i].imshow(cams[list(cams.keys())[i]][np.newaxis, :], cmap="plasma", aspect="auto", alpha=.75,
-                       extent=extent)
-        # data
-        axes[i].plot(data_points, voltage_vals, '#000000')
-
-    plt.tight_layout()
+    gen_heatmaps_overlay_side_by_side(cams, voltage_vals, title)
     plt.savefig("visualization.svg", format="svg", bbox_inches='tight')
     plt.show()
 
 
-def plot_heatmaps(cams, voltage_vals, title):
+def plot_heatmaps(cams: dict, voltage_vals: np.ndarray, title: str) -> None:
     """
     Visualizes the class activation maps (heatmaps).
 
@@ -332,7 +300,6 @@ def plot_heatmaps(cams, voltage_vals, title):
     plt.rcParams["figure.figsize"] = len(cams) * 10, 4
     fig, axes = plt.subplots(nrows=2, ncols=len(cams), sharex=True, sharey=True)
     fig.canvas.set_window_title(title)
-
     # bounding box in data coordinates that the image will fill (left, right, bottom, top)
     extent = [0, cams[list(cams.keys())[0]].shape[0], np.floor(np.min(voltage_vals)), np.ceil(np.max(voltage_vals))]
     data_points = [i for i in range(len(voltage_vals))]
@@ -340,7 +307,6 @@ def plot_heatmaps(cams, voltage_vals, title):
     for i in range(len(cams)):
         # first row (heatmaps)
         curr_above = axes[0][i] if len(cams) > 1 else axes[0]
-        # curr_above.set_yticks([])
         curr_above.set_xlim(extent[0], extent[1])
         curr_above.title.set_text(list(cams.keys())[i])
 
@@ -354,7 +320,7 @@ def plot_heatmaps(cams, voltage_vals, title):
     plt.show()
 
 
-def file_path(path):
+def file_path(path: str) -> str:
     """
     Returns path if it's valid, raises error otherwise.
 
@@ -367,9 +333,47 @@ def file_path(path):
         raise argparse.ArgumentTypeError(f"{path} is not a valid file")
 
 
+def gen_heatmap_dictionary(method: str, net_input: np.ndarray, model: keras.models.Model,
+                           prediction: np.ndarray) -> dict:
+    """
+    Generates the heatmap dictionary for the specified method, model, prediction, and input.
+
+    :param method: heatmap generation method
+    :param net_input: input to generate heatmap for
+    :param model: model to generate heatmap for
+    :param prediction: prediction to generate heatmap for
+    :return: heatmap dictionary
+    """
+    heatmaps = {}
+    if method == "gradcam":
+        heatmaps[method] = generate_gradcam(np.array([net_input]), model)
+    elif method == "tf-keras-gradcam":
+        heatmaps[method] = tf_keras_gradcam(np.array([net_input]), model, prediction)
+    elif method == "tf-keras-gradcam++":
+        heatmaps[method] = tf_keras_gradcam_plus_plus(np.array([net_input]), model, prediction)
+    elif method == "tf-keras-scorecam":
+        heatmaps[method] = tf_keras_scorecam(np.array([net_input]), model, prediction)
+    elif method == "tf-keras-layercam":
+        heatmaps[method] = tf_keras_layercam(np.array([net_input]), model, prediction)
+    elif method == "tf-keras-smoothgrad":
+        heatmaps[method] = tf_keras_smooth_grad(np.array([net_input]), model, prediction)
+    elif method == "hirescam":
+        heatmaps[method] = generate_hirescam(np.array([net_input]), model)
+    elif method == "all":
+        heatmaps["tf-keras-gradcam"] = tf_keras_gradcam(np.array([net_input]), model, prediction)
+        heatmaps["hirescam"] = generate_hirescam(np.array([net_input]), model)
+        heatmaps["tf-keras-gradcam++"] = tf_keras_gradcam_plus_plus(np.array([net_input]), model, prediction)
+        heatmaps["tf-keras-scorecam"] = tf_keras_scorecam(np.array([net_input]), model, prediction)
+        heatmaps["tf-keras-smoothgrad"] = tf_keras_smooth_grad(np.array([net_input]), model, prediction)
+        heatmaps["tf-keras-layercam"] = tf_keras_layercam(np.array([net_input]), model, prediction)
+    else:
+        print("specified unknown CAM method:", method)
+    return heatmaps
+
+
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Apply diff. CAM methods to trained model to understand predictions..')
-    parser.add_argument('--diff_format', action='store_true', help='using the "only voltage" format')
+    parser = argparse.ArgumentParser(description='Apply various heatmap generation (CAM) methods to the trained model'
+                                                 ' to understand / interpret its predictions')
     parser.add_argument('--sample_path', type=file_path, required=True)
     parser.add_argument('--znorm', action='store_true', help='z-normalize time series')
     parser.add_argument('--model_path', type=file_path, required=True)
@@ -377,68 +381,24 @@ if __name__ == '__main__':
     parser.add_argument('--overlay', action='store_true', help='overlay heatmap and time series')
 
     args = parser.parse_args()
-
-    if args.diff_format:
-        _, voltages = preprocess.read_voltage_only_format_recording(args.sample_path)
-    else:
-        _, voltages = preprocess.read_oscilloscope_recording(args.sample_path)
-
+    _, voltages = preprocess.read_oscilloscope_recording(args.sample_path)
     if args.znorm:
         voltages = preprocess.z_normalize_time_series(voltages)
-
     model = keras.models.load_model(args.model_path)
     net_input_size = model.layers[0].output_shape[0][1]
-
     assert net_input_size == len(voltages)
-
-    # TODO: think about whether it makes sense to fix input size
-    # if len(voltages) > net_input_size:
-    #     remove = len(voltages) - net_input_size
-    #     voltages = voltages[: len(voltages) - remove]
-    # elif net_input_size > len(voltages):
-    #     for _ in range(net_input_size - len(voltages)):
-    #         voltages.append(0)
-
     net_input = np.asarray(voltages).astype('float32')
     net_input = net_input.reshape((net_input.shape[0], 1))
 
     print("input shape:", net_input.shape)
     print(model.summary())
 
-    # EXPLAIN PREDICTION WITH GRAD-CAM
     prediction = model.predict(np.array([net_input]))
     print("PREDICTION:", prediction)
     res = (np.argmax(prediction), np.max(prediction))
     print("predicted class", res[0], " with score", res[1])
 
-    heatmaps = {}
-    if args.method == "gradcam":
-        heatmaps[args.method] = generate_gradcam(np.array([net_input]), model)
-    elif args.method == "tf-keras-gradcam":
-        heatmaps[args.method] = tf_keras_gradcam(np.array([net_input]), model, prediction)
-    elif args.method == "tf-keras-gradcam++":
-        heatmaps[args.method] = tf_keras_gradcam_plus_plus(np.array([net_input]), model, prediction)
-    elif args.method == "tf-keras-scorecam":
-        heatmaps[args.method] = tf_keras_scorecam(np.array([net_input]), model, prediction)
-    elif args.method == "tf-keras-layercam":
-        heatmaps[args.method] = tf_keras_layercam(np.array([net_input]), model, prediction)
-    elif args.method == "tf-keras-smoothgrad":
-        heatmaps[args.method] = tf_keras_smooth_grad(np.array([net_input]), model, prediction)
-    elif args.method == "hirescam":
-        heatmaps[args.method] = generate_hirescam(np.array([net_input]), model)
-    elif args.method == "all":
-        # not needed as it returns exactly the same heatmap as tf-keras-gradcam
-        # heatmaps["gradcam"] = generate_gradcam(np.array([net_input]), model)
-        heatmaps["tf-keras-gradcam"] = tf_keras_gradcam(np.array([net_input]), model, prediction)
-        # TODO: deactivated for now (can't yet deal with one-neuron output binary classification)
-        heatmaps["hirescam"] = generate_hirescam(np.array([net_input]), model)
-        heatmaps["tf-keras-gradcam++"] = tf_keras_gradcam_plus_plus(np.array([net_input]), model, prediction)
-        heatmaps["tf-keras-scorecam"] = tf_keras_scorecam(np.array([net_input]), model, prediction)
-        # TODO: should be checked later on (no reasonable heatmaps)
-        heatmaps["tf-keras-smoothgrad"] = tf_keras_smooth_grad(np.array([net_input]), model, prediction)
-        heatmaps["tf-keras-layercam"] = tf_keras_layercam(np.array([net_input]), model, prediction)
-    else:
-        print("specified unknown CAM method:", args.method)
+    heatmaps = gen_heatmap_dictionary(args.method, net_input, model, prediction)
 
     if len(heatmaps) > 0:
         res_str = (" [ANOMALY" if res[0] == 0 else " [NO ANOMALY") + " - SCORE: " + str(res[1]) + "]"
