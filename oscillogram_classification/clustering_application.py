@@ -4,12 +4,10 @@
 
 import argparse
 import os
-from pathlib import Path
 from typing import List, Tuple
 
 import joblib
 import numpy as np
-import pandas as pd
 from tslearn.clustering import TimeSeriesKMeans
 from tslearn.metrics import dtw, soft_dtw
 
@@ -80,25 +78,6 @@ def dir_path(path: str) -> str:
         return path
     else:
         raise argparse.ArgumentTypeError(f"{path} is not a valid path")
-
-
-def read_oscilloscope_recording(rec_file: Path) -> Tuple[int, List]:
-    """
-    Reads the oscilloscope recording from the specified file.
-
-    :param rec_file: oscilloscope recording file
-    :return: (label, list of voltage values (time series))
-    """
-    print("reading oscilloscope recording from", rec_file)
-    label = None
-    patches = ["patch0", "patch1", "patch2", "patch3", "patch4"]
-    for patch in patches:
-        if patch in str(rec_file).lower():
-            label = int(patch[-1])
-            break
-    df = pd.read_csv(rec_file, delimiter=';', na_values=['-∞', '∞'])
-    curr_voltages = df['Kanal A'].to_list()
-    return label, curr_voltages
 
 
 if __name__ == '__main__':
