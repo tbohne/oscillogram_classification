@@ -4,7 +4,7 @@
 
 import argparse
 import os
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 import joblib
 import numpy as np
@@ -81,7 +81,7 @@ def dir_path(path: str) -> str:
 
 
 def cluster_test_samples(x_test: np.ndarray, y_test: np.ndarray, measurement_ids: np.ndarray,
-                         trained_model: TimeSeriesKMeans, ground_truth: np.ndarray):
+                         trained_model: TimeSeriesKMeans, ground_truth: np.ndarray) -> Dict[str, Tuple[List, List]]:
     """
     Clusters the test samples, i.e., assigns new samples to predetermined clusters.
 
@@ -90,6 +90,8 @@ def cluster_test_samples(x_test: np.ndarray, y_test: np.ndarray, measurement_ids
     :param measurement_ids: measurement IDs of samples
     :param trained_model: clustering model (predetermined clusters)
     :param ground_truth: ground truth labels of samples
+    :return dictionary containing clustering (classification) results
+            scheme: rec_id: [[prediction], [ground_truth]]
     """
     classification_per_measurement_id = {}
 
@@ -122,14 +124,10 @@ def cluster_test_samples(x_test: np.ndarray, y_test: np.ndarray, measurement_ids
                 classification_per_measurement_id[measurement_ids[i]][0].append(most_prominent_entry)
                 classification_per_measurement_id[measurement_ids[i]][1].append(test_sample_ground_truth)
             else:
-                classification_per_measurement_id[measurement_ids[i]] = [
+                classification_per_measurement_id[measurement_ids[i]] = (
                     [most_prominent_entry], [test_sample_ground_truth]
-                ]
-
-    for key, value in classification_per_measurement_id.items():
-        print("measurement:", key)
-        print("prediction:", value[0])
-        print("ground truth:", value[1])
+                )
+    return classification_per_measurement_id
 
 
 if __name__ == '__main__':
@@ -141,4 +139,9 @@ if __name__ == '__main__':
     # load saved clustering model from file
     model, y_pred, ground_truth_labels = joblib.load(cluster_config.cluster_application_config["model"])
     test_x, test_y, rec_ids = load_data()
-    cluster_test_samples(test_x, test_y, rec_ids, model, ground_truth_labels)
+    clustering_res = cluster_test_samples(test_x, test_y, rec_ids, model, ground_truth_labels)
+
+    for key, value in clustering_res.items():
+        print("measurement:", key)
+        print("prediction:", value[0])
+        print("ground truth:", value[1])
