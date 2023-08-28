@@ -157,16 +157,6 @@ def dir_path(path: str) -> str:
         raise argparse.ArgumentTypeError(f"{path} is not a valid path")
 
 
-def create_dataset(norm: bool, data_path: str) -> None:
-    """
-    Iterates through input data and generates an accumulated data set (.npz).
-
-    :param norm: whether each sample should be normalized
-    :param data_path: path to sample data
-    """
-    create_processed_time_series_dataset(data_path, norm)
-
-
 def clean_incorrect_patches(paths: list) -> list:
     """
     Removes time series that were not split into the expected number of patches (either too many or too little).
@@ -195,15 +185,16 @@ def clean_incorrect_patches(paths: list) -> list:
     return cleaned_paths
 
 
-def create_processed_time_series_dataset(data_path: str, norm: bool = False) -> None:
+def create_processed_time_series_dataset(data_path: str, norm: bool = False, clean_patches: bool = False) -> None:
     """
-    Creates a processed time series dataset (.npz file containing all samples).
+    Creates a processed time series dataset (accumulated .npz file containing all samples).
 
     -> input: raw oscilloscope data - one file per patch (sub ROI)
     -> output: preprocessed data - one file containing data of all patches
 
     :param data_path: path to sample data
     :param norm: whether each sample should be normalized
+    :param clean_patches: whether the patches should be cleaned based on a priori assumptions
     """
     voltage_series = []
     labels = []
@@ -213,7 +204,9 @@ def create_processed_time_series_dataset(data_path: str, norm: bool = False) -> 
         paths = [Path(data_path)]
     else:
         paths = list(Path(data_path).glob('**/*.csv'))
-        paths = clean_incorrect_patches(paths)
+        if clean_patches:
+            paths = clean_incorrect_patches(paths)
+
     for path in paths:
         label, curr_voltages = read_oscilloscope_recording(path)
         labels.append(label)
@@ -339,10 +332,13 @@ if __name__ == '__main__':
     parser.add_argument('--norm', action='store', type=str, required=True,
                         help='normalization method: %s' % cluster_config.cluster_config["normalization_methods"])
     parser.add_argument('--path', type=dir_path, required=True, help='path to the data to be processed')
+    parser.add_argument('--clean_patches', action='store_true',
+                        help='whether the patches should be cleaned based on a priori assumptions')
     args = parser.parse_args()
 
-    create_dataset(args.norm, args.path)
+    create_processed_time_series_dataset(args.path, args.norm, args.clean_patches)
     train_x, train_y = load_data()
+
     # bring all patches to the same length
     train_x = preprocess.interpolation(train_x)
 
