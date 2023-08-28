@@ -131,9 +131,9 @@ cluster distribution: [7, 6, 6, 6, 5]
 ground truth per cluster: [[1, 3, 1, 1, 1, 1, 1], [4, 4, 4, 4, 4, 4], [2, 2, 2, 2, 2, 2], [5, 5, 5, 5, 5, 5], [3, 3, 3, 3, 3]])
 ```
 
-Clustering usage (with .csv patches):
+**Clustering usage** (with .csv patches):
 ```
-$ python oscillogram_classification/cluster.py --path PATH_TO_PATCHES
+$ python oscillogram_classification/cluster.py --norm {none | z_norm | min_max_norm | dec_norm | log_norm} --path PATH_TO_PATCHES [--clean_patches]
 ```
 
 ## Using Predetermined Clusters for Comparison with Newly Recorded Samples
