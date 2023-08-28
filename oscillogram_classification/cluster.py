@@ -185,7 +185,7 @@ def clean_incorrect_patches(paths: list) -> list:
     return cleaned_paths
 
 
-def create_processed_time_series_dataset(data_path: str, norm: bool = False, clean_patches: bool = False) -> None:
+def create_processed_time_series_dataset(data_path: str, norm: str = "none", clean_patches: bool = False) -> None:
     """
     Creates a processed time series dataset (accumulated .npz file containing all samples).
 
@@ -193,7 +193,7 @@ def create_processed_time_series_dataset(data_path: str, norm: bool = False, cle
     -> output: preprocessed data - one file containing data of all patches
 
     :param data_path: path to sample data
-    :param norm: whether each sample should be normalized
+    :param norm: normalization method to be applied to each sample
     :param clean_patches: whether the patches should be cleaned based on a priori assumptions
     """
     voltage_series = []
