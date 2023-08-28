@@ -14,3 +14,11 @@ cluster_config = {
     "small_val": 0.0000001,
     "normalization_methods": ["none", "z_norm", "min_max_norm", "dec_norm", "log_norm"]
 }
+
+cluster_application_config = {
+    "model": "trained_models/dba_km.pkl",
+    "data": "data/patch_data.npz",
+    "measurement_ids": "data/patch_measurement_ids.csv",
+    "metric": "DTW",
+    "seed": 42
+}
