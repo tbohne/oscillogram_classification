@@ -80,28 +80,30 @@ def dir_path(path: str) -> str:
         raise argparse.ArgumentTypeError(f"{path} is not a valid path")
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Assign new samples to predetermined clusters')
-    parser.add_argument('--samples', type=dir_path, required=True, help='path to the samples to be assigned')
-    args = parser.parse_args()
-    create_processed_time_series_dataset(args.samples)
+def cluster_test_samples(x_test: np.ndarray, y_test: np.ndarray, measurement_ids: np.ndarray,
+                         trained_model: TimeSeriesKMeans, ground_truth: np.ndarray):
+    """
+    Clusters the test samples, i.e., assigns new samples to predetermined clusters.
 
-    # load saved clustering model from file
-    model, y_pred, ground_truth = joblib.load(cluster_config.cluster_application_config["model"])
-    test_x, test_y, rec_ids = load_data()
+    :param x_test: voltage value samples
+    :param y_test: labels for samples
+    :param measurement_ids: measurement IDs of samples
+    :param trained_model: clustering model (predetermined clusters)
+    :param ground_truth: ground truth labels of samples
+    """
     classification_per_measurement_id = {}
 
-    for i in range(len(test_x)):
-        test_sample = test_x[i]
+    for i in range(len(x_test)):
+        test_sample = x_test[i]
         print("test sample excerpt:", test_sample[:15])
-        best_matching_cluster = determine_best_matching_cluster_for_sample(test_sample, model)
+        best_matching_cluster = determine_best_matching_cluster_for_sample(test_sample, trained_model)
         print("best matching cluster for new sample:", best_matching_cluster,
               "(", ground_truth[best_matching_cluster], ")")
         best_cluster = ground_truth[best_matching_cluster]
 
         # ground truth provided?
-        if test_y[i] is not None:
-            test_sample_ground_truth = test_y[i]
+        if y_test[i] is not None:
+            test_sample_ground_truth = y_test[i]
             print("ground truth:", test_sample_ground_truth)
 
             # if the ground truth matches the most prominent label in the cluster, it's a success
@@ -116,11 +118,11 @@ if __name__ == '__main__':
                       ") does not match most prominent entry in cluster (", most_prominent_entry, ")")
             print("-------------------------------------------------------------------------")
 
-            if rec_ids[i] in classification_per_measurement_id:
-                classification_per_measurement_id[rec_ids[i]][0].append(most_prominent_entry)
-                classification_per_measurement_id[rec_ids[i]][1].append(test_sample_ground_truth)
+            if measurement_ids[i] in classification_per_measurement_id:
+                classification_per_measurement_id[measurement_ids[i]][0].append(most_prominent_entry)
+                classification_per_measurement_id[measurement_ids[i]][1].append(test_sample_ground_truth)
             else:
-                classification_per_measurement_id[rec_ids[i]] = [
+                classification_per_measurement_id[measurement_ids[i]] = [
                     [most_prominent_entry], [test_sample_ground_truth]
                 ]
 
@@ -128,3 +130,15 @@ if __name__ == '__main__':
         print("measurement:", key)
         print("prediction:", value[0])
         print("ground truth:", value[1])
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Assign new samples to predetermined clusters')
+    parser.add_argument('--samples', type=dir_path, required=True, help='path to the samples to be assigned')
+    args = parser.parse_args()
+    create_processed_time_series_dataset(args.samples)
+
+    # load saved clustering model from file
+    model, y_pred, ground_truth_labels = joblib.load(cluster_config.cluster_application_config["model"])
+    test_x, test_y, rec_ids = load_data()
+    cluster_test_samples(test_x, test_y, rec_ids, model, ground_truth_labels)
