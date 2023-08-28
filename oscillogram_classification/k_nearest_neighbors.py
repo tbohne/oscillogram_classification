@@ -3,7 +3,7 @@ import argparse
 from tslearn.neighbors import KNeighborsTimeSeriesClassifier
 from tslearn.preprocessing import TimeSeriesResampler
 
-from cluster import create_dataset, load_data, preprocess_patches, dir_path
+from cluster import create_processed_time_series_dataset, load_data, preprocess_patches, dir_path
 from clustering_application import load_data as load_data_measurements
 from oscillogram_classification import preprocess
 
@@ -17,11 +17,11 @@ if __name__ == '__main__':
     parser.add_argument('--test_path', type=dir_path, required=True, help='path to the test data to be processed')
     args = parser.parse_args()
 
-    create_dataset(args.norm, args.train_path)
+    create_processed_time_series_dataset(args.train_path, args.norm)
     x_train, y_train = load_data()
     x_train = preprocess.interpolation(x_train)
 
-    create_dataset(args.norm, args.test_path)
+    create_processed_time_series_dataset(args.test_path, args.norm)
     x_test, y_test, measurement_ids = load_data_measurements()
     x_test = preprocess.interpolation(x_test)
 
