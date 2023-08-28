@@ -159,6 +159,11 @@ SUCCESS: ground truth ( 0 ) matches most prominent entry in cluster ( 0 )
 ```
 The options without ground truth labels work equivalently, just without the patch type in the file / dir name.
 
+## $k$-NN Classification
+```
+$ python oscillogram_classification/knn.py --train_path /TRAIN_DATA --test_path /TEST_DATA --norm {none | z_norm | min_max_norm | dec_norm | log_norm}
+```
+
 ## Positive (1) and Negative (0) Sample for each Component
 
 ### Normalized Battery Voltage (Engine Starting Process)
