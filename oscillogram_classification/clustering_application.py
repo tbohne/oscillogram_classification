@@ -5,6 +5,7 @@
 import argparse
 import os
 from pathlib import Path
+from typing import List, Tuple
 
 import joblib
 import numpy as np
@@ -12,17 +13,12 @@ import pandas as pd
 from tslearn.clustering import TimeSeriesKMeans
 from tslearn.metrics import dtw, soft_dtw
 
-from training_data import TrainingData
 from cluster import create_processed_time_series_dataset
-
-MODEL = "trained_models/dba_km.pkl"
-DATA = "data/patch_data.npz"
-MEASUREMENT_IDS = "data/patch_measurement_ids.csv"
-METRIC = "DTW"
-SEED = 42
+from config import cluster_config
+from training_data import TrainingData
 
 
-def compute_distances(sample: np.ndarray, clustering_model: TimeSeriesKMeans) -> list:
+def compute_distances(sample: np.ndarray, clustering_model: TimeSeriesKMeans) -> List:
     """
     Computes the distance between the provided sample and each cluster of the specified model using the configured
     metric.
@@ -31,28 +27,33 @@ def compute_distances(sample: np.ndarray, clustering_model: TimeSeriesKMeans) ->
     :param clustering_model: "trained" clustering model
     :return: computed cluster distances
     """
-    if METRIC == "DTW":
+    if cluster_config.cluster_application_config["metric"] == "DTW":
         return [dtw(sample, cluster_centroid) for cluster_centroid in clustering_model.cluster_centers_]
-    elif METRIC == "SOFT_DTW":
+    elif cluster_config.cluster_application_config["metric"] == "SOFT_DTW":
         return [soft_dtw(sample, cluster_centroid) for cluster_centroid in clustering_model.cluster_centers_]
     else:
         # default option is DTW
         return [dtw(sample, cluster_centroid) for cluster_centroid in clustering_model.cluster_centers_]
 
 
-def load_data() -> (np.ndarray, np.ndarray):
+def load_data() -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Loads the test samples.
 
-    :return: test samples
+    :return: test samples (voltage values, labels, measurement IDs)
     """
-    data = TrainingData(np.load(DATA, allow_pickle=True))
-    measurement_ids = np.loadtxt(MEASUREMENT_IDS, delimiter=',', dtype=str)
+    data = TrainingData(np.load(cluster_config.cluster_application_config["data"], allow_pickle=True))
+    measurement_ids = np.loadtxt(cluster_config.cluster_application_config["measurement_ids"], delimiter=',', dtype=str)
+
+    if measurement_ids.shape == ():
+        # convert scalar value to a 1D array
+        measurement_ids = np.array([measurement_ids])
+
     x_test = data[:][0]
     y_test = data[:][1]
-    np.random.seed(SEED)
+    np.random.seed(cluster_config.cluster_application_config["seed"])
     idx = np.random.permutation(len(x_test))
-    return x_test[idx], y_test[idx], measurement_ids[idx] if len(y_test) > 0 else []
+    return x_test[idx], y_test[idx], measurement_ids[idx] if len(y_test) > 0 else ()
 
 
 def determine_best_matching_cluster_for_sample(sample: np.ndarray, clustering_model: TimeSeriesKMeans) -> int:
@@ -81,7 +82,7 @@ def dir_path(path: str) -> str:
         raise argparse.ArgumentTypeError(f"{path} is not a valid path")
 
 
-def read_oscilloscope_recording(rec_file: Path) -> (int, list):
+def read_oscilloscope_recording(rec_file: Path) -> Tuple[int, List]:
     """
     Reads the oscilloscope recording from the specified file.
 
@@ -96,7 +97,7 @@ def read_oscilloscope_recording(rec_file: Path) -> (int, list):
             label = int(patch[-1])
             break
     df = pd.read_csv(rec_file, delimiter=';', na_values=['-∞', '∞'])
-    curr_voltages = list(df['Kanal A'].values)
+    curr_voltages = df['Kanal A'].to_list()
     return label, curr_voltages
 
 
@@ -107,9 +108,8 @@ if __name__ == '__main__':
     create_processed_time_series_dataset(args.samples)
 
     # load saved clustering model from file
-    model, y_pred, ground_truth = joblib.load(MODEL)
-    test_x, test_y, measurement_ids = load_data()
-
+    model, y_pred, ground_truth = joblib.load(cluster_config.cluster_application_config["model"])
+    test_x, test_y, rec_ids = load_data()
     classification_per_measurement_id = {}
 
     for i in range(len(test_x)):
@@ -137,11 +137,11 @@ if __name__ == '__main__':
                       ") does not match most prominent entry in cluster (", most_prominent_entry, ")")
             print("-------------------------------------------------------------------------")
 
-            if measurement_ids[i] in classification_per_measurement_id:
-                classification_per_measurement_id[measurement_ids[i]][0].append(most_prominent_entry)
-                classification_per_measurement_id[measurement_ids[i]][1].append(test_sample_ground_truth)
+            if rec_ids[i] in classification_per_measurement_id:
+                classification_per_measurement_id[rec_ids[i]][0].append(most_prominent_entry)
+                classification_per_measurement_id[rec_ids[i]][1].append(test_sample_ground_truth)
             else:
-                classification_per_measurement_id[measurement_ids[i]] = [
+                classification_per_measurement_id[rec_ids[i]] = [
                     [most_prominent_entry], [test_sample_ground_truth]
                 ]
 
