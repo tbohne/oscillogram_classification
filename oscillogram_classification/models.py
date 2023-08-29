@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # @author Tim Bohne, Patricia Windler
 
-from typing import Tuple
+from typing import Tuple, Union
 
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neural_network import MLPClassifier
@@ -148,7 +148,8 @@ def create_decision_tree_model() -> DecisionTreeClassifier:
     return DecisionTreeClassifier(criterion='entropy')
 
 
-def create_model(input_shape: Tuple, num_classes: int, architecture: str = "FCN"):
+def create_model(input_shape: Tuple, num_classes: int, architecture: str = "FCN") \
+        -> Union[keras.models.Model, RandomForestClassifier, MLPClassifier, DecisionTreeClassifier]:
     """
     Initiates model generation based on the specified architecture, input shape, and number of classes.
 
