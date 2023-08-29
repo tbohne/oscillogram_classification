@@ -66,7 +66,7 @@ Currently supported models: `FCN`, `ResNet`, `RandomForest`, `MLP`, `DecisionTre
 
 ### Preprocessing
 ```
-$ python oscillogram_classification/preprocess.py [--znorm] [--diff_format] [--feature_extraction] [--feature_list] --path /DATA --type {training | validation | test}
+$ python oscillogram_classification/preprocess.py --norm {none | z_norm | min_max_norm | dec_norm | log_norm} [--feature_extraction] [--feature_list] --path /DATA --type {training | validation | test}
 ```
 *Note: In the event of `feature_extraction`, in addition to the actual generated records, csv files (e.g. `training_complete_features.csv`) are generated, which contain the list of the features considered in each case.*
 
@@ -83,7 +83,7 @@ training_filtered_features.csv
 ```
 Now the model is to be trained using the filtered features. The validation dataset should correspond to this feature selection and thus be generated as follows:
 ```
-$ python oscillogram_classification/preprocess.py --path /VALIDATION_DATA --feature_extraction --feature_list data/training_filtered_features.csv --type validation
+$ python oscillogram_classification/preprocess.py --norm {none | z_norm | min_max_norm | dec_norm | log_norm} --path /VALIDATION_DATA --feature_extraction --feature_list data/training_filtered_features.csv --type validation
 ```
 This in turn leads to a set of files corresponding to the different feature vectors. In the described scenario, the file to be used for training would be `validation_manually_filtered_feature_vectors.npz`. The generation of the test dataset works analogously.
 
