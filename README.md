@@ -36,11 +36,21 @@ $ touch config/api_key.py  # enter: wandb_api_key = "YOUR_KEY"
 Hyperparameter configuration in `config/run_config.py`, e.g.:
 ```python
 hyperparameter_config = {
-    "batch_size": 32,
+    "batch_size": 4,
     "learning_rate": 0.001,
     "optimizer": "keras.optimizers.Adam",
     "epochs": 100,
-    "model": "FCN"
+    "model": "FCN",
+    "loss_function": "binary_crossentropy",
+    "accuracy_metric": "binary_accuracy",
+    "trained_model_path": "best_model.h5",
+    "save_best_only": True,
+    "monitor": "val_loss",
+    "ReduceLROnPlateau_factor": 0.5,
+    "ReduceLROnPlateau_patience": 20,
+    "ReduceLROnPlateau_min_lr": 0.0001,
+    "EarlyStopping_patience": 50,
+    "validation_split": 0.2
 }
 ```
 WandB sweep config in `config/sweep_config.py`, e.g.:
