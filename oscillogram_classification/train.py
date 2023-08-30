@@ -28,8 +28,8 @@ def set_up_wandb(wandb_config: dict) -> None:
     :param wandb_config: configuration to be used
     """
     if wandb.run is None:
-    wandb.login(key=api_key.wandb_api_key)
-    wandb.init(project="Oscillogram Classification", config=wandb_config)
+        wandb.login(key=api_key.wandb_api_key)
+        wandb.init(project="Oscillogram Classification", config=wandb_config)
 
 
 def visualize_n_samples_per_class(x: np.ndarray, y: np.ndarray) -> None:
