@@ -6,3 +6,6 @@ best_model.h5
 oscillogram_classification/config/api_key.py
 wandb/
 img/model.png
+img/sorted_out/
+build/
+*.egg-info/
