@@ -16,13 +16,14 @@ N_RUNS_IN_SWEEP = 3
 
 
 def main():
-    def call_training_procedure(config_dict=None):
+    def call_training_procedure():
         """
         Wrapper for the training procedure.
 
         :param config_dict: hyperparameter config
         """
-        train.train_procedure(args.train_path, args.val_path, args.test_path, hyperparameter_config=config_dict)
+        with wandb.init():
+            train.train_procedure(args.train_path, args.val_path, args.test_path, hyperparameter_config=wandb.config)
 
     parser = argparse.ArgumentParser(description='hyper parameter tuning with "weights & biases sweep"')
     parser.add_argument('--train_path', type=file_path, required=True)

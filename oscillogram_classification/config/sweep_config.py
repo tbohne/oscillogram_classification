@@ -13,5 +13,11 @@ sweep_config = {
     },
     "model": {
         "values": ["FCN", "ResNet"]
+    },
+    "loss_function": {
+        "value": "sparse_categorical_crossentropy"
+    },
+    "accuracy_metric": {
+        "value": "sparse_categorical_accuracy"
     }
 }
