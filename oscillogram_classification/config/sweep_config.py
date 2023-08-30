@@ -22,5 +22,35 @@ sweep_config = {
     },
     "model": {
         "values": ["FCN", "ResNet"]
+    },
+    "loss_function": {
+        "value": "sparse_categorical_crossentropy"
+    },
+    "accuracy_metric": {
+        "value": "sparse_categorical_accuracy"
+    },
+    "trained_model_path": {
+        "value": "best_model.h5"
+    },
+    "save_best_only": {
+        "value": True
+    },
+    "monitor": {
+        "value": "val_loss"
+    },
+    "ReduceLROnPlateau_factor": {
+        "value": 0.5
+    },
+    "ReduceLROnPlateau_patience": {
+        "value": 20
+    },
+    "ReduceLROnPlateau_min_lr": {
+        "value": 0.0001
+    },
+    "EarlyStopping_patience": {
+        "value": 50
+    },
+    "validation_split": {
+        "value": 0.2
     }
 }
