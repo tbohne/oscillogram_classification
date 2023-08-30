@@ -1,5 +1,8 @@
 # Oscillogram Classification
 
+![unstable](https://img.shields.io/badge/stability-unstable-orange)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Neural network based anomaly detection for vehicle components using oscilloscope recordings.
 
 Example of the time series data to be considered (voltage over time - $z$-normalized):
@@ -183,6 +186,6 @@ $ python oscillogram_classification/knn.py --train_path /TRAIN_DATA --test_path 
 
 TBD.
 
-## Paper Reference
+## Related Publications
 
 TBD.
