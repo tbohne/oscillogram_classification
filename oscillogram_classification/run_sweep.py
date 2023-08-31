@@ -18,7 +18,9 @@ def main(train_path: str, val_path: str, test_path: str) -> None:
         Wrapper for the training procedure.
         """
         with wandb.init():
-            train.train_procedure(train_path, val_path, test_path, hyperparameter_config=wandb.config)
+            train.train_procedure(
+                train_path, val_path, test_path, hyperparameter_config=wandb.config, vis_samples=False
+            )
 
     os.environ["WANDB_API_KEY"] = api_key.wandb_api_key
     config = {'method': sweep_config.params["tuning_method"], 'parameters': sweep_config.sweep_config}

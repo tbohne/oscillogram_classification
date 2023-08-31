@@ -234,7 +234,7 @@ def perform_consistency_check(train_data: TrainingData, val_data: TrainingData, 
     print("consistency check passed..")
 
 
-def prepare_data(train_data_path: str, val_data_path: str, test_data_path: str, keras_model: bool) \
+def prepare_data(train_data_path: str, val_data_path: str, test_data_path: str, keras_model: bool, vis_samples: bool) \
         -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Prepares the data for the training / evaluation process.
@@ -243,6 +243,7 @@ def prepare_data(train_data_path: str, val_data_path: str, test_data_path: str, 
     :param val_data_path: path to read validation data from
     :param test_data_path: path to read test data from
     :param keras_model: whether the data is prepared for a keras model
+    :param vis_samples: whether to display option to visualize samples
     :return: (x_train, y_train, x_val, y_val, x_test, y_test)
     """
     z_train = z_val = z_test = []
@@ -254,7 +255,8 @@ def prepare_data(train_data_path: str, val_data_path: str, test_data_path: str, 
     y_train = data[:][1]
     if len(data[:]) == 3:
         z_train = data[:][2]
-    visualize_n_samples_per_class(x_train, y_train)
+    if vis_samples:
+        visualize_n_samples_per_class(x_train, y_train)
 
     if keras_model:
         # generally applicable to multivariate time series
@@ -281,7 +283,7 @@ def prepare_data(train_data_path: str, val_data_path: str, test_data_path: str, 
 
 
 def train_procedure(train_path: str, val_path: str, test_path: str,
-                    hyperparameter_config: dict = run_config.hyperparameter_config):
+                    hyperparameter_config: dict = run_config.hyperparameter_config, vis_samples: bool = True):
     """
     Initiates the training and evaluation procedures.
 
@@ -289,12 +291,15 @@ def train_procedure(train_path: str, val_path: str, test_path: str,
     :param val_path: path to validation data
     :param test_path: path to test data
     :param hyperparameter_config: hyperparameter specification
+    :param vis_samples: whether to display option to visualize samples
     """
     keras_model = hyperparameter_config["model"] in ["FCN", "ResNet"]
     if keras_model:
         set_up_wandb(hyperparameter_config)
 
-    x_train, y_train, x_val, y_val, x_test, y_test = prepare_data(train_path, val_path, test_path, keras_model)
+    x_train, y_train, x_val, y_val, x_test, y_test = prepare_data(
+        train_path, val_path, test_path, keras_model, vis_samples
+    )
     model = models.create_model(x_train.shape[1:], len(np.unique(y_train)), architecture=hyperparameter_config["model"])
 
     if 'keras' in str(type(model)):
