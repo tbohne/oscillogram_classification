@@ -19,7 +19,7 @@ from tsfresh.feature_extraction.settings import ComprehensiveFCParameters, Effic
 from tsfresh.utilities.dataframe_functions import impute
 from tslearn.preprocessing import TimeSeriesResampler
 
-from config import cluster_config
+from oscillogram_classification.config import cluster_config
 
 
 def read_oscilloscope_recording(rec_file: str) -> Tuple[int, List[float]]:

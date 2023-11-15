@@ -21,13 +21,13 @@ sweep_config = {
         "value": 3
     },
     "model": {
-        "values": ["FCN", "ResNet"]
+        "values": ["FCN"]
     },
     "loss_function": {
-        "value": "sparse_categorical_crossentropy"
+        "value": "binary_crossentropy"
     },
     "accuracy_metric": {
-        "value": "sparse_categorical_accuracy"
+        "value": "binary_accuracy"
     },
     "trained_model_path": {
         "value": "best_model.h5"
