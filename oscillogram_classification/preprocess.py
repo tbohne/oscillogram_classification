@@ -41,9 +41,8 @@ def read_oscilloscope_recording(rec_file: str, return_time_values: bool = False)
     curr_voltages = df['Kanal A'].to_list()
     if not return_time_values:
         return label, curr_voltages
-    else:
-        time_values = df['Zeit'].to_list()
-        return label, curr_voltages, time_values
+    time_values = df['Zeit'].to_list()
+    return label, curr_voltages, time_values
 
 
 def equalize_sample_sizes(voltage_series: List[List[float]]) -> None:

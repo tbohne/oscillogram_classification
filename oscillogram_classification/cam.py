@@ -241,8 +241,8 @@ def gen_heatmaps_overlay_side_by_side(cams: dict, voltage_vals: np.ndarray, titl
     fig, axes = plt.subplots(nrows=1, ncols=len(cams), sharex=True, sharey=True)
     fig.canvas.set_window_title(title)
     # bounding box in data coordinates that the image will fill (left, right, bottom, top)
-    extent = [0, np.max(time_vals), np.floor(np.min(voltage_vals)), np.ceil(np.max(voltage_vals))]
-    plt.xlabel("time (s)")
+    extent = [0, time_vals[-1], np.floor(np.min(voltage_vals)), np.ceil(np.max(voltage_vals))]
+    fig.text(0.5, 0.02, "time (s)", ha="center", va="center")
 
     if len(cams) == 1:
         axes = [axes]
@@ -306,8 +306,8 @@ def plot_heatmaps(cams: dict, voltage_vals: np.ndarray, title: str, time_vals: L
     fig, axes = plt.subplots(nrows=2, ncols=len(cams), sharex=True, sharey=True)
     fig.canvas.set_window_title(title)
     # bounding box in data coordinates that the image will fill (left, right, bottom, top)
-    extent = [0, np.max(time_vals), np.floor(np.min(voltage_vals)), np.ceil(np.max(voltage_vals))]
-    plt.xlabel("time (s)")
+    extent = [0, time_vals[-1], np.floor(np.min(voltage_vals)), np.ceil(np.max(voltage_vals))]
+    fig.text(0.5, 0.02, "time (s)", ha="center", va="center")
 
     for i in range(len(cams)):
         # first row (heatmaps)
