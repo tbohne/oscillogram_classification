@@ -5,7 +5,7 @@
 import argparse
 import io
 import os
-from typing import Union, Tuple
+from typing import Union, Tuple, List
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -228,23 +228,25 @@ def generate_hirescam(input_array: np.ndarray, trained_model: keras.models.Model
     return cam.numpy()
 
 
-def gen_heatmaps_overlay_side_by_side(cams: dict, voltage_vals: np.ndarray, title: str) -> None:
+def gen_heatmaps_overlay_side_by_side(cams: dict, voltage_vals: np.ndarray, title: str, time_vals: List[float]) -> None:
     """
     Generates the class activation map (heatmap) side-by-side plot - time series as overlay.
 
     :param cams: dictionary containing the class activation maps to be visualized (+ method names)
     :param voltage_vals: voltage values to be visualized
     :param title: window title, e.g., recorded vehicle component and classification result
+    :param time_vals: time values to be visualized on the x-axis
     """
     plt.rcParams["figure.figsize"] = len(cams) * 10, 3
     fig, axes = plt.subplots(nrows=1, ncols=len(cams), sharex=True, sharey=True)
     fig.canvas.set_window_title(title)
     # bounding box in data coordinates that the image will fill (left, right, bottom, top)
-    extent = [0, cams[list(cams.keys())[0]].shape[0], np.floor(np.min(voltage_vals)), np.ceil(np.max(voltage_vals))]
-    data_points = np.array([i for i in range(len(voltage_vals))])
+    extent = [0, np.max(time_vals), np.floor(np.min(voltage_vals)), np.ceil(np.max(voltage_vals))]
+    plt.xlabel("time (s)")
 
     if len(cams) == 1:
         axes = [axes]
+    axes[0].set_ylabel("norm. voltage (V)")
 
     for i in range(len(cams)):
         axes[i].set_xlim(extent[0], extent[1])
@@ -254,11 +256,11 @@ def gen_heatmaps_overlay_side_by_side(cams: dict, voltage_vals: np.ndarray, titl
             cams[list(cams.keys())[i]][np.newaxis, :], cmap="plasma", aspect="auto", alpha=.75, extent=extent
         )
         # data
-        axes[i].plot(data_points, voltage_vals, '#000000')
+        axes[i].plot(time_vals, voltage_vals, '#000000')
     plt.tight_layout()
 
 
-def gen_heatmaps_as_overlay(cams: dict, voltage_vals: np.ndarray, title: str) -> Image:
+def gen_heatmaps_as_overlay(cams: dict, voltage_vals: np.ndarray, title: str, time_vals: List[float]) -> Image:
     """
     Generates the class activation map (heatmap) side-by-side plot - time series as overlay - and returns it as image.
 
@@ -266,8 +268,9 @@ def gen_heatmaps_as_overlay(cams: dict, voltage_vals: np.ndarray, title: str) ->
     :param voltage_vals: voltage values to be visualized
     :param title: window title, e.g., recorded vehicle component and classification result
     :return heatmap side-by-side plot as image
+    :param time_vals: time values to be visualized on the x-axis
     """
-    gen_heatmaps_overlay_side_by_side(cams, voltage_vals, title)
+    gen_heatmaps_overlay_side_by_side(cams, voltage_vals, title, time_vals)
     # create bytes object and save matplotlib fig into it
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
@@ -276,33 +279,35 @@ def gen_heatmaps_as_overlay(cams: dict, voltage_vals: np.ndarray, title: str) ->
     return Image.open(buf)
 
 
-def plot_heatmaps_as_overlay(cams: dict, voltage_vals: np.ndarray, title: str) -> None:
+def plot_heatmaps_as_overlay(cams: dict, voltage_vals: np.ndarray, title: str, time_vals: List[float]) -> None:
     """
     Visualizes the class activation map (heatmap) side-by-side plot - time series as overlay.
 
     :param cams: dictionary containing the class activation maps to be visualized (+ method names)
     :param voltage_vals: voltage values to be visualized
     :param title: window title, e.g., recorded vehicle component and classification result
+    :param time_vals: time values to be visualized on the x-axis
     """
-    gen_heatmaps_overlay_side_by_side(cams, voltage_vals, title)
+    gen_heatmaps_overlay_side_by_side(cams, voltage_vals, title, time_vals)
     plt.savefig("visualization.svg", format="svg", bbox_inches='tight')
     plt.show()
 
 
-def plot_heatmaps(cams: dict, voltage_vals: np.ndarray, title: str) -> None:
+def plot_heatmaps(cams: dict, voltage_vals: np.ndarray, title: str, time_vals: List[float]) -> None:
     """
     Visualizes the class activation maps (heatmaps).
 
     :param cams: dictionary containing the class activation maps to be visualized (+ method names)
     :param voltage_vals: voltage values to be visualized
     :param title: window title, e.g., recorded vehicle component and classification result
+    :param time_vals: time values to be visualized on the x-axis
     """
     plt.rcParams["figure.figsize"] = len(cams) * 10, 4
     fig, axes = plt.subplots(nrows=2, ncols=len(cams), sharex=True, sharey=True)
     fig.canvas.set_window_title(title)
     # bounding box in data coordinates that the image will fill (left, right, bottom, top)
-    extent = [0, cams[list(cams.keys())[0]].shape[0], np.floor(np.min(voltage_vals)), np.ceil(np.max(voltage_vals))]
-    data_points = [i for i in range(len(voltage_vals))]
+    extent = [0, np.max(time_vals), np.floor(np.min(voltage_vals)), np.ceil(np.max(voltage_vals))]
+    plt.xlabel("time (s)")
 
     for i in range(len(cams)):
         # first row (heatmaps)
@@ -312,9 +317,11 @@ def plot_heatmaps(cams: dict, voltage_vals: np.ndarray, title: str) -> None:
 
         # second row (voltages)
         curr_below = axes[1][i] if len(cams) > 1 else axes[1]
+        if i == 0:
+            curr_below.set_ylabel("norm. voltage (V)")
 
         curr_above.imshow(cams[list(cams.keys())[i]][np.newaxis, :], cmap="plasma", aspect="auto", extent=extent)
-        curr_below.plot(data_points, voltage_vals, '#000000')
+        curr_below.plot(time_vals, voltage_vals, '#000000')
 
     plt.tight_layout()
     plt.show()
@@ -381,7 +388,7 @@ if __name__ == '__main__':
     parser.add_argument('--overlay', action='store_true', help='overlay heatmap and time series')
 
     args = parser.parse_args()
-    _, voltages = preprocess.read_oscilloscope_recording(args.sample_path)
+    _, voltages, time_values = preprocess.read_oscilloscope_recording(args.sample_path, return_time_values=True)
     if args.znorm:
         voltages = preprocess.z_normalize_time_series(voltages)
     model = keras.models.load_model(args.model_path)
@@ -403,6 +410,6 @@ if __name__ == '__main__':
     if len(heatmaps) > 0:
         res_str = (" [ANOMALY" if res[0] == 0 else " [NO ANOMALY") + " - SCORE: " + str(res[1]) + "]"
         if args.overlay:
-            plot_heatmaps_as_overlay(heatmaps, voltages, 'test_plot' + res_str)
+            plot_heatmaps_as_overlay(heatmaps, voltages, 'test_plot' + res_str, time_values)
         else:
-            plot_heatmaps(heatmaps, voltages, 'test_plot' + res_str)
+            plot_heatmaps(heatmaps, voltages, 'test_plot' + res_str, time_values)
