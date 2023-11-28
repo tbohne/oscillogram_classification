@@ -6,7 +6,7 @@ import argparse
 import os
 import uuid
 from pathlib import Path
-from typing import Tuple, List
+from typing import Tuple, List, Union
 
 import dask.dataframe as dd
 import numpy as np
@@ -22,12 +22,13 @@ from tslearn.preprocessing import TimeSeriesResampler
 from oscillogram_classification.config import cluster_config
 
 
-def read_oscilloscope_recording(rec_file: str) -> Tuple[int, List[float]]:
+def read_oscilloscope_recording(rec_file: str, return_time_values: bool = False) -> Union[Tuple[int, List[float]], Tuple[int, List[float], List[float]]]:
     """
     Reads the oscilloscope recording from the specified file.
 
     :param rec_file: oscilloscope recording file
-    :return: label, list of voltage values (time series)
+    :param return_time_values: specifies whether the corresponding list of time values should be returned
+    :return: label, list of voltage values (time series), optional: list of time values
     """
     print("reading oscilloscope recording from", rec_file)
     # check whether it's a labeled file
@@ -38,7 +39,10 @@ def read_oscilloscope_recording(rec_file: str) -> Tuple[int, List[float]]:
     df = pd.read_csv(rec_file, delimiter=';', na_values=['-∞', '∞'])
     df = df[1:].apply(lambda x: x.str.replace(',', '.')).astype(float).dropna()
     curr_voltages = df['Kanal A'].to_list()
-    return label, curr_voltages
+    if not return_time_values:
+        return label, curr_voltages
+    time_values = df['Zeit'].to_list()
+    return label, curr_voltages, time_values
 
 
 def equalize_sample_sizes(voltage_series: List[List[float]]) -> None:
