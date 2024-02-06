@@ -9,3 +9,4 @@ img/model.png
 img/sorted_out/
 build/
 *.egg-info/
+.ipynb_checkpoints/
