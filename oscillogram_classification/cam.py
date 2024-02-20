@@ -165,6 +165,7 @@ def tf_keras_scorecam(input_array: np.ndarray, trained_model: keras.models.Model
     num_classes = len(pred[0])
     scorecam = Scorecam(trained_model, model_modifier=ReplaceToLinear())
     score = CategoricalScore([np.argmax(pred)]) if num_classes > 1 else BinaryScore(pred[0][0] > 0.5)
+    # this is the call that leads to some progress log
     cam = scorecam(score, input_array, penultimate_layer=-1)
     cam = tf.squeeze(cam)
     cam = normalize_heatmap(cam)
@@ -279,6 +280,8 @@ def gen_heatmaps_as_overlay(cams: dict, voltage_vals: np.ndarray, title: str, ti
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
     buf.seek(0)
+    # close plt
+    plt.close()
     # create PIL image object
     return Image.open(buf)
 
