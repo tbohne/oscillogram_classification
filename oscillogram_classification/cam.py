@@ -280,7 +280,6 @@ def gen_heatmaps_as_overlay(cams: dict, voltage_vals: np.ndarray, title: str, ti
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
     buf.seek(0)
-    # close plt
     plt.close()
     # create PIL image object
     return Image.open(buf)
