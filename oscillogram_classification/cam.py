@@ -165,6 +165,7 @@ def tf_keras_scorecam(input_array: np.ndarray, trained_model: keras.models.Model
     num_classes = len(pred[0])
     scorecam = Scorecam(trained_model, model_modifier=ReplaceToLinear())
     score = CategoricalScore([np.argmax(pred)]) if num_classes > 1 else BinaryScore(pred[0][0] > 0.5)
+    # this is the call that leads to some progress log
     cam = scorecam(score, input_array, penultimate_layer=-1)
     cam = tf.squeeze(cam)
     cam = normalize_heatmap(cam)
@@ -237,27 +238,31 @@ def gen_heatmaps_overlay_side_by_side(cams: dict, voltage_vals: np.ndarray, titl
     :param title: window title, e.g., recorded vehicle component and classification result
     :param time_vals: time values to be visualized on the x-axis
     """
-    plt.rcParams["figure.figsize"] = len(cams) * 10, 3
+    plt.rcParams["figure.figsize"] = len(cams) * 5, 3
     fig, axes = plt.subplots(nrows=1, ncols=len(cams), sharex=True, sharey=True)
     fig.canvas.set_window_title(title)
     # bounding box in data coordinates that the image will fill (left, right, bottom, top)
     extent = [0, time_vals[-1], np.floor(np.min(voltage_vals)), np.ceil(np.max(voltage_vals))]
-    fig.text(0.5, 0.02, "time (s)", ha="center", va="center")
+    frequency = round(len(voltage_vals) / time_vals[-1], 2)
+    fig.text(0.5, -0.035, "time (s), %d Hz" % frequency, ha="center", va="center", fontsize=18)
 
     if len(cams) == 1:
         axes = [axes]
-    axes[0].set_ylabel("norm. voltage (V)")
+    axes[0].set_ylabel("norm. voltage (V)", fontsize=18)
 
     for i in range(len(cams)):
         axes[i].set_xlim(extent[0], extent[1])
         axes[i].title.set_text(list(cams.keys())[i])
+        axes[i].title.set_fontsize(18)
+        axes[i].tick_params(axis='x', labelsize=12)
+        axes[i].tick_params(axis='y', labelsize=12)
         # heatmap
         axes[i].imshow(
             cams[list(cams.keys())[i]][np.newaxis, :], cmap="plasma", aspect="auto", alpha=.75, extent=extent
         )
         # data
         axes[i].plot(time_vals, voltage_vals, '#000000')
-    plt.tight_layout()
+    plt.tight_layout(pad=0.4)
 
 
 def gen_heatmaps_as_overlay(cams: dict, voltage_vals: np.ndarray, title: str, time_vals: List[float]) -> Image:
@@ -275,6 +280,7 @@ def gen_heatmaps_as_overlay(cams: dict, voltage_vals: np.ndarray, title: str, ti
     buf = io.BytesIO()
     plt.savefig(buf, format='png')
     buf.seek(0)
+    plt.close()
     # create PIL image object
     return Image.open(buf)
 

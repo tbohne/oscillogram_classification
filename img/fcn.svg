@@ -40,9 +40,9 @@
      inkscape:window-height="1322"
      id="namedview412"
      showgrid="false"
-     inkscape:zoom="1.1666321"
-     inkscape:cx="307.17486"
-     inkscape:cy="121.23189"
+     inkscape:zoom="1.649867"
+     inkscape:cx="396.1371"
+     inkscape:cy="159.78585"
      inkscape:window-x="0"
      inkscape:window-y="27"
      inkscape:window-maximized="1"
@@ -432,26 +432,7 @@
     </clipPath>
   </defs>
   <g
-     id="surface867">
-    <g
-       clip-path="url(#clip1)"
-       clip-rule="nonzero"
-       id="g163">
-      <rect
-         x="0"
-         y="0"
-         width="630.95996"
-         height="295.91998"
-         style="fill:rgb(100%,100%,100%);fill-opacity:1;stroke:none;"
-         id="rect159" />
-      <rect
-         x="0"
-         y="0"
-         width="630.95996"
-         height="295.91998"
-         style="fill:rgb(100%,100%,100%);fill-opacity:1;stroke:none;"
-         id="rect161" />
-    </g>
+     id="surface1029">
     <g
        clip-path="url(#clip2)"
        clip-rule="nonzero"

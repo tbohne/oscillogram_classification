@@ -22,15 +22,19 @@ from tslearn.preprocessing import TimeSeriesResampler
 from oscillogram_classification.config import cluster_config
 
 
-def read_oscilloscope_recording(rec_file: str, return_time_values: bool = False) -> Union[Tuple[int, List[float]], Tuple[int, List[float], List[float]]]:
+def read_oscilloscope_recording(
+        rec_file: str, return_time_values: bool = False, verbose: bool = True
+) -> Union[Tuple[int, List[float]], Tuple[int, List[float], List[float]]]:
     """
     Reads the oscilloscope recording from the specified file.
 
     :param rec_file: oscilloscope recording file
     :param return_time_values: specifies whether the corresponding list of time values should be returned
+    :param verbose: whether terminal logs should be enabled
     :return: label, list of voltage values (time series), optional: list of time values
     """
-    print("reading oscilloscope recording from", rec_file)
+    if verbose:
+        print("reading oscilloscope recording from", rec_file)
     # check whether it's a labeled file
     if "pos" in str(rec_file).lower() or "neg" in str(rec_file).lower():
         label = 1 if "pos" in str(rec_file).lower() else 0  # label: pos (1) / neg (0)
