@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Tuple, List, Union
 
 import dask.dataframe as dd
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from tsfresh import extract_features
@@ -40,13 +41,54 @@ def read_oscilloscope_recording(
         label = 1 if "pos" in str(rec_file).lower() else 0  # label: pos (1) / neg (0)
     else:
         label = None
-    df = pd.read_csv(rec_file, delimiter=';', na_values=['-∞', '∞'])
-    df = df[1:].apply(lambda x: x.str.replace(',', '.')).astype(float).dropna()
+    df = load_measurement(rec_file)
     curr_voltages = df['Kanal A'].to_list()
     if not return_time_values:
         return label, curr_voltages
     time_values = df['Zeit'].to_list()
     return label, curr_voltages, time_values
+
+
+def load_measurement(rec_file: str) -> pd.DataFrame:
+    df = pd.read_csv(rec_file, delimiter=";", na_values=["-∞", "∞"])
+    df = df[1:].apply(lambda x: x.str.replace(",", ".")).astype(float).dropna()
+    return df
+
+
+def plot_signals_with_channels(signals, colors, channel_titles, signal_titles, figsize):
+    fig, axs = plt.subplots(len(signals), len(colors), figsize=figsize)
+    for signal_idx, signal in enumerate(signals):
+        for channel_idx, channel in enumerate(signal):
+            axs[signal_idx, channel_idx].plot(channel, color=colors[channel_idx])
+            if signal_idx == 0:
+                axs[signal_idx, channel_idx].set_title(channel_titles[channel_idx])
+            if channel_idx == 0:
+                axs[signal_idx, channel_idx].set_ylabel(signal_titles[signal_idx])
+    plt.tight_layout()
+    # plt.savefig("data_vis.svg", format="svg", bbox_inches='tight')
+    plt.show()
+
+
+def resample(signals: np.ndarray, znorm: bool) -> np.ndarray:
+    # TODO: set reasonable value
+    target_len = 2000  # int(np.average([len(chan) for signal in signals for chan in signal ]))
+    print("target len", target_len)
+    for i in range(len(signals)):
+        for j in range(len(signals[i])):
+            sig_arr = np.array(signals[i][j])
+            sig_arr = sig_arr.reshape((1, len(signals[i][j]), 1))  # n_ts, sz, d
+            signals[i][j] = TimeSeriesResampler(sz=target_len).fit_transform(sig_arr).tolist()[0]
+            # z-normalization
+            if znorm:
+                signals[i][j] = z_normalize_time_series(signals[i][j])
+    return np.array(signals)
+
+
+def gen_multivariate_signal_from_csv(csv_file):
+    signal_df = load_measurement(csv_file)
+    signal = [signal_df[channel_name] for channel_name in signal_df.columns.tolist() if not channel_name == "Zeit"]
+    time_values = [signal_df["Zeit"]]
+    return signal, time_values
 
 
 def equalize_sample_sizes(voltage_series: List[List[float]]) -> None:
@@ -363,8 +405,7 @@ def set_up_dataframe_and_labels(data_path: str) -> Tuple[pd.DataFrame, pd.Series
         print("reading oscilloscope recording from", path)
         assert "pos" in str(path).lower() or "neg" in str(path).lower()
         label = 1 if "pos" in str(path).lower() else 0  # label: pos (1) / neg (0)
-        curr_df = pd.read_csv(path, delimiter=';', na_values=['-∞', '∞'])
-        curr_df = curr_df[1:].apply(lambda x: x.str.replace(',', '.')).astype(float).dropna()
+        curr_df = load_measurement(path)
         unique_id = uuid.uuid4().hex
         curr_df.insert(0, "id", [unique_id for _ in range(len(curr_df))], True)
         labels[unique_id] = label
