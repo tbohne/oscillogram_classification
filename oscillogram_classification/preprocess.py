@@ -55,6 +55,12 @@ def load_measurement(rec_file: str) -> pd.DataFrame:
     return df
 
 
+def load_preprocessed_demo_measurement(rec_file: str) -> pd.DataFrame:
+    df = pd.read_csv(rec_file, na_values=["-∞", "∞"])
+    df = df[1:].astype(float).dropna()
+    return df
+
+
 def plot_signals_with_channels(signals, colors, channel_titles, signal_titles, figsize):
     fig, axs = plt.subplots(len(signals), len(colors), figsize=figsize)
     for signal_idx, signal in enumerate(signals):
@@ -85,7 +91,7 @@ def resample(signals: np.ndarray, znorm: bool) -> np.ndarray:
 
 
 def gen_multivariate_signal_from_csv(csv_file):
-    signal_df = load_measurement(csv_file)
+    signal_df = load_preprocessed_demo_measurement(csv_file)
     signal = [signal_df[channel_name] for channel_name in signal_df.columns.tolist() if not channel_name == "Zeit"]
     time_values = [signal_df["Zeit"]]
     return signal, time_values
