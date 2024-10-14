@@ -75,9 +75,9 @@ def plot_signals_with_channels(signals, colors, channel_titles, signal_titles, f
     plt.show()
 
 
-def resample(signals: np.ndarray, znorm: bool) -> np.ndarray:
+def resample(signals: np.ndarray, znorm: bool, target_len: int) -> np.ndarray:
     # TODO: set reasonable value
-    target_len = 2000  # int(np.average([len(chan) for signal in signals for chan in signal ]))
+    target_len = target_len  # int(np.average([len(chan) for signal in signals for chan in signal ]))
     print("target len", target_len)
     for i in range(len(signals)):
         for j in range(len(signals[i])):
