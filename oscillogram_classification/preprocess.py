@@ -75,19 +75,14 @@ def plot_signals_with_channels(signals, colors, channel_titles, signal_titles, f
     plt.show()
 
 
-def resample(signals: np.ndarray, znorm: bool, target_len: int) -> np.ndarray:
-    # TODO: set reasonable value
-    target_len = target_len  # int(np.average([len(chan) for signal in signals for chan in signal ]))
-    print("target len", target_len)
-    for i in range(len(signals)):
-        for j in range(len(signals[i])):
-            sig_arr = np.array(signals[i][j])
-            sig_arr = sig_arr.reshape((1, len(signals[i][j]), 1))  # n_ts, sz, d
-            signals[i][j] = TimeSeriesResampler(sz=target_len).fit_transform(sig_arr).tolist()[0]
-            # z-normalization
-            if znorm:
-                signals[i][j] = z_normalize_time_series(signals[i][j])
-    return np.array(signals)
+def resample(signal: np.ndarray, znorm: bool, target_len: int) -> np.ndarray:
+    print("resampling..; target len:", target_len)
+    sig_arr = signal.reshape((1, len(signal), 1))  # n_ts, sz, d
+    signal = TimeSeriesResampler(sz=target_len).fit_transform(sig_arr).tolist()[0]
+    # z-normalization
+    if znorm:
+        signal = z_normalize_time_series(signal)
+    return np.array(signal)
 
 
 def gen_multivariate_signal_from_csv(csv_file):
