@@ -103,7 +103,7 @@ def equalize_sample_sizes(voltage_series: List[List[float]]) -> None:
             voltage_series[i] = voltage_series[i][: len(voltage_series[i]) - remove]
 
 
-def z_normalize_time_series(series: np.ndarray[float]) -> np.ndarray[float]:
+def z_normalize_time_series(series: np.ndarray) -> np.ndarray:
     """
     Z-normalizes the specified time series - 0 mean and 1 std_dev.
 
@@ -117,7 +117,7 @@ def z_normalize_time_series(series: np.ndarray[float]) -> np.ndarray[float]:
     return (series - np.mean(series)) / std_dev
 
 
-def min_max_normalize_time_series(series: np.ndarray[float]) -> np.ndarray[float]:
+def min_max_normalize_time_series(series: np.ndarray) -> np.ndarray:
     """
     Min-max-normalizes the specified time series -> scales values to range [0, 1].
 
@@ -134,7 +134,7 @@ def min_max_normalize_time_series(series: np.ndarray[float]) -> np.ndarray[float
     return (series - minimum) / denominator
 
 
-def decimal_scaling_normalize_time_series(series: np.ndarray[float], power: int) -> np.ndarray[float]:
+def decimal_scaling_normalize_time_series(series: np.ndarray, power: int) -> np.ndarray:
     """
     Decimal-scaling-normalizes the specified time series -> largest absolute value < 1.0.
 
@@ -145,7 +145,7 @@ def decimal_scaling_normalize_time_series(series: np.ndarray[float], power: int)
     return np.array(series) / (10 ** power)
 
 
-def logarithmic_normalize_time_series(series: np.ndarray[float], base: int) -> np.ndarray[float]:
+def logarithmic_normalize_time_series(series: np.ndarray, base: int) -> np.ndarray:
     """
     Logarithmic-normalizes the specified time series -> reduces impact of extreme values.
 
