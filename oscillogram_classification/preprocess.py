@@ -103,7 +103,7 @@ def equalize_sample_sizes(voltage_series: List[List[float]]) -> None:
             voltage_series[i] = voltage_series[i][: len(voltage_series[i]) - remove]
 
 
-def z_normalize_time_series(series: List[float]) -> List[float]:
+def z_normalize_time_series(series: np.ndarray[float]) -> np.ndarray[float]:
     """
     Z-normalizes the specified time series - 0 mean and 1 std_dev.
 
@@ -114,10 +114,10 @@ def z_normalize_time_series(series: List[float]) -> List[float]:
     if std_dev == 0.0:
         std_dev = cluster_config.cluster_config["small_val"]  # value not important, just prevent division by zero
         # (x - mean) is 0 anyway when the standard deviation is 0 -> 0 in the end
-    return ((series - np.mean(series)) / std_dev).tolist()
+    return (series - np.mean(series)) / std_dev
 
 
-def min_max_normalize_time_series(series: List[float]) -> List[float]:
+def min_max_normalize_time_series(series: np.ndarray[float]) -> np.ndarray[float]:
     """
     Min-max-normalizes the specified time series -> scales values to range [0, 1].
 
@@ -131,10 +131,10 @@ def min_max_normalize_time_series(series: List[float]) -> List[float]:
         denominator = cluster_config.cluster_config["small_val"]
         # if (max-min) is 0, they are equal, which means that all values are the same,
         # but then the numerator is 0 anyway
-    return ((series - minimum) / denominator).tolist()
+    return (series - minimum) / denominator
 
 
-def decimal_scaling_normalize_time_series(series: List[float], power: int) -> List[float]:
+def decimal_scaling_normalize_time_series(series: np.ndarray[float], power: int) -> np.ndarray[float]:
     """
     Decimal-scaling-normalizes the specified time series -> largest absolute value < 1.0.
 
@@ -142,10 +142,10 @@ def decimal_scaling_normalize_time_series(series: List[float], power: int) -> Li
     :param power: power used for scaling
     :return: normalized time series
     """
-    return (np.array(series) / (10 ** power)).tolist()
+    return np.array(series) / (10 ** power)
 
 
-def logarithmic_normalize_time_series(series: List[float], base: int) -> List[float]:
+def logarithmic_normalize_time_series(series: np.ndarray[float], base: int) -> np.ndarray[float]:
     """
     Logarithmic-normalizes the specified time series -> reduces impact of extreme values.
 
@@ -153,7 +153,7 @@ def logarithmic_normalize_time_series(series: List[float], base: int) -> List[fl
     :param base: log base to be used
     :return: normalized time series
     """
-    return (np.log(series) / np.log(base)).tolist()
+    return np.log(series) / np.log(base)
 
 
 def avg_padding(patches: np.ndarray) -> np.ndarray:
