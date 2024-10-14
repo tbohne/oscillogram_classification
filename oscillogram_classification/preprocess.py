@@ -75,13 +75,10 @@ def plot_signals_with_channels(signals, colors, channel_titles, signal_titles, f
     plt.show()
 
 
-def resample(signal: np.ndarray, znorm: bool, target_len: int) -> np.ndarray:
+def resample(signal: np.ndarray, target_len: int) -> np.ndarray:
     print("resampling..; target len:", target_len)
     sig_arr = signal.reshape((1, len(signal), 1))  # n_ts, sz, d
     signal = TimeSeriesResampler(sz=target_len).fit_transform(sig_arr).tolist()[0]
-    # z-normalization
-    if znorm:
-        signal = z_normalize_time_series(signal)
     return np.array(signal)
 
 
