@@ -77,9 +77,7 @@ def plot_signals_with_channels(signals, colors, channel_titles, signal_titles, f
 
 def resample(signal: np.ndarray, target_len: int) -> np.ndarray:
     print("resampling..; target len:", target_len)
-    sig_arr = signal.reshape((1, len(signal), 1))  # n_ts, sz, d
-    signal = TimeSeriesResampler(sz=target_len).fit_transform(sig_arr)
-    return signal.flatten()
+    return TimeSeriesResampler(sz=target_len).fit_transform(signal).flatten()
 
 
 def gen_multivariate_signal_from_csv(csv_file):
