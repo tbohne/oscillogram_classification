@@ -57,7 +57,7 @@ def load_measurement(rec_file: str) -> pd.DataFrame:
 
 def load_preprocessed_demo_measurement(rec_file: str) -> pd.DataFrame:
     df = pd.read_csv(rec_file, na_values=["-∞", "∞"])
-    df = df[1:].astype(float).dropna()
+    df = df[:].astype(float).dropna()
     return df
 
 
