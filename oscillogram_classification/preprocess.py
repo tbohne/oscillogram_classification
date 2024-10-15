@@ -79,7 +79,7 @@ def resample(signal: np.ndarray, target_len: int) -> np.ndarray:
     print("resampling..; target len:", target_len)
     sig_arr = signal.reshape((1, len(signal), 1))  # n_ts, sz, d
     signal = TimeSeriesResampler(sz=target_len).fit_transform(sig_arr).tolist()[0]
-    return np.array(signal)
+    return signal
 
 
 def gen_multivariate_signal_from_csv(csv_file):
