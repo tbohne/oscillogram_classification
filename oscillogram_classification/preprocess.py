@@ -50,18 +50,42 @@ def read_oscilloscope_recording(
 
 
 def load_measurement(rec_file: str) -> pd.DataFrame:
+    """
+    Loads the specified measurement.
+
+    :param rec_file: recording file to load measurement from
+    :return: read dataframe
+    """
     df = pd.read_csv(rec_file, delimiter=";", na_values=["-∞", "∞"])
     df = df[1:].apply(lambda x: x.str.replace(",", ".")).astype(float).dropna()
     return df
 
 
 def load_preprocessed_demo_measurement(rec_file: str) -> pd.DataFrame:
+    """
+    Loads the preprocessed demo measurement.
+
+    :param rec_file: recording file to load measurement from
+    :return: read dataframe
+    """
     df = pd.read_csv(rec_file, na_values=["-∞", "∞"])
     df = df[:].astype(float).dropna()
     return df
 
 
-def plot_signals_with_channels(signals, colors, channel_titles, signal_titles, figsize):
+def plot_signals_with_channels(
+        signals: np.ndarray, colors: List[str], channel_titles: List[str], signal_titles: List[str],
+        figsize: Tuple[int, int]
+) -> None:
+    """
+    Plots the given signals with its channels.
+
+    :param signals: signals to be visualized
+    :param colors: colors to distinguish channels
+    :param channel_titles: channel titles
+    :param signal_titles: signal titles
+    :param figsize: dimensions of the figure to be generated
+    """
     fig, axs = plt.subplots(len(signals), len(colors), figsize=figsize)
     for signal_idx, signal in enumerate(signals):
         for channel_idx, channel in enumerate(signal):
@@ -76,11 +100,24 @@ def plot_signals_with_channels(signals, colors, channel_titles, signal_titles, f
 
 
 def resample(signal: np.ndarray, target_len: int) -> np.ndarray:
+    """
+    Resamples the specified signal.
+
+    :param signal: signal to be resampled
+    :param target_len: target length for the resampling process
+    :return: resampled signal
+    """
     print("resampling..; target len:", target_len)
     return TimeSeriesResampler(sz=target_len).fit_transform(signal).flatten()
 
 
-def gen_multivariate_signal_from_csv(csv_file):
+def gen_multivariate_signal_from_csv(csv_file: str) -> Tuple[List[pd.DataFrame], List[float]]:
+    """
+    Generates the multivariate signal for the corresponding .csv file.
+
+    :param csv_file: .csv file to read multivariate signal from
+    :return: signal, time values
+    """
     signal_df = load_preprocessed_demo_measurement(csv_file)
     signal = [signal_df[channel_name] for channel_name in signal_df.columns.tolist() if not channel_name == "Zeit"]
     time_values = [signal_df["Zeit"]]
