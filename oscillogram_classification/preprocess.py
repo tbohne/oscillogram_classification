@@ -86,6 +86,7 @@ def plot_signals_with_channels(
     :param signal_titles: signal titles
     :param figsize: dimensions of the figure to be generated
     """
+    assert len(colors) >= len(signals[0])
     fig, axs = plt.subplots(len(signals), len(colors), figsize=figsize)
     for signal_idx, signal in enumerate(signals):
         for channel_idx, channel in enumerate(signal):
