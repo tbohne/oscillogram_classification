@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Tuple, List, Union
 
 import dask.dataframe as dd
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from tsfresh import extract_features
@@ -40,13 +41,88 @@ def read_oscilloscope_recording(
         label = 1 if "pos" in str(rec_file).lower() else 0  # label: pos (1) / neg (0)
     else:
         label = None
-    df = pd.read_csv(rec_file, delimiter=';', na_values=['-∞', '∞'])
-    df = df[1:].apply(lambda x: x.str.replace(',', '.')).astype(float).dropna()
+    df = load_measurement(rec_file)
     curr_voltages = df['Kanal A'].to_list()
     if not return_time_values:
         return label, curr_voltages
     time_values = df['Zeit'].to_list()
     return label, curr_voltages, time_values
+
+
+def load_measurement(rec_file: str) -> pd.DataFrame:
+    """
+    Loads the specified measurement.
+
+    :param rec_file: recording file to load measurement from
+    :return: read dataframe
+    """
+    df = pd.read_csv(rec_file, delimiter=";", na_values=["-∞", "∞"])
+    df = df[1:].apply(lambda x: x.str.replace(",", ".")).astype(float).dropna()
+    return df
+
+
+def load_preprocessed_demo_measurement(rec_file: str) -> pd.DataFrame:
+    """
+    Loads the preprocessed demo measurement.
+
+    :param rec_file: recording file to load measurement from
+    :return: read dataframe
+    """
+    df = pd.read_csv(rec_file, na_values=["-∞", "∞"])
+    df = df[:].astype(float).dropna()
+    return df
+
+
+def plot_signals_with_channels(
+        signals: np.ndarray, colors: List[str], channel_titles: List[str], signal_titles: List[str],
+        figsize: Tuple[int, int]
+) -> None:
+    """
+    Plots the given signals with its channels.
+
+    :param signals: signals to be visualized
+    :param colors: colors to distinguish channels
+    :param channel_titles: channel titles
+    :param signal_titles: signal titles
+    :param figsize: dimensions of the figure to be generated
+    """
+    assert len(colors) >= len(signals[0])
+    fig, axs = plt.subplots(len(signals), len(signals[0]), figsize=figsize)
+    for signal_idx, signal in enumerate(signals):
+        for channel_idx, channel in enumerate(signal):
+            axs[signal_idx, channel_idx].plot(channel, color=colors[channel_idx])
+            if signal_idx == 0:
+                axs[signal_idx, channel_idx].set_title(channel_titles[channel_idx])
+            if channel_idx == 0:
+                axs[signal_idx, channel_idx].set_ylabel(signal_titles[signal_idx])
+    plt.tight_layout()
+    # plt.savefig("data_vis.svg", format="svg", bbox_inches='tight')
+    plt.show()
+
+
+def resample(signal: np.ndarray, target_len: int) -> np.ndarray:
+    """
+    Resamples the specified signal.
+
+    :param signal: signal to be resampled
+    :param target_len: target length for the resampling process
+    :return: resampled signal
+    """
+    print("resampling..; target len:", target_len)
+    return TimeSeriesResampler(sz=target_len).fit_transform(signal).flatten()
+
+
+def gen_multivariate_signal_from_csv(csv_file: str) -> Tuple[List[pd.DataFrame], List[float]]:
+    """
+    Generates the multivariate signal for the corresponding .csv file.
+
+    :param csv_file: .csv file to read multivariate signal from
+    :return: signal, time values
+    """
+    signal_df = load_preprocessed_demo_measurement(csv_file)
+    signal = [signal_df[channel_name] for channel_name in signal_df.columns.tolist() if not channel_name == "Zeit"]
+    time_values = [signal_df["Zeit"]]
+    return signal, time_values
 
 
 def equalize_sample_sizes(voltage_series: List[List[float]]) -> None:
@@ -63,7 +139,7 @@ def equalize_sample_sizes(voltage_series: List[List[float]]) -> None:
             voltage_series[i] = voltage_series[i][: len(voltage_series[i]) - remove]
 
 
-def z_normalize_time_series(series: List[float]) -> List[float]:
+def z_normalize_time_series(series: np.ndarray) -> np.ndarray:
     """
     Z-normalizes the specified time series - 0 mean and 1 std_dev.
 
@@ -74,10 +150,10 @@ def z_normalize_time_series(series: List[float]) -> List[float]:
     if std_dev == 0.0:
         std_dev = cluster_config.cluster_config["small_val"]  # value not important, just prevent division by zero
         # (x - mean) is 0 anyway when the standard deviation is 0 -> 0 in the end
-    return ((series - np.mean(series)) / std_dev).tolist()
+    return (series - np.mean(series)) / std_dev
 
 
-def min_max_normalize_time_series(series: List[float]) -> List[float]:
+def min_max_normalize_time_series(series: np.ndarray) -> np.ndarray:
     """
     Min-max-normalizes the specified time series -> scales values to range [0, 1].
 
@@ -91,10 +167,10 @@ def min_max_normalize_time_series(series: List[float]) -> List[float]:
         denominator = cluster_config.cluster_config["small_val"]
         # if (max-min) is 0, they are equal, which means that all values are the same,
         # but then the numerator is 0 anyway
-    return ((series - minimum) / denominator).tolist()
+    return (series - minimum) / denominator
 
 
-def decimal_scaling_normalize_time_series(series: List[float], power: int) -> List[float]:
+def decimal_scaling_normalize_time_series(series: np.ndarray, power: int) -> np.ndarray:
     """
     Decimal-scaling-normalizes the specified time series -> largest absolute value < 1.0.
 
@@ -102,10 +178,10 @@ def decimal_scaling_normalize_time_series(series: List[float], power: int) -> Li
     :param power: power used for scaling
     :return: normalized time series
     """
-    return (np.array(series) / (10 ** power)).tolist()
+    return np.array(series) / (10 ** power)
 
 
-def logarithmic_normalize_time_series(series: List[float], base: int) -> List[float]:
+def logarithmic_normalize_time_series(series: np.ndarray, base: int) -> np.ndarray:
     """
     Logarithmic-normalizes the specified time series -> reduces impact of extreme values.
 
@@ -113,7 +189,7 @@ def logarithmic_normalize_time_series(series: List[float], base: int) -> List[fl
     :param base: log base to be used
     :return: normalized time series
     """
-    return (np.log(series) / np.log(base)).tolist()
+    return np.log(series) / np.log(base)
 
 
 def avg_padding(patches: np.ndarray) -> np.ndarray:
@@ -363,8 +439,7 @@ def set_up_dataframe_and_labels(data_path: str) -> Tuple[pd.DataFrame, pd.Series
         print("reading oscilloscope recording from", path)
         assert "pos" in str(path).lower() or "neg" in str(path).lower()
         label = 1 if "pos" in str(path).lower() else 0  # label: pos (1) / neg (0)
-        curr_df = pd.read_csv(path, delimiter=';', na_values=['-∞', '∞'])
-        curr_df = curr_df[1:].apply(lambda x: x.str.replace(',', '.')).astype(float).dropna()
+        curr_df = load_measurement(path)
         unique_id = uuid.uuid4().hex
         curr_df.insert(0, "id", [unique_id for _ in range(len(curr_df))], True)
         labels[unique_id] = label
