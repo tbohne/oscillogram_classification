@@ -339,7 +339,7 @@ def plot_heatmaps_as_overlay(cams: dict, voltage_vals: np.ndarray, title: str, t
 
 
 def plot_multi_chan_heatmaps_as_overlay(
-        cams: dict, voltage_vals: np.ndarray, title: str, time_vals: List[float]
+        cams: dict, voltage_vals: np.ndarray, title: str, time_vals: List[float], variable_attr: bool = True
 ) -> None:
     """
     Visualizes the class activation maps for each channel - side-by-side plot - time series as overlay.
@@ -348,9 +348,11 @@ def plot_multi_chan_heatmaps_as_overlay(
     :param voltage_vals: voltage values to be visualized (channels)
     :param title: window title, e.g., recorded vehicle component and classification result
     :param time_vals: time values to be visualized on the x-axis
+    :param variable_attr: whether the variable attribution map is visualized (time attribution otherwise)
     """
     gen_multi_chan_heatmaps_overlay_side_by_side(cams, voltage_vals, title, time_vals)
-    plt.savefig("visualization.svg", format="svg", bbox_inches='tight')
+    title = "variable_attr" if variable_attr else "time_attr"
+    plt.savefig(title + "_visualization.svg", format="svg", bbox_inches='tight')
     plt.show()
 
 
