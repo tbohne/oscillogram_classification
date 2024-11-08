@@ -265,6 +265,45 @@ def gen_heatmaps_overlay_side_by_side(cams: dict, voltage_vals: np.ndarray, titl
     plt.tight_layout(pad=0.4)
 
 
+def gen_multi_chan_heatmaps_overlay_side_by_side(
+        cams: dict, voltage_vals: np.ndarray, title: str, time_vals: List[float]
+) -> None:
+    """
+    Generates the class activation maps for each channel - side-by-side plot - time series as overlay.
+
+    :param cams: dictionary containing the class activation maps to be visualized (+ chan names)
+    :param voltage_vals: voltage values (channels) to be visualized
+    :param title: window title, e.g., recorded vehicle component and classification result
+    :param time_vals: time values to be visualized on the x-axis
+    """
+    plt.rcParams["figure.figsize"] = len(cams) * 5, 3
+    fig, axes = plt.subplots(nrows=1, ncols=len(cams), sharex=True, sharey=True)
+    fig.canvas.set_window_title(title)
+    frequency = round(len(voltage_vals[0]) / time_vals[-1], 2)
+    fig.text(0.5, -0.035, "time (s), %d Hz" % frequency, ha="center", va="center", fontsize=18)
+
+    if len(cams) == 1:
+        axes = [axes]
+    axes[0].set_ylabel("norm. voltage (V)", fontsize=18)
+
+    for i in range(len(cams)):
+        # bounding box in data coordinates that the image will fill (left, right, bottom, top)
+        extent = [0, time_vals[-1], np.floor(np.min(voltage_vals[i])), np.ceil(np.max(voltage_vals[i]))]
+
+        axes[i].set_xlim(extent[0], extent[1])
+        axes[i].title.set_text(list(cams.keys())[i])
+        axes[i].title.set_fontsize(18)
+        axes[i].tick_params(axis='x', labelsize=12)
+        axes[i].tick_params(axis='y', labelsize=12)
+        # heatmap
+        axes[i].imshow(
+            cams[list(cams.keys())[i]][np.newaxis, :], cmap="plasma", aspect="auto", alpha=.75, extent=extent
+        )
+        # data
+        axes[i].plot(time_vals, voltage_vals[i], '#000000')
+    plt.tight_layout(pad=0.4)
+
+
 def gen_heatmaps_as_overlay(cams: dict, voltage_vals: np.ndarray, title: str, time_vals: List[float]) -> Image:
     """
     Generates the class activation map (heatmap) side-by-side plot - time series as overlay - and returns it as image.
@@ -295,6 +334,22 @@ def plot_heatmaps_as_overlay(cams: dict, voltage_vals: np.ndarray, title: str, t
     :param time_vals: time values to be visualized on the x-axis
     """
     gen_heatmaps_overlay_side_by_side(cams, voltage_vals, title, time_vals)
+    plt.savefig("visualization.svg", format="svg", bbox_inches='tight')
+    plt.show()
+
+
+def plot_multi_chan_heatmaps_as_overlay(
+        cams: dict, voltage_vals: np.ndarray, title: str, time_vals: List[float]
+) -> None:
+    """
+    Visualizes the class activation maps for each channel - side-by-side plot - time series as overlay.
+
+    :param cams: dictionary containing the class activation maps to be visualized (+ chan names)
+    :param voltage_vals: voltage values to be visualized (channels)
+    :param title: window title, e.g., recorded vehicle component and classification result
+    :param time_vals: time values to be visualized on the x-axis
+    """
+    gen_multi_chan_heatmaps_overlay_side_by_side(cams, voltage_vals, title, time_vals)
     plt.savefig("visualization.svg", format="svg", bbox_inches='tight')
     plt.show()
 
