@@ -304,6 +304,28 @@ def gen_multi_chan_heatmaps_overlay_side_by_side(
     plt.tight_layout(pad=0.4)
 
 
+def gen_multi_chan_heatmaps_as_overlay(
+        cams: dict, voltage_vals: np.ndarray, title: str, time_vals: List[float]
+) -> Image:
+    """
+    Generates the class activation maps (heatmaps) side-by-side plot - time series as overlay - and returns it as image.
+
+    :param cams: dictionary containing the class activation maps to be visualized (+ chan names)
+    :param voltage_vals: voltage values to be visualized (per channel)
+    :param title: window title, e.g., recorded vehicle component and classification result
+    :return heatmap side-by-side plot as image
+    :param time_vals: time values to be visualized on the x-axis
+    """
+    gen_multi_chan_heatmaps_overlay_side_by_side(cams, voltage_vals, title, time_vals)
+    # create bytes object and save matplotlib fig into it
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png')
+    buf.seek(0)
+    plt.close()
+    # create PIL image object
+    return Image.open(buf)
+
+
 def gen_heatmaps_as_overlay(cams: dict, voltage_vals: np.ndarray, title: str, time_vals: List[float]) -> Image:
     """
     Generates the class activation map (heatmap) side-by-side plot - time series as overlay - and returns it as image.
