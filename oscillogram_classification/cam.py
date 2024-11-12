@@ -277,7 +277,7 @@ def gen_multi_chan_heatmaps_overlay_side_by_side(
     :param time_vals: time values to be visualized on the x-axis
     """
     plt.rcParams["figure.figsize"] = len(cams) * 5, 3
-    fig, axes = plt.subplots(nrows=1, ncols=len(cams), sharex=True, sharey=True)
+    fig, axes = plt.subplots(nrows=1, ncols=len(cams), sharex=True, sharey=False)
     fig.canvas.set_window_title(title)
     frequency = round(len(voltage_vals[0]) / time_vals[-1], 2)
     fig.text(0.5, -0.035, "time (s), %d Hz" % frequency, ha="center", va="center", fontsize=18)
