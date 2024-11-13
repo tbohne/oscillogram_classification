@@ -288,10 +288,10 @@ def gen_multi_chan_heatmaps_overlay_side_by_side(
 
     for i in range(len(cams)):
         voltage_val_diff = np.max(voltage_vals[i]) - np.min(voltage_vals[i])
-        voltage_val_diff = np.max(voltage_val_diff, 0.01)
+        voltage_val_diff = np.max([voltage_val_diff, 0.01])
         # bounding box in data coordinates that the image will fill (left, right, bottom, top)
         extent = [0, time_vals[-1],
-                  np.min(voltage_vals[i]) - voltage_val_diff/4, np.max(voltage_vals[i]) + voltage_val_diff/4]
+                  np.min(voltage_vals[i]) - voltage_val_diff / 4, np.max(voltage_vals[i]) + voltage_val_diff / 4]
 
         axes[i].set_xlim(extent[0], extent[1])
         axes[i].title.set_text(list(cams.keys())[i])
