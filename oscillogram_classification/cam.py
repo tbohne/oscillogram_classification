@@ -277,7 +277,7 @@ def gen_multi_chan_heatmaps_overlay_side_by_side(
     :param time_vals: time values to be visualized on the x-axis
     """
     plt.rcParams["figure.figsize"] = len(cams) * 5, 3
-    fig, axes = plt.subplots(nrows=1, ncols=len(cams), sharex=True, sharey=True)
+    fig, axes = plt.subplots(nrows=1, ncols=len(cams), sharex=True, sharey=False)
     fig.canvas.set_window_title(title)
     frequency = round(len(voltage_vals[0]) / time_vals[-1], 2)
     fig.text(0.5, -0.035, "time (s), %d Hz" % frequency, ha="center", va="center", fontsize=18)
@@ -287,8 +287,11 @@ def gen_multi_chan_heatmaps_overlay_side_by_side(
     axes[0].set_ylabel("norm. voltage (V)", fontsize=18)
 
     for i in range(len(cams)):
+        voltage_val_diff = np.max(voltage_vals[i]) - np.min(voltage_vals[i])
+        voltage_val_diff = np.max([voltage_val_diff, 0.01])
         # bounding box in data coordinates that the image will fill (left, right, bottom, top)
-        extent = [0, time_vals[-1], np.floor(np.min(voltage_vals[i])), np.ceil(np.max(voltage_vals[i]))]
+        extent = [0, time_vals[-1],
+                  np.min(voltage_vals[i]) - voltage_val_diff / 4, np.max(voltage_vals[i]) + voltage_val_diff / 4]
 
         axes[i].set_xlim(extent[0], extent[1])
         axes[i].title.set_text(list(cams.keys())[i])
@@ -301,7 +304,7 @@ def gen_multi_chan_heatmaps_overlay_side_by_side(
         )
         # data
         axes[i].plot(time_vals, voltage_vals[i], '#000000')
-    plt.tight_layout(pad=0.4)
+    plt.tight_layout(pad=0.8)
 
 
 def gen_multi_chan_heatmaps_as_overlay(
