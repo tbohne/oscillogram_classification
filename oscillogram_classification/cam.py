@@ -276,11 +276,13 @@ def gen_multi_chan_heatmaps_overlay_side_by_side(
     :param title: window title, e.g., recorded vehicle component and classification result
     :param time_vals: time values to be visualized on the x-axis
     """
-    plt.rcParams["figure.figsize"] = len(cams) * 5, 3
+    plt.rcParams["figure.figsize"] = len(cams) * 5, 3.15
     fig, axes = plt.subplots(nrows=1, ncols=len(cams), sharex=True, sharey=False)
     fig.canvas.set_window_title(title)
     frequency = round(len(voltage_vals[0]) / time_vals[-1], 2)
-    fig.text(0.5, 0.04, "time (s), %d Hz" % frequency, ha="center", va="center", fontsize=18)
+    # fig.text(0.5, 0.04, "time (s), %d Hz" % frequency, ha="center", va="center", fontsize=18)
+    # TODO: shouldn't be hard-coded
+    fig.text(0.5, 0.04, "sampling points (1.5 kHz, downsampled)", ha="center", va="center", fontsize=18)
 
     if len(cams) == 1:
         axes = [axes]
@@ -305,7 +307,7 @@ def gen_multi_chan_heatmaps_overlay_side_by_side(
         # data
         axes[i].plot(time_vals, voltage_vals[i], '#000000')
     # [left, bottom, right, top]
-    plt.tight_layout(pad=0.8, rect=[0, 0.08, 1, 0.98])
+    plt.tight_layout(pad=0.8, rect=[0, 0.08, 1, 1])
 
 
 def gen_multi_chan_heatmaps_as_overlay(
