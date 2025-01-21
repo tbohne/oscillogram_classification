@@ -326,6 +326,7 @@ def gen_multi_chan_heatmaps_as_overlay(
     gen_multi_chan_heatmaps_overlay_side_by_side(cams, voltage_vals, title, time_vals)
     # create bytes object and save matplotlib fig into it
     buf = io.BytesIO()
+    plt.savefig("heatmaps_" + str(random.randint(0, 10000)) + ".svg")
     plt.savefig(buf, format='png')
     buf.seek(0)
     plt.close()
