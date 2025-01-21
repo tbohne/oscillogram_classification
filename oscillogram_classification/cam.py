@@ -5,6 +5,7 @@
 import argparse
 import io
 import os
+import random
 from typing import Union, Tuple, List
 
 import matplotlib.pyplot as plt
@@ -345,6 +346,7 @@ def gen_heatmaps_as_overlay(cams: dict, voltage_vals: np.ndarray, title: str, ti
     gen_heatmaps_overlay_side_by_side(cams, voltage_vals, title, time_vals)
     # create bytes object and save matplotlib fig into it
     buf = io.BytesIO()
+    plt.savefig("heatmaps_" + str(random.randint(0, 10000)) + ".svg")
     plt.savefig(buf, format='png')
     buf.seek(0)
     plt.close()
