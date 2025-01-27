@@ -6,7 +6,7 @@ import argparse
 import io
 import os
 import random
-from typing import Union, Tuple, List
+from typing import Union, Tuple, List, Dict
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -39,8 +39,9 @@ def retrieve_last_conv_layer(trained_model: keras.models.Model) -> str:
             return layer.name
 
 
-def compute_gradients_and_last_conv_layer_output(input_array: np.ndarray, trained_model: keras.models.Model,
-                                                 pred_idx: Union[int, None]) -> Tuple[tf.Tensor, tf.Tensor]:
+def compute_gradients_and_last_conv_layer_output(
+        input_array: np.ndarray, trained_model: keras.models.Model, pred_idx: Union[int, None]
+) -> Tuple[tf.Tensor, tf.Tensor]:
     """
     Computes the gradients of the predicted class for the input series with respect to the activations of the last conv
     layer and returns them together with the output of the last conv layer.
@@ -86,8 +87,9 @@ def normalize_heatmap(cam: tf.Tensor) -> tf.Tensor:
     return cam
 
 
-def generate_gradcam(input_array: np.ndarray, trained_model: keras.models.Model,
-                     pred_idx: Union[int, None] = None) -> np.ndarray:
+def generate_gradcam(
+        input_array: np.ndarray, trained_model: keras.models.Model, pred_idx: Union[int, None] = None
+) -> np.ndarray:
     """
     Generates the Grad-CAM (Gradient-weighted Class Activation Map) for the specified input, trained model
     and optional prediction. It is essentially used to get a sense of what regions of the input the CNN is looking
@@ -135,8 +137,9 @@ def tf_keras_gradcam(input_array: np.ndarray, trained_model: keras.models.Model,
     return cam.numpy()
 
 
-def tf_keras_gradcam_plus_plus(input_array: np.ndarray, trained_model: keras.models.Model,
-                               pred: np.ndarray) -> np.ndarray:
+def tf_keras_gradcam_plus_plus(
+        input_array: np.ndarray, trained_model: keras.models.Model, pred: np.ndarray
+) -> np.ndarray:
     """
     Generates the Grad-CAM++ heatmap using the tf-keras-vis library.
 
@@ -209,8 +212,9 @@ def tf_keras_smooth_grad(input_array: np.ndarray, trained_model: keras.models.Mo
     return cam.numpy()
 
 
-def generate_hirescam(input_array: np.ndarray, trained_model: keras.models.Model,
-                      pred_idx: Union[int, None] = None) -> np.ndarray:
+def generate_hirescam(
+        input_array: np.ndarray, trained_model: keras.models.Model, pred_idx: Union[int, None] = None
+) -> np.ndarray:
     """
     Generates the HiResCAM for the specified input, trained model and optional prediction. It is essentially used to
     get a sense of what regions of the input the CNN is looking at in order to make a prediction.
@@ -230,7 +234,7 @@ def generate_hirescam(input_array: np.ndarray, trained_model: keras.models.Model
     return cam.numpy()
 
 
-def gen_heatmaps_overlay_side_by_side(cams: dict, voltage_vals: np.ndarray, title: str, time_vals: List[float]) -> None:
+def gen_heatmaps_overlay_side_by_side(cams: Dict, voltage_vals: np.ndarray, title: str, time_vals: List[float]) -> None:
     """
     Generates the class activation map (heatmap) side-by-side plot - time series as overlay.
 
@@ -267,7 +271,7 @@ def gen_heatmaps_overlay_side_by_side(cams: dict, voltage_vals: np.ndarray, titl
 
 
 def gen_multi_chan_heatmaps_overlay_side_by_side(
-        cams: dict, voltage_vals: np.ndarray, title: str, time_vals: List[float]
+        cams: Dict, voltage_vals: np.ndarray, title: str, time_vals: List[float]
 ) -> None:
     """
     Generates the class activation maps for each channel - side-by-side plot - time series as overlay.
@@ -312,7 +316,7 @@ def gen_multi_chan_heatmaps_overlay_side_by_side(
 
 
 def gen_multi_chan_heatmaps_as_overlay(
-        cams: dict, voltage_vals: np.ndarray, title: str, time_vals: List[float]
+        cams: Dict, voltage_vals: np.ndarray, title: str, time_vals: List[float]
 ) -> Image:
     """
     Generates the class activation maps (heatmaps) side-by-side plot - time series as overlay - and returns it as image.
@@ -320,8 +324,8 @@ def gen_multi_chan_heatmaps_as_overlay(
     :param cams: dictionary containing the class activation maps to be visualized (+ chan names)
     :param voltage_vals: voltage values to be visualized (per channel)
     :param title: window title, e.g., recorded vehicle component and classification result
-    :return heatmap side-by-side plot as image
     :param time_vals: time values to be visualized on the x-axis
+    :return heatmap side-by-side plot as image
     """
     gen_multi_chan_heatmaps_overlay_side_by_side(cams, voltage_vals, title, time_vals)
     # create bytes object and save matplotlib fig into it
@@ -334,15 +338,15 @@ def gen_multi_chan_heatmaps_as_overlay(
     return Image.open(buf)
 
 
-def gen_heatmaps_as_overlay(cams: dict, voltage_vals: np.ndarray, title: str, time_vals: List[float]) -> Image:
+def gen_heatmaps_as_overlay(cams: Dict, voltage_vals: np.ndarray, title: str, time_vals: List[float]) -> Image:
     """
     Generates the class activation map (heatmap) side-by-side plot - time series as overlay - and returns it as image.
 
     :param cams: dictionary containing the class activation maps to be visualized (+ method names)
     :param voltage_vals: voltage values to be visualized
     :param title: window title, e.g., recorded vehicle component and classification result
-    :return heatmap side-by-side plot as image
     :param time_vals: time values to be visualized on the x-axis
+    :return heatmap side-by-side plot as image
     """
     gen_heatmaps_overlay_side_by_side(cams, voltage_vals, title, time_vals)
     # create bytes object and save matplotlib fig into it
@@ -355,7 +359,7 @@ def gen_heatmaps_as_overlay(cams: dict, voltage_vals: np.ndarray, title: str, ti
     return Image.open(buf)
 
 
-def plot_heatmaps_as_overlay(cams: dict, voltage_vals: np.ndarray, title: str, time_vals: List[float]) -> None:
+def plot_heatmaps_as_overlay(cams: Dict, voltage_vals: np.ndarray, title: str, time_vals: List[float]) -> None:
     """
     Visualizes the class activation map (heatmap) side-by-side plot - time series as overlay.
 
@@ -370,7 +374,7 @@ def plot_heatmaps_as_overlay(cams: dict, voltage_vals: np.ndarray, title: str, t
 
 
 def plot_multi_chan_heatmaps_as_overlay(
-        cams: dict, voltage_vals: np.ndarray, title: str, time_vals: List[float], variable_attr: bool = True
+        cams: Dict, voltage_vals: np.ndarray, title: str, time_vals: List[float], variable_attr: bool = True
 ) -> None:
     """
     Visualizes the class activation maps for each channel - side-by-side plot - time series as overlay.
@@ -387,7 +391,7 @@ def plot_multi_chan_heatmaps_as_overlay(
     plt.show()
 
 
-def plot_heatmaps(cams: dict, voltage_vals: np.ndarray, title: str, time_vals: List[float]) -> None:
+def plot_heatmaps(cams: Dict, voltage_vals: np.ndarray, title: str, time_vals: List[float]) -> None:
     """
     Visualizes the class activation maps (heatmaps).
 
@@ -434,8 +438,9 @@ def file_path(path: str) -> str:
         raise argparse.ArgumentTypeError(f"{path} is not a valid file")
 
 
-def gen_heatmap_dictionary(method: str, net_input: np.ndarray, model: keras.models.Model,
-                           prediction: np.ndarray) -> dict:
+def gen_heatmap_dictionary(
+        method: str, net_input: np.ndarray, model: keras.models.Model, prediction: np.ndarray
+) -> Dict:
     """
     Generates the heatmap dictionary for the specified method, model, prediction, and input.
 

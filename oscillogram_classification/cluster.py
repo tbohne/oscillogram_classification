@@ -5,6 +5,7 @@
 import argparse
 import os
 from pathlib import Path
+from typing import Dict, Tuple, List
 
 import joblib
 import matplotlib.pyplot as plt
@@ -38,7 +39,7 @@ def evaluate_performance_for_binary_clustering(ground_truth: np.ndarray, predict
     print("...determine by visual comparison...")
 
 
-def evaluate_performance(ground_truth: np.ndarray, predictions: np.ndarray) -> dict:
+def evaluate_performance(ground_truth: np.ndarray, predictions: np.ndarray) -> Dict:
     """
     Evaluates the clustering performance for battery signals. An ROI detection algorithm provides the input for the
     clustering of the cropped sub-ROIs. The ROIs are divided into five categories for the battery signals. The five
@@ -69,8 +70,10 @@ def evaluate_performance(ground_truth: np.ndarray, predictions: np.ndarray) -> d
     return ground_truth_per_cluster
 
 
-def plot_results(offset: int, title: str, clustering: TimeSeriesKMeans, x_train: np.ndarray, y_train: np.ndarray,
-                 pred_y: np.ndarray, fig: plt.Figure) -> dict:
+def plot_results(
+        offset: int, title: str, clustering: TimeSeriesKMeans, x_train: np.ndarray, y_train: np.ndarray,
+        pred_y: np.ndarray, fig: plt.Figure
+) -> Dict:
     """
     Plots the results of the clustering procedure.
 
@@ -127,7 +130,7 @@ def visualize_n_samples_per_class(x: np.ndarray, y: np.ndarray) -> None:
         sample_fig.show()
 
 
-def load_data() -> (np.ndarray, np.ndarray):
+def load_data() -> Tuple[np.ndarray, np.ndarray]:
     """
     Loads the data to be clustered.
 
@@ -157,7 +160,7 @@ def dir_path(path: str) -> str:
         raise argparse.ArgumentTypeError(f"{path} is not a valid path")
 
 
-def clean_incorrect_patches(paths: list) -> list:
+def clean_incorrect_patches(paths: List[Path]) -> List[Path]:
     """
     Removes time series that were not split into the expected number of patches (either too many or too little).
 
@@ -229,7 +232,7 @@ def create_processed_time_series_dataset(data_path: str, norm: str = "none", cle
     np.savetxt("data/patch_measurement_ids.csv", measurement_ids, delimiter=',', fmt='%s')
 
 
-def read_oscilloscope_recording(rec_file: Path) -> (int, list):
+def read_oscilloscope_recording(rec_file: Path) -> Tuple[int, List[float]]:
     """
     Reads the oscilloscope recording from the specified file.
 
@@ -296,8 +299,10 @@ def perform_dba_k_means_clustering(x_train: np.ndarray, y_train: np.ndarray, fig
     )
     y_pred = dba_km.fit_predict(x_train)
     visualize_n_samples_per_class(x_train, y_pred)
-    ground_truth = plot_results(1 + cluster_config.cluster_config["number_of_clusters"], "DBA $k$-means", dba_km,
-                                x_train, y_train, y_pred, fig)
+    ground_truth = plot_results(
+        1 + cluster_config.cluster_config["number_of_clusters"], "DBA $k$-means", dba_km, x_train, y_train,
+        y_pred, fig
+    )
     joblib.dump((dba_km, y_pred, ground_truth), 'trained_models/dba_km.pkl')  # save model to file
 
 
@@ -322,8 +327,10 @@ def perform_soft_dtw_k_means_clustering(x_train: np.ndarray, y_train: np.ndarray
     )
     y_pred = sdtw_km.fit_predict(x_train)
     visualize_n_samples_per_class(x_train, y_pred)
-    ground_truth = plot_results(1 + 2 * cluster_config.cluster_config["number_of_clusters"], "Soft-DTW $k$-means",
-                                sdtw_km, x_train, y_train, y_pred, fig)
+    ground_truth = plot_results(
+        1 + 2 * cluster_config.cluster_config["number_of_clusters"], "Soft-DTW $k$-means", sdtw_km, x_train, y_train,
+        y_pred, fig
+    )
     joblib.dump((sdtw_km, y_pred, ground_truth), 'trained_models/sdtw_km.pkl')  # save model to file
 
 
@@ -346,7 +353,8 @@ if __name__ == '__main__':
     # resample time series so that they reach the target size (sz - size of output TS)
     #   -> we need to reduce the length of the TS (due to runtime, memory)
     train_x = TimeSeriesResampler(
-        sz=len(train_x[0]) // cluster_config.cluster_config["resampling_divisor"]).fit_transform(train_x)
+        sz=len(train_x[0]) // cluster_config.cluster_config["resampling_divisor"]
+    ).fit_transform(train_x)
     print("after down sampling:", len(train_x[0]))
 
     cluster_fig = plt.figure(figsize=(5 * cluster_config.cluster_config["number_of_clusters"], 3))
