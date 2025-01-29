@@ -16,7 +16,7 @@ from config import cluster_config
 from training_data import TrainingData
 
 
-def compute_distances(sample: np.ndarray, clustering_model: TimeSeriesKMeans) -> List:
+def compute_distances(sample: np.ndarray, clustering_model: TimeSeriesKMeans) -> List[float]:
     """
     Computes the distance between the provided sample and each cluster of the specified model using the configured
     metric.
@@ -29,8 +29,7 @@ def compute_distances(sample: np.ndarray, clustering_model: TimeSeriesKMeans) ->
         return [dtw(sample, cluster_centroid) for cluster_centroid in clustering_model.cluster_centers_]
     elif cluster_config.cluster_application_config["metric"] == "SOFT_DTW":
         return [soft_dtw(sample, cluster_centroid) for cluster_centroid in clustering_model.cluster_centers_]
-    else:
-        # default option is DTW
+    else:  # default option is DTW
         return [dtw(sample, cluster_centroid) for cluster_centroid in clustering_model.cluster_centers_]
 
 
@@ -80,8 +79,10 @@ def dir_path(path: str) -> str:
         raise argparse.ArgumentTypeError(f"{path} is not a valid path")
 
 
-def cluster_test_samples(x_test: np.ndarray, y_test: np.ndarray, measurement_ids: np.ndarray,
-                         trained_model: TimeSeriesKMeans, ground_truth: np.ndarray) -> Dict[str, Tuple[List, List]]:
+def cluster_test_samples(
+        x_test: np.ndarray, y_test: np.ndarray, measurement_ids: np.ndarray, trained_model: TimeSeriesKMeans,
+        ground_truth: np.ndarray
+) -> Dict[str, Tuple[List, List]]:
     """
     Clusters the test samples, i.e., assigns new samples to predetermined clusters.
 
