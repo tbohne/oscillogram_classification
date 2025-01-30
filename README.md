@@ -9,7 +9,7 @@ Univariate sample (two classes; positive (1) and negative (0)) of the time serie
 
 <img src="img/battery.svg" width="500">
 
-Multivariate sample (8 synchronously recorded signals from different vehicle components to be examined in combination):
+Multivariate sample: 8 synchronously recorded signals from different vehicle components to be examined in combination (cf. `data/multivariate_real_world/`):
 ![](img/multi_ex.png)
 
 The task comes down to binary (anomaly / regular) univariate / multivariate time series classification, i.e., anomaly detection.
@@ -19,7 +19,7 @@ The task comes down to binary (anomaly / regular) univariate / multivariate time
 Initially, we trained two self-implemented architectures, the following FCN as well as a ResNet (cf. `img/ResNet.png`):
 <img src="img/fcn.svg" width="500">
 
-Additionally, we trained various models from [tsai](https://timeseriesai.github.io/tsai/). The one that was finally used in the multivariate anomaly detection application was an `XCMPlus` (*e<u>X</u>plainable <u>C</u>onvolutional neural network for <u>M</u>ultivariate time series classification*). Two trained versions of it are `experiments/trained_models/druck_combined.pth` and `experiments/trained_models/lambda_combined.pth`.
+Additionally, we trained various models from [tsai](https://timeseriesai.github.io/tsai/). The one that was finally used in the multivariate anomaly detection application was an `XCMPlus` (*e<u>X</u>plainable <u>C</u>onvolutional neural network for <u>M</u>ultivariate time series classification*). Two trained versions of it are `experiments/trained_models/druck_combined.pth` and `experiments/trained_models/lambda_combined.pth` (trained on `data/multivariate_real_world/`).
 
 ## Dependencies
 
