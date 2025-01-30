@@ -3,19 +3,23 @@
 ![unstable](https://img.shields.io/badge/stability-unstable-orange)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Neural network based anomaly detection for vehicle components using oscilloscope recordings.
+**Neural network based anomaly detection for physical vehicle components using oscilloscope recordings.**
 
-Example of the time series data to be considered (voltage over time - $z$-normalized):
+Univariate sample (two classes) of the time series data to be considered (voltage over time - $z$-normalized - in this case, battery voltage during engine starting process):
 
 <img src="img/battery.svg" width="500">
 
-The task comes down to binary univariate time series classification.
+Multivariate sample (8 synchronously recorded signals from different vehicle components to be examined in combination):
+![](img/multi_ex.png)
 
-## FCN Architecture
+The task comes down to binary (anomaly / regular) univariate / multivariate time series classification, i.e., anomaly detection.
 
+## ANN Architectures
+
+Initially, we trained two self-implemented architectures, the following FCN as well as a ResNet (cf. `img/ResNet.png`):
 <img src="img/fcn.svg" width="500">
 
-*Note: See ResNet architecture in `img/ResNet.png`*
+Additionally, we trained various models from [tsai](https://timeseriesai.github.io/tsai/). The one that was finally used in the multivariate anomaly detection application was an `XCMPlus` (*e<u>X</u>plainable <u>C</u>onvolutional neural network for <u>M</u>ultivariate time series classification*). Two trained versions of it are `experiments/trained_models/druck_combined.pth` and `experiments/trained_models/lambda_combined.pth`.
 
 ## Dependencies
 
@@ -28,6 +32,55 @@ $ git clone https://github.com/tbohne/oscillogram_classification.git
 $ cd oscillogram_classification/
 $ pip install .
 ```
+
+## ANN-Based Oscillogram Classification Experiments
+
+The final trained models utilized in the project were all created based on `experiments/oscillogram_classification.ipynb`. The notebook offers functionalities for loading, preprocessing, plotting, training, evaluating and heatmap (saliency map) generation for the considered input oscillograms (univariate and multivariate time series). Currently, we support two self-implemented models: FCN (`keras`) + ResNet (`keras`), and a wide range of `tsai` models, e.g., `XCMPlus`. It is also possible to load and apply an already trained `torch` model, e.g., `../data/Lambdasonde.pth`.
+
+## Explicit usage in `vehicle_diag_smach`
+
+Exemplary use of functionalities in [vehicle_diag_smach](https://github.com/tbohne/vehicle_diag_smach) (besides the application of trained models).
+
+### Saliency map generation
+
+```python
+# univariate heatmap array generation (various generation methods)
+gradcam_arr = cam.tf_keras_gradcam(np.array([net_input]), model, prediction)
+gradcam_pp_arr = cam.tf_keras_gradcam_plus_plus(np.array([net_input]), model, prediction)
+scorecam_arr = cam.tf_keras_scorecam(np.array([net_input]), model, prediction)
+layercam_arr = cam.tf_keras_layercam(np.array([net_input]), model, prediction)
+
+# univariate data - heatmap side-by-side plot (various methods) - time series as overlay
+heatmap_img = cam.gen_heatmaps_as_overlay(heatmaps, voltages, title, time_vals)
+
+# multivariate data - heatmap for each channel - side-by-side plot - variable attribution maps
+var_attr_heatmap_img = cam.gen_multi_chan_heatmaps_as_overlay(
+    var_attr_heatmaps, tensor[0].numpy(), comp_name + res_str, time_vals
+)
+# multivariate data - heatmap for each channel - side-by-side plot - time attribution maps
+time_attr_heatmap_img = cam.gen_multi_chan_heatmaps_as_overlay(
+    time_attr_heatmaps, tensor[0].numpy(), comp_name + res_str, time_vals
+)
+```
+
+### Preprocessing input signals
+
+```python
+# multivariate signal (dataframe) for the corresponding .csv file
+signal, time_values = preprocess.gen_multivariate_signal_from_csv(csv_path)
+# univariate signal for the corresponding .csv file
+label, signal, time_values = preprocess.read_oscilloscope_recording(csv_path)
+
+# resample voltage values (time series) to expected length
+voltages = preprocess.resample(voltages, model_meta_info["input_length"])
+# normalize voltage values (various normalization methods)
+voltages = preprocess.z_normalize_time_series(voltages)
+voltages = preprocess.min_max_normalize_time_series(voltages)
+voltages = preprocess.decimal_scaling_normalize_time_series(voltages, 2)
+voltages = preprocess.logarithmic_normalize_time_series(voltages, 10)
+```
+
+## ANN-Based Oscillogram Classification
 
 **WandB Setup**
 ```
@@ -192,7 +245,15 @@ $ python oscillogram_classification/knn.py --train_path /TRAIN_DATA --test_path 
 
 ## Training and Validation Accuracy of Selected Models
 
-TBD.
+`experiments/trained_models/lambda_combined.pth` (multivariate - 4 channels):
+- ![](img/lambda_loss.png)
+- <img src="img/lambda_proba.png" width="250"><img src="img/lambda_conf.png" width="250">
+- test accuracy: **`0.96`**
+
+`experiments/trained_models/druck_combined.pth` (multivariate - 4 channels):
+- ![](img/druck_loss.png)
+- <img src="img/druck_proba.png" width="250"><img src="img/druck_conf.png" width="250">
+- test accuracy: **`1.0`**
 
 ## Related Publications
 
