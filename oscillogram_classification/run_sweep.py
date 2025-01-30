@@ -13,6 +13,14 @@ from train import file_path
 
 
 def main(train_path: str, val_path: str, test_path: str) -> None:
+    """
+    Sweep main function.
+
+    :param train_path: path to training data
+    :param val_path: path to validation data
+    :param test_path: path to test data
+    """
+
     def call_training_procedure() -> None:
         """
         Wrapper for the training procedure.
