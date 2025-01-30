@@ -5,7 +5,7 @@
 
 **Neural network based anomaly detection for physical vehicle components using oscilloscope recordings.**
 
-Univariate sample (two classes) of the time series data to be considered (voltage over time - $z$-normalized - in this case, battery voltage during engine starting process):
+Univariate sample (two classes; positive (1) and negative (0)) of the time series data to be considered (voltage over time - $z$-normalized - in this case, battery voltage during engine starting process):
 
 <img src="img/battery.svg" width="500">
 
@@ -35,7 +35,7 @@ $ pip install .
 
 ## ANN-Based Oscillogram Classification Experiments
 
-The final trained models utilized in the project were all created based on `experiments/oscillogram_classification.ipynb`. The notebook offers functionalities for loading, preprocessing, plotting, training, evaluating and heatmap (saliency map) generation for the considered input oscillograms (univariate and multivariate time series). Currently, we support two self-implemented models: FCN (`keras`) + ResNet (`keras`), and a wide range of `tsai` models, e.g., `XCMPlus`. It is also possible to load and apply an already trained `torch` model, e.g., `../data/Lambdasonde.pth`.
+The final trained models utilized in the project were all created based on `experiments/oscillogram_classification.ipynb`. The notebook offers functionalities for loading, preprocessing, plotting, training, evaluating and heatmap (saliency map) generation for the considered input oscillograms (univariate and multivariate time series). Currently, we support two self-implemented models: FCN (`keras`) + ResNet (`keras`), and a wide range of `tsai` models, e.g., `XCMPlus`. It is also possible to load and apply an already trained `torch` model, e.g., `experiments/trained_models/lambda_combined.pth`.
 
 ## Explicit usage in `vehicle_diag_smach`
 
@@ -82,7 +82,7 @@ voltages = preprocess.logarithmic_normalize_time_series(voltages, 10)
 
 ## ANN-Based Oscillogram Classification
 
-**WandB Setup**
+***WandB* Setup**
 ```
 $ touch config/api_key.py  # enter: wandb_api_key = "YOUR_KEY"
 ```
@@ -109,7 +109,7 @@ hyperparameter_config = {
     "validation_split": 0.2
 }
 ```
-WandB sweep config in `config/sweep_config.py`, e.g.:
+*WandB* sweep config in `config/sweep_config.py`, e.g.:
 ```python
 sweep_config = {
     "batch_size": {"values": [4, 16, 32]},
@@ -179,7 +179,7 @@ $ python oscillogram_classification/cam.py [--znorm] [--overlay] --method {gradc
 ### Variable Attribution Maps
 ![](img/multivar_var.svg)
 
-**WandB Sweeps (Hyperparameter Optimization)**
+***WandB* Sweeps (Hyperparameter Optimization)**
 
 *"Hyperparameter sweeps provide an organized and efficient way to conduct a battle royale of models and pick the most accurate model. They enable this by automatically searching through combinations of hyperparameter values (e.g. learning rate, batch size, number of hidden layers, optimizer type) to find the most optimal values."* - [wandb.ai](https://wandb.ai/site/articles/introduction-hyperparameter-sweeps)
 
@@ -193,7 +193,7 @@ As an alternative to the above classification of entire ROIs (Regions of Interes
 
 ![](img/categories.png)
 
-The five categories are practically motivated, based on semantically meaningful regions that an expert would look at when searching for anomalies. Afterwards, the patches are clustered and for each patch type, i.e., cluster, a model is trained that classifies samples of the corresponding patch type. The following example shows the result of such a clustering, where each cluster is annotated (red) with the represented patch type from the above battery signal:
+The five categories are practically motivated, based on semantically meaningful regions that a domain expert would look at when searching for anomalies. Afterwards, the patches are clustered and for each patch type, i.e., cluster, a model is trained that classifies samples of the corresponding patch type. The following example shows the result of such a clustering, where each cluster is annotated (red) with the represented patch type from the above battery signal:
 
 ![](img/annotated_clus_res.png)
 
@@ -238,12 +238,7 @@ The options without ground truth labels work equivalently, just without the patc
 $ python oscillogram_classification/knn.py --train_path /TRAIN_DATA --test_path /TEST_DATA --norm {none | z_norm | min_max_norm | dec_norm | log_norm}
 ```
 
-## Positive (1) and Negative (0) Sample for each Component
-
-### Normalized Battery Voltage (Engine Starting Process)
-![](img/battery.svg)
-
-## Training and Validation Accuracy of Selected Models
+## Training Results of Selected Models
 
 `experiments/trained_models/lambda_combined.pth` (multivariate - 4 channels):
 - ![](img/lambda_loss.png)
