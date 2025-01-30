@@ -1,4 +1,4 @@
-data/
+hidden_data/
 .idea/
 __pycache__/
 *.pyc
