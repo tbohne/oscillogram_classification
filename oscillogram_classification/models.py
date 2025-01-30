@@ -10,7 +10,7 @@ from sklearn.tree import DecisionTreeClassifier
 from tensorflow import keras
 
 
-def create_fcn_model(input_shape: Tuple, num_classes: int) -> keras.models.Model:
+def create_fcn_model(input_shape: Tuple[int, int, int], num_classes: int) -> keras.models.Model:
     """
     Defines the CNN (FCN) architecture to be worked with.
 
@@ -46,7 +46,7 @@ def create_fcn_model(input_shape: Tuple, num_classes: int) -> keras.models.Model
     return keras.models.Model(inputs=input_layer, outputs=output_layer)
 
 
-def create_resnet_model(input_shape: Tuple, num_classes: int) -> keras.models.Model:
+def create_resnet_model(input_shape: Tuple[int, int, int], num_classes: int) -> keras.models.Model:
     """
     Defines the ResNet architecture to be worked with.
 
@@ -135,8 +135,9 @@ def create_mlp_model() -> MLPClassifier:
 
     :return: MLP classifier
     """
-    return MLPClassifier(verbose=1, random_state=1, max_iter=100000, n_iter_no_change=500, batch_size=32,
-                         hidden_layer_sizes=(16,))
+    return MLPClassifier(
+        verbose=1, random_state=1, max_iter=100000, n_iter_no_change=500, batch_size=32, hidden_layer_sizes=(16,)
+    )
 
 
 def create_decision_tree_model() -> DecisionTreeClassifier:
@@ -148,8 +149,9 @@ def create_decision_tree_model() -> DecisionTreeClassifier:
     return DecisionTreeClassifier(criterion='entropy')
 
 
-def create_model(input_shape: Tuple, num_classes: int, architecture: str = "FCN") \
-        -> Union[keras.models.Model, RandomForestClassifier, MLPClassifier, DecisionTreeClassifier]:
+def create_model(
+        input_shape: Tuple[int, int, int], num_classes: int, architecture: str = "FCN"
+) -> Union[keras.models.Model, RandomForestClassifier, MLPClassifier, DecisionTreeClassifier]:
     """
     Initiates model generation based on the specified architecture, input shape, and number of classes.
 

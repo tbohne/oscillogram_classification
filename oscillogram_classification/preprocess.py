@@ -12,9 +12,7 @@ import dask.dataframe as dd
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from tsfresh import extract_features
-from tsfresh import extract_relevant_features
-from tsfresh import select_features
+from tsfresh import extract_features, extract_relevant_features, select_features
 from tsfresh.convenience.bindings import dask_feature_extraction_on_chunk
 from tsfresh.feature_extraction.settings import ComprehensiveFCParameters, EfficientFCParameters
 from tsfresh.utilities.dataframe_functions import impute
@@ -32,7 +30,7 @@ def read_oscilloscope_recording(
     :param rec_file: oscilloscope recording file
     :param return_time_values: specifies whether the corresponding list of time values should be returned
     :param verbose: whether terminal logs should be enabled
-    :return: label, list of voltage values (time series), optional: list of time values
+    :return: (label, list of voltage values (time series), optional: list of time values)
     """
     if verbose:
         print("reading oscilloscope recording from", rec_file)
@@ -96,7 +94,7 @@ def plot_signals_with_channels(
             if channel_idx == 0:
                 axs[signal_idx, channel_idx].set_ylabel(signal_titles[signal_idx])
     plt.tight_layout()
-    # plt.savefig("data_vis.svg", format="svg", bbox_inches='tight')
+    plt.savefig("data_vis.svg", format="svg", bbox_inches='tight')
     plt.show()
 
 
@@ -117,7 +115,7 @@ def gen_multivariate_signal_from_csv(csv_file: str) -> Tuple[List[pd.DataFrame],
     Generates the multivariate signal for the corresponding .csv file.
 
     :param csv_file: .csv file to read multivariate signal from
-    :return: signal, time values
+    :return: (multivariate signal, time values)
     """
     signal_df = load_preprocessed_demo_measurement(csv_file)
     signal = [signal_df[channel_name] for channel_name in signal_df.columns.tolist() if not channel_name == "Zeit"]
@@ -284,8 +282,9 @@ def interpolation(patches: np.ndarray) -> np.ndarray:
     return padded_array.reshape((padded_array.shape[0], interpolation_target_len, 1))
 
 
-def dask_feature_extraction_for_large_input_data(dataframe: pd.DataFrame, partitions: int, on_chunk: bool = True,
-                                                 simple_return: bool = True):
+def dask_feature_extraction_for_large_input_data(
+        dataframe: pd.DataFrame, partitions: int, on_chunk: bool = True, simple_return: bool = True
+) -> dd.DataFrame:
     """
     Performs feature extraction / selection with 'tsfresh' using 'Dask' dataframes.
 
@@ -306,9 +305,10 @@ def dask_feature_extraction_for_large_input_data(dataframe: pd.DataFrame, partit
         df_grouped = df.groupby(["id"])
         print(df_grouped)
         print("extract features..")
-        features = dask_feature_extraction_on_chunk(df_grouped, column_id="id", column_kind="id", column_sort="Zeit",
-                                                    column_value="Kanal A",
-                                                    default_fc_parameters=ComprehensiveFCParameters())
+        features = dask_feature_extraction_on_chunk(
+            df_grouped, column_id="id", column_kind="id", column_sort="Zeit", column_value="Kanal A",
+            default_fc_parameters=ComprehensiveFCParameters()
+        )
         if simple_return:
             print("ext. features:")
             print(features)
@@ -349,8 +349,9 @@ def pandas_feature_extraction(df: pd.DataFrame, labels: pd.Series) -> pd.DataFra
     )
 
 
-def pandas_feature_extraction_manual(df: pd.DataFrame, labels: pd.Series, data_type: str) \
-        -> Tuple[pd.DataFrame, pd.DataFrame]:
+def pandas_feature_extraction_manual(
+        df: pd.DataFrame, labels: pd.Series, data_type: str
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Performs feature extraction / selection using tsfresh (all steps manually).
 
@@ -402,17 +403,16 @@ def create_processed_time_series_dataset(data_path: str, norm: str, data_type: s
             elif norm == "log_norm":
                 curr_voltages = logarithmic_normalize_time_series(curr_voltages, 10)
         voltage_series.append(curr_voltages)
-    # TODO: this shouldn't be used -- use interpolation instead
-    # equalize_sample_sizes(voltage_series)
     voltage_series = interpolation(np.array(voltage_series))
     np.savez("data/%s_data.npz" % data_type, np.array(voltage_series, dtype=object), np.array(labels))
 
 
-def filter_extracted_features_based_on_list(feature_list: pd.DataFrame,
-                                            all_extracted_features: pd.DataFrame) -> pd.DataFrame:
+def filter_extracted_features_based_on_list(
+        feature_list: pd.DataFrame, all_extracted_features: pd.DataFrame
+) -> pd.DataFrame:
     """
     Filters the extracted features based on the specified features list.
-    Aim: E.g. to align the test / validation set with the training set (use same features).
+    Aim: e.g., to align the test / validation set with the training set (use same features).
 
     :param feature_list: list of features to be considered
     :param all_extracted_features: extracted features to be filtered
@@ -420,7 +420,7 @@ def filter_extracted_features_based_on_list(feature_list: pd.DataFrame,
     """
     to_drop = [feature for feature in all_extracted_features.columns if feature not in feature_list]
     filtered_features = all_extracted_features.drop(columns=to_drop)
-    # establish same order of features as in feature list (e.g. as in training set)
+    # establish same order of features as in feature list (e.g., as in training set)
     filtered_features = filtered_features.reindex(columns=feature_list)
     assert len(filtered_features.columns.to_numpy()) == len(feature_list)
     return filtered_features
@@ -466,8 +466,12 @@ def create_filtered_feature_vectors(filtered_features: pd.DataFrame, data_type: 
         # filtered feature vectors generated by tsfresh relevance estimation
         filtered_feature_columns = np.array(filtered_features.columns)
         res_feature_vectors = filtered_features.to_numpy()
-        np.savez("data/%s_filtered_feature_vectors.npz" % data_type,
-                 res_feature_vectors, labels.to_numpy(), filtered_feature_columns)
+        np.savez(
+            "data/%s_filtered_feature_vectors.npz" % data_type,
+            res_feature_vectors,
+            labels.to_numpy(),
+            filtered_feature_columns
+        )
 
 
 def create_complete_feature_vectors(all_extracted_features: pd.DataFrame, data_type: str, labels: pd.Series) -> None:
@@ -482,12 +486,17 @@ def create_complete_feature_vectors(all_extracted_features: pd.DataFrame, data_t
     complete_feature_columns = np.array(all_extracted_features.columns)
     print("number of features:", len(complete_feature_columns))
     res_complete_feature_vectors = all_extracted_features.to_numpy()
-    np.savez("data/%s_complete_feature_vectors.npz" % data_type,
-             res_complete_feature_vectors, labels.to_numpy(), complete_feature_columns)
+    np.savez(
+        "data/%s_complete_feature_vectors.npz" % data_type,
+        res_complete_feature_vectors,
+        labels.to_numpy(),
+        complete_feature_columns
+    )
 
 
-def create_manually_filtered_feature_vectors(feature_list: pd.DataFrame, all_extracted_features: pd.DataFrame,
-                                             data_type: str, labels: pd.Series) -> None:
+def create_manually_filtered_feature_vectors(
+        feature_list: pd.DataFrame, all_extracted_features: pd.DataFrame, data_type: str, labels: pd.Series
+) -> None:
     """
     Creates the manually filtered feature vector dataset (by manual alignment with provided feature list).
 
@@ -501,11 +510,16 @@ def create_manually_filtered_feature_vectors(feature_list: pd.DataFrame, all_ext
         manually_filtered_features = filter_extracted_features_based_on_list(feature_list, all_extracted_features)
         filtered_feature_columns = np.array(manually_filtered_features.columns)
         print("number of features:", len(filtered_feature_columns))
-        manually_filtered_features.to_csv('data/%s_manually_filtered_features.csv' % data_type, encoding='utf-8',
-                                          index=False)
+        manually_filtered_features.to_csv(
+            'data/%s_manually_filtered_features.csv' % data_type, encoding='utf-8', index=False
+        )
         manually_filtered_features = manually_filtered_features.to_numpy()
-        np.savez("data/%s_manually_filtered_feature_vectors.npz" % data_type, manually_filtered_features,
-                 labels.to_numpy(), filtered_feature_columns)
+        np.savez(
+            "data/%s_manually_filtered_feature_vectors.npz" % data_type,
+            manually_filtered_features,
+            labels.to_numpy(),
+            filtered_feature_columns
+        )
 
 
 def create_feature_vector_dataset(data_path: str, data_type: str, feature_list: pd.DataFrame) -> None:
@@ -527,8 +541,9 @@ def create_feature_vector_dataset(data_path: str, data_type: str, feature_list: 
     create_manually_filtered_feature_vectors(feature_list, all_extracted_features, data_type, labels)
 
 
-def create_dataset(norm: str, data_path: str, data_type: str, feature_extraction: bool,
-                   feature_list: pd.DataFrame) -> None:
+def create_dataset(
+        norm: str, data_path: str, data_type: str, feature_extraction: bool, feature_list: pd.DataFrame
+) -> None:
     """
     Iterates through input data and generates an accumulated test / train / validation data set (.npz).
 
@@ -574,14 +589,18 @@ if __name__ == '__main__':
     # input: raw oscilloscope data (one file per recording)
     # output: preprocessed data (one training / testing / validation data file containing data of all recordings)
     parser = argparse.ArgumentParser(description='Preprocess time series data..')
-    parser.add_argument('--norm', action='store', type=str, required=True,
-                        help='normalization method: %s' % cluster_config.cluster_config["normalization_methods"])
+    parser.add_argument(
+        '--norm', action='store', type=str, required=True,
+        help='normalization method: %s' % cluster_config.cluster_config["normalization_methods"]
+    )
     parser.add_argument('--path', type=dir_path, required=True, help='path to the data to be processed')
     parser.add_argument('--feature_extraction', action='store_true', help='apply feature extraction (and selection)')
     parser.add_argument(
-        '--feature_list', type=file_path, help='path to the csv file containing the list of features to be considered')
+        '--feature_list', type=file_path, help='path to the csv file containing the list of features to be considered'
+    )
     parser.add_argument(
-        '--type', action='store', type=str, help='type of data: ["training", "validation", "test"]', required=True)
+        '--type', action='store', type=str, help='type of data: ["training", "validation", "test"]', required=True
+    )
 
     args = parser.parse_args()
     list_of_features = None
