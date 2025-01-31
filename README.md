@@ -5,6 +5,10 @@
 
 **Neural network based anomaly detection for physical vehicle components using oscilloscope recordings.**
 
+> Anomalies in the context of this paper refer to specific, known fault cases for which domain experts provide us with datasets to train on. Therefore, it is a matter of recognizing specific faults and not simply
+deviations from the norm. It is thus binary in the sense that either a specific fault is detected or the signal is classified as regular. Also, the uncertainty allows further conclusions on whether an anomaly
+is known (high confidence) or unknown (high uncertainty).
+
 Univariate sample (two classes; positive (1) and negative (0)) of the time series data to be considered (voltage over time - $z$-normalized - in this case, battery voltage during engine starting process):
 
 <img src="img/battery.svg" width="500">
