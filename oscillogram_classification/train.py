@@ -4,7 +4,7 @@
 
 import argparse
 import os
-from typing import Union, List, Tuple
+from typing import Union, List, Tuple, Dict
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,7 +21,7 @@ from config import api_key, run_config
 from training_data import TrainingData
 
 
-def set_up_wandb(wandb_config: dict) -> None:
+def set_up_wandb(wandb_config: Dict) -> None:
     """
     Setup for 'weights and biases'.
 
@@ -54,8 +54,9 @@ def visualize_n_samples_per_class(x: np.ndarray, y: np.ndarray) -> None:
         plt.close()
 
 
-def train_keras_model(model: keras.models.Model, x_train: np.ndarray, y_train: np.ndarray, x_val: np.ndarray,
-                      y_val: np.ndarray) -> None:
+def train_keras_model(
+        model: keras.models.Model, x_train: np.ndarray, y_train: np.ndarray, x_val: np.ndarray, y_val: np.ndarray
+) -> None:
     """
     Trains the specified 'Keras' model on the specified data.
 
@@ -99,9 +100,10 @@ def train_keras_model(model: keras.models.Model, x_train: np.ndarray, y_train: n
     plot_training_and_validation_loss(history)
 
 
-def train_model(model: Union[keras.models.Model, RandomForestClassifier, MLPClassifier, DecisionTreeClassifier],
-                x_train: np.ndarray, y_train: np.ndarray, x_val: np.ndarray, y_val: np.ndarray) \
-        -> Union[keras.models.Model, RandomForestClassifier, MLPClassifier, DecisionTreeClassifier]:
+def train_model(
+        model: Union[keras.models.Model, RandomForestClassifier, MLPClassifier, DecisionTreeClassifier],
+        x_train: np.ndarray, y_train: np.ndarray, x_val: np.ndarray, y_val: np.ndarray
+) -> Union[keras.models.Model, RandomForestClassifier, MLPClassifier, DecisionTreeClassifier]:
     """
     Trains the selected model (classifier).
 
@@ -158,7 +160,8 @@ def plot_training_and_validation_loss(history: keras.callbacks.History) -> None:
 def evaluate_model_on_test_data(
         x_test: np.ndarray, y_test: np.ndarray,
         model: Union[keras.models.Model, RandomForestClassifier, MLPClassifier, DecisionTreeClassifier],
-        x_train: np.ndarray, y_train: np.ndarray) -> None:
+        x_train: np.ndarray, y_train: np.ndarray
+) -> None:
     """
     Evaluates the trained model on the specified test data.
 
@@ -205,8 +208,10 @@ def evaluate_model_on_test_data(
         print(classification_report(y_test, y_pred_test))
 
 
-def perform_consistency_check(train_data: TrainingData, val_data: TrainingData, test_data: TrainingData,
-                              z_train: List[str], z_val: List[str], z_test: List[str]) -> None:
+def perform_consistency_check(
+        train_data: TrainingData, val_data: TrainingData, test_data: TrainingData,
+        z_train: List[str], z_val: List[str], z_test: List[str]
+) -> None:
     """
     Performs a consistency check for the provided data:
         - all three (train, val, test) should either provide feature info or not
@@ -234,8 +239,9 @@ def perform_consistency_check(train_data: TrainingData, val_data: TrainingData, 
     print("consistency check passed..")
 
 
-def prepare_data(train_data_path: str, val_data_path: str, test_data_path: str, keras_model: bool, vis_samples: bool) \
-        -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def prepare_data(
+        train_data_path: str, val_data_path: str, test_data_path: str, keras_model: bool, vis_samples: bool
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     Prepares the data for the training / evaluation process.
 
@@ -282,8 +288,10 @@ def prepare_data(train_data_path: str, val_data_path: str, test_data_path: str, 
     return x_train.astype('float32'), y_train, x_val.astype('float32'), y_val, x_test.astype('float32'), y_test
 
 
-def train_procedure(train_path: str, val_path: str, test_path: str,
-                    hyperparameter_config: dict = run_config.hyperparameter_config, vis_samples: bool = True):
+def train_procedure(
+        train_path: str, val_path: str, test_path: str,
+        hyperparameter_config: Dict = run_config.hyperparameter_config, vis_samples: bool = True
+) -> None:
     """
     Initiates the training and evaluation procedures.
 

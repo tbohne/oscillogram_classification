@@ -3,19 +3,25 @@
 ![unstable](https://img.shields.io/badge/stability-unstable-orange)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Neural network based anomaly detection for vehicle components using oscilloscope recordings.
+**Neural network based anomaly detection for physical vehicle components using oscilloscope recordings.**
 
-Example of the time series data to be considered (voltage over time - $z$-normalized):
+> *Anomalies in the context of this paper refer to specific, known fault cases for which domain experts provide us with datasets to train on. Therefore, it is a matter of recognizing specific faults and not simply deviations from the norm. It is thus binary in the sense that either a specific fault is detected or the signal is classified as regular. Also, the uncertainty allows further conclusions on whether an anomaly is known (high confidence) or unknown (high uncertainty).*
+
+Univariate sample (two classes; positive (1) and negative (0)) of the time series data to be considered (voltage over time - $z$-normalized - in this case, battery voltage during engine starting process):
 
 <img src="img/battery.svg" width="500">
 
-The task comes down to binary univariate time series classification.
+Multivariate sample: 8 synchronously recorded signals from different vehicle components to be examined in combination (cf. `data/multivariate_real_world/`):
+![](img/multi_ex.png)
 
-## FCN Architecture
+The task comes down to binary (anomaly / regular) univariate / multivariate time series classification, i.e., anomaly detection.
 
+## ANN Architectures
+
+Initially, we trained two self-implemented architectures, the following FCN as well as a ResNet (cf. `img/ResNet.png`):
 <img src="img/fcn.svg" width="500">
 
-*Note: See ResNet architecture in `img/ResNet.png`*
+Additionally, we trained various models from [tsai](https://timeseriesai.github.io/tsai/). The one that was finally used in the multivariate anomaly detection application was an `XCMPlus` (*e<u>X</u>plainable <u>C</u>onvolutional neural network for <u>M</u>ultivariate time series classification*). Two trained versions of it are `experiments/trained_models/druck_combined.pth` and `experiments/trained_models/lambda_combined.pth` (trained on `data/multivariate_real_world/`).
 
 ## Dependencies
 
@@ -29,7 +35,56 @@ $ cd oscillogram_classification/
 $ pip install .
 ```
 
-**WandB Setup**
+## ANN-Based Oscillogram Classification Experiments
+
+The final trained models utilized in the project were all created based on `experiments/oscillogram_classification.ipynb`. The notebook offers functionalities for loading, preprocessing, plotting, training, evaluating and heatmap (saliency map) generation for the considered input oscillograms (univariate and multivariate time series). Currently, we support two self-implemented models: FCN (`keras`) + ResNet (`keras`), and a wide range of `tsai` models, e.g., `XCMPlus`. It is also possible to load and apply an already trained `torch` model, e.g., `experiments/trained_models/lambda_combined.pth`.
+
+## Explicit usage in `vehicle_diag_smach`
+
+Exemplary use of functionalities in [vehicle_diag_smach](https://github.com/tbohne/vehicle_diag_smach) (besides the application of trained models).
+
+### Saliency map generation
+
+```python
+# univariate heatmap array generation (various generation methods)
+gradcam_arr = cam.tf_keras_gradcam(np.array([net_input]), model, prediction)
+gradcam_pp_arr = cam.tf_keras_gradcam_plus_plus(np.array([net_input]), model, prediction)
+scorecam_arr = cam.tf_keras_scorecam(np.array([net_input]), model, prediction)
+layercam_arr = cam.tf_keras_layercam(np.array([net_input]), model, prediction)
+
+# univariate data - heatmap side-by-side plot (various methods) - time series as overlay
+heatmap_img = cam.gen_heatmaps_as_overlay(heatmaps, voltages, title, time_vals)
+
+# multivariate data - heatmap for each channel - side-by-side plot - variable attribution maps
+var_attr_heatmap_img = cam.gen_multi_chan_heatmaps_as_overlay(
+    var_attr_heatmaps, tensor[0].numpy(), comp_name + res_str, time_vals
+)
+# multivariate data - heatmap for each channel - side-by-side plot - time attribution maps
+time_attr_heatmap_img = cam.gen_multi_chan_heatmaps_as_overlay(
+    time_attr_heatmaps, tensor[0].numpy(), comp_name + res_str, time_vals
+)
+```
+
+### Preprocessing input signals
+
+```python
+# multivariate signal (dataframe) for the corresponding .csv file
+signal, time_values = preprocess.gen_multivariate_signal_from_csv(csv_path)
+# univariate signal for the corresponding .csv file
+label, signal, time_values = preprocess.read_oscilloscope_recording(csv_path)
+
+# resample voltage values (time series) to expected length
+voltages = preprocess.resample(voltages, model_meta_info["input_length"])
+# normalize voltage values (various normalization methods)
+voltages = preprocess.z_normalize_time_series(voltages)
+voltages = preprocess.min_max_normalize_time_series(voltages)
+voltages = preprocess.decimal_scaling_normalize_time_series(voltages, 2)
+voltages = preprocess.logarithmic_normalize_time_series(voltages, 10)
+```
+
+## ANN-Based Oscillogram Classification
+
+***WandB* Setup**
 ```
 $ touch config/api_key.py  # enter: wandb_api_key = "YOUR_KEY"
 ```
@@ -56,7 +111,7 @@ hyperparameter_config = {
     "validation_split": 0.2
 }
 ```
-WandB sweep config in `config/sweep_config.py`, e.g.:
+*WandB* sweep config in `config/sweep_config.py`, e.g.:
 ```python
 sweep_config = {
     "batch_size": {"values": [4, 16, 32]},
@@ -118,7 +173,15 @@ $ python oscillogram_classification/cam.py [--znorm] [--overlay] --method {gradc
 ### All Heatmap Generation Methods Side-by-Side
 ![](img/all_overlay.svg)
 
-**WandB Sweeps (Hyperparameter Optimization)**
+## Multivariate Heatmap Examples
+
+### Time Attribution Maps
+![](img/multivar_time.svg)
+
+### Variable Attribution Maps
+![](img/multivar_var.svg)
+
+***WandB* Sweeps (Hyperparameter Optimization)**
 
 *"Hyperparameter sweeps provide an organized and efficient way to conduct a battle royale of models and pick the most accurate model. They enable this by automatically searching through combinations of hyperparameter values (e.g. learning rate, batch size, number of hidden layers, optimizer type) to find the most optimal values."* - [wandb.ai](https://wandb.ai/site/articles/introduction-hyperparameter-sweeps)
 
@@ -132,7 +195,7 @@ As an alternative to the above classification of entire ROIs (Regions of Interes
 
 ![](img/categories.png)
 
-The five categories are practically motivated, based on semantically meaningful regions that an expert would look at when searching for anomalies. Afterwards, the patches are clustered and for each patch type, i.e., cluster, a model is trained that classifies samples of the corresponding patch type. The following example shows the result of such a clustering, where each cluster is annotated (red) with the represented patch type from the above battery signal:
+The five categories are practically motivated, based on semantically meaningful regions that a domain expert would look at when searching for anomalies. Afterwards, the patches are clustered and for each patch type, i.e., cluster, a model is trained that classifies samples of the corresponding patch type. The following example shows the result of such a clustering, where each cluster is annotated (red) with the represented patch type from the above battery signal:
 
 ![](img/annotated_clus_res.png)
 
@@ -177,14 +240,17 @@ The options without ground truth labels work equivalently, just without the patc
 $ python oscillogram_classification/knn.py --train_path /TRAIN_DATA --test_path /TEST_DATA --norm {none | z_norm | min_max_norm | dec_norm | log_norm}
 ```
 
-## Positive (1) and Negative (0) Sample for each Component
+## Training Results of Selected Models
 
-### Normalized Battery Voltage (Engine Starting Process)
-![](img/battery.svg)
+`experiments/trained_models/lambda_combined.pth` (multivariate - 4 channels):
+- ![](img/lambda_loss.png)
+- <img src="img/lambda_proba.png" width="250"><img src="img/lambda_conf.png" width="250">
+- test accuracy: **`0.96`**
 
-## Training and Validation Accuracy of Selected Models
-
-TBD.
+`experiments/trained_models/druck_combined.pth` (multivariate - 4 channels):
+- ![](img/druck_loss.png)
+- <img src="img/druck_proba.png" width="250"><img src="img/druck_conf.png" width="250">
+- test accuracy: **`1.0`**
 
 ## Related Publications
 

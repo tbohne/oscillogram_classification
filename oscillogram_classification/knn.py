@@ -59,8 +59,9 @@ def resample_voltage_values(voltage_values: np.ndarray) -> np.ndarray:
     return voltage_values
 
 
-def knn_classification(train_x: np.ndarray, train_y: np.ndarray, test_x: np.ndarray, test_y: np.ndarray,
-                       rec_ids: np.ndarray) -> Tuple[np.ndarray, Dict[str, Tuple[List, List]]]:
+def knn_classification(
+        train_x: np.ndarray, train_y: np.ndarray, test_x: np.ndarray, test_y: np.ndarray, rec_ids: np.ndarray
+) -> Tuple[np.ndarray, Dict[str, Tuple[List, List]]]:
     """
     Performs k-nearest-neighbor (KNN) classification.
 
