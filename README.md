@@ -21,7 +21,7 @@ The task comes down to binary (anomaly / regular) univariate / multivariate time
 Initially, we trained two self-implemented architectures, the following FCN as well as a ResNet (cf. `img/ResNet.png`):
 <img src="img/fcn.svg" width="500">
 
-Additionally, we trained various models from [tsai](https://timeseriesai.github.io/tsai/). The one that was finally used in the multivariate anomaly detection application was an `XCM` (*e<u>X</u>plainable <u>C</u>onvolutional neural network for <u>M</u>ultivariate time series classification*). Two trained versions of it are `experiments/trained_models/druck_combined.pth` and `experiments/trained_models/lambda_combined.pth` (trained on `data/multivariate_real_world/`).
+Additionally, we trained various models from [tsai](https://timeseriesai.github.io/tsai/). The one that was finally used in the multivariate anomaly detection application was an `XCMPlus` (*e<u>X</u>plainable <u>C</u>onvolutional neural network for <u>M</u>ultivariate time series classification*). Two trained versions of it are `experiments/trained_models/druck_combined.pth` and `experiments/trained_models/lambda_combined.pth` (trained on `data/multivariate_real_world/`).
 
 ## Dependencies
 
@@ -245,13 +245,13 @@ $ python oscillogram_classification/knn.py --train_path /TRAIN_DATA --test_path 
 `experiments/trained_models/lambda_combined.pth` (multivariate - 4 channels):
 - ![](img/lambda_loss.png)
 - <img src="img/lambda_proba.png" width="250"><img src="img/lambda_conf.png" width="250">
-- architecture: `XCM`
+- architecture: `XCMPlus`
 - test accuracy: **`0.96`**
 
 `experiments/trained_models/druck_combined.pth` (multivariate - 4 channels):
 - ![](img/druck_loss.png)
 - <img src="img/druck_proba.png" width="250"><img src="img/druck_conf.png" width="250">
-- architecture: `XCM`
+- architecture: `XCMPlus`
 - test accuracy: **`1.0`**
 
 ## Cross-Validation Results of Selected Model Architectures
