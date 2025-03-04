@@ -37,7 +37,7 @@ $ pip install .
 
 ## ANN-Based Oscillogram Classification Experiments
 
-The final trained models utilized in the project were all created based on `experiments/oscillogram_classification.ipynb`. The notebook offers functionalities for loading, preprocessing, plotting, training, evaluating and heatmap (saliency map) generation for the considered input oscillograms (univariate and multivariate time series). Currently, we support two self-implemented models: FCN (`keras`) + ResNet (`keras`), and a wide range of `tsai` models, e.g., `XCMPlus`. It is also possible to load and apply an already trained `torch` model, e.g., `experiments/trained_models/lambda_combined.pth`.
+The final trained models utilized in the project were all created based on `experiments/oscillogram_classification.ipynb`. The notebook offers functionalities for loading, preprocessing, plotting, training, evaluating and heatmap (saliency map) generation for the considered input oscillograms (univariate and multivariate time series). Currently, we support two self-implemented models: FCN (`keras`) + ResNet (`keras`), and a wide range of `tsai` models, e.g., `XCM`, `XCMPlus` and `TransformerModel`. It is also possible to load and apply an already trained `torch` model, e.g., `experiments/trained_models/lambda_combined.pth`.
 
 ## Explicit usage in `vehicle_diag_smach`
 
@@ -245,12 +245,20 @@ $ python oscillogram_classification/knn.py --train_path /TRAIN_DATA --test_path 
 `experiments/trained_models/lambda_combined.pth` (multivariate - 4 channels):
 - ![](img/lambda_loss.png)
 - <img src="img/lambda_proba.png" width="250"><img src="img/lambda_conf.png" width="250">
+- architecture: `XCMPlus`
 - test accuracy: **`0.96`**
 
 `experiments/trained_models/druck_combined.pth` (multivariate - 4 channels):
 - ![](img/druck_loss.png)
 - <img src="img/druck_proba.png" width="250"><img src="img/druck_conf.png" width="250">
+- architecture: `XCMPlus`
 - test accuracy: **`1.0`**
+
+## Cross-Validation Results of Selected Model Architectures
+
+- accuracy of `XCM` on lambda sensor data (multivariate - 4 channels): **`0.9826`**
+- accuracy of `TransformerModel` on lambda sensor data (multivariate - 4 channels): **`0.9235`**
+- accuracy of `XCM` on intake manifold pressure sensor data (multivariate - 4 channels): **`1.0`**
 
 ## Related Publications
 
